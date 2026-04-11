@@ -63,57 +63,53 @@
   --ease-smooth: cubic-bezier(0.25, 0.1, 0.25, 1);
 }
 
-/* ══════════════════════════════════════
-   Dark theme
-   ══════════════════════════════════════ */
-.dark {
-  --color-bg-primary: #0D0D0F;
-  --color-bg-secondary: #1C1C1E;
-  --color-bg-tertiary: #2C2C2E;
-  --color-bg-elevated: #1C1C1E;
-  --color-bg-accent: #3A3520;
-  --color-bg-glass: rgba(28, 28, 30, 0.55);
-  --color-bg-glass-heavy: rgba(28, 28, 30, 0.75);
-  --color-bg-hover: rgba(255, 255, 255, 0.06);
-  --color-bg-active: rgba(255, 255, 255, 0.10);
-  --color-bg-sidebar: rgba(22, 22, 24, 0.80);
+@layer base {
+  .dark {
+    --color-bg-primary: #0D0D0F;
+    --color-bg-secondary: #1C1C1E;
+    --color-bg-tertiary: #2C2C2E;
+    --color-bg-elevated: #1C1C1E;
+    --color-bg-accent: #3A3520;
+    --color-bg-glass: rgba(28, 28, 30, 0.55);
+    --color-bg-glass-heavy: rgba(28, 28, 30, 0.75);
+    --color-bg-hover: rgba(255, 255, 255, 0.06);
+    --color-bg-active: rgba(255, 255, 255, 0.10);
+    --color-bg-sidebar: rgba(22, 22, 24, 0.80);
 
-  --color-text-primary: #F5F5F7;
-  --color-text-secondary: #98989D;
-  --color-text-tertiary: #636366;
-  --color-text-inverse: #1D1D1F;
+    --color-text-primary: #F5F5F7;
+    --color-text-secondary: #98989D;
+    --color-text-tertiary: #636366;
+    --color-text-inverse: #1D1D1F;
 
-  --color-border: rgba(255, 255, 255, 0.10);
-  --color-border-light: rgba(255, 255, 255, 0.06);
-  --color-divider: rgba(255, 255, 255, 0.08);
+    --color-border: rgba(255, 255, 255, 0.10);
+    --color-border-light: rgba(255, 255, 255, 0.06);
+    --color-divider: rgba(255, 255, 255, 0.08);
 
-  --color-note-yellow: #3A3520;
-  --color-note-green: #1A3A1A;
-  --color-note-blue: #1A2A3A;
-  --color-note-pink: #3A1A2A;
-  --color-note-purple: #2A1A3A;
-  --color-note-orange: #3A2A1A;
-  --color-note-gray: #2C2C2E;
+    --color-note-yellow: #3A3520;
+    --color-note-green: #1A3A1A;
+    --color-note-blue: #1A2A3A;
+    --color-note-pink: #3A1A2A;
+    --color-note-purple: #2A1A3A;
+    --color-note-orange: #3A2A1A;
+    --color-note-gray: #2C2C2E;
 
-  --color-shadow: rgba(0, 0, 0, 0.25);
-  --color-shadow-md: rgba(0, 0, 0, 0.35);
-  --color-shadow-lg: rgba(0, 0, 0, 0.50);
-}
+    --color-shadow: rgba(0, 0, 0, 0.25);
+    --color-shadow-md: rgba(0, 0, 0, 0.35);
+    --color-shadow-lg: rgba(0, 0, 0, 0.50);
+  }
 
-/* ══════════════════════════════════════
-   Base
-   ══════════════════════════════════════ */
-*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
-html, body, #root {
-  height: 100%;
-  width: 100%;
-  overflow: hidden;
-  font-family: var(--font-sans);
-  background: var(--color-bg-primary);
-  color: var(--color-text-primary);
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  html, body, #root {
+    height: 100%;
+    width: 100%;
+    overflow: hidden;
+    font-family: var(--font-sans);
+    background: var(--color-bg-primary);
+    color: var(--color-text-primary);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
 }
 
 /* Disable spell-check underlines everywhere */
