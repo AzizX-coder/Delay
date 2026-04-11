@@ -148,7 +148,7 @@
     <div class="nav-links">
       <a href="#features" class="hide-mobile">Features</a>
       <a href="https://github.com/AzizX-coder/Delay" class="hide-mobile">Source</a>
-      <a href="https://github.com/AzizX-coder/Delay/releases/latest" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.8rem;">
+      <a href="https://github.com/AzizX-coder/Delay/releases/latest" class="btn btn-primary download-btn" style="padding:0.4rem 1rem;font-size:0.8rem;">
         Download
       </a>
     </div>
@@ -156,15 +156,15 @@
 </nav>
 
 <section class="hero">
-  <div class="badge">
-    v1.0.1 Open Source Release
+  <div class="badge" id="version-badge">
+    Latest Open Source Release
   </div>
   
   <h1>Your focus, reclaimed.</h1>
   <p class="tagline">Notes, tasks, calendar, and a 100% local AI assistant mapped into one meticulously designed desktop environment.</p>
 
   <div class="cta-group">
-    <a href="https://github.com/AzizX-coder/Delay/releases/latest/download/Delay-Setup-1.0.1.exe" class="btn btn-primary">
+    <a href="https://github.com/AzizX-coder/Delay/releases/latest" class="btn btn-primary download-btn">
       Download for Windows (x64)
     </a>
     <a href="https://github.com/AzizX-coder/Delay" class="btn btn-ghost">
@@ -204,6 +204,37 @@
 <footer>
   <p>Engineered by <a href="https://github.com/AzizX-coder">AzizX</a> under the MIT License.</p>
 </footer>
+
+<script>
+  async function fetchLatestRelease() {
+    try {
+      const res = await fetch('https://api.github.com/repos/AzizX-coder/Delay/releases/latest');
+      if (!res.ok) throw new Error('API error');
+      const data = await res.json();
+      
+      // Find the Windows installer
+      const exeAsset = data.assets.find(a => a.name.endsWith('.exe'));
+      if (exeAsset) {
+        document.querySelectorAll('.download-btn').forEach(btn => {
+          btn.href = exeAsset.browser_download_url;
+        });
+      }
+
+      // Update the badge
+      const badge = document.getElementById('version-badge');
+      if (badge && data.tag_name) {
+        badge.innerText = `${data.tag_name} Open Source Release`;
+      }
+    } catch (err) {
+      console.error('Failed to fetch latest release:', err);
+      // Fallback route
+      document.querySelectorAll('.download-btn').forEach(btn => {
+        btn.href = 'https://github.com/AzizX-coder/Delay/releases/latest';
+      });
+    }
+  }
+  fetchLatestRelease();
+</script>
 
 </body>
 </html>
