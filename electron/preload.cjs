@@ -1,0 +1,19 @@
+const { contextBridge, ipcRenderer } = require("electron");
+
+contextBridge.exposeInMainWorld("electronAPI", {
+  minimize: () => ipcRenderer.send("window-minimize"),
+  maximize: () => ipcRenderer.send("window-maximize"),
+  close: () => ipcRenderer.send("window-close"),
+  isElectron: true,
+  getVersion: () => ipcRenderer.invoke("get-app-version"),
+  updater: {
+    check: () => ipcRenderer.invoke("updater-check"),
+    download: () => ipcRenderer.invoke("updater-download"),
+    quitAndInstall: () => ipcRenderer.send("updater-quit-and-install"),
+    onEvent: (cb) => {
+      const listener = (_e, data) => cb(data);
+      ipcRenderer.on("updater-event", listener);
+      return () => ipcRenderer.removeListener("updater-event", listener);
+    },
+  },
+});

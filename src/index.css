@@ -1,0 +1,245 @@
+@import "tailwindcss";
+
+@theme {
+  /* ─── Background surfaces ─── */
+  --color-bg-primary: #FFFFFF;
+  --color-bg-secondary: #F2F2F7;
+  --color-bg-tertiary: #E5E5EA;
+  --color-bg-elevated: #FFFFFF;
+  --color-bg-accent: #FFF9DB;
+  --color-bg-glass: rgba(255, 255, 255, 0.60);
+  --color-bg-glass-heavy: rgba(255, 255, 255, 0.78);
+  --color-bg-hover: rgba(0, 0, 0, 0.04);
+  --color-bg-active: rgba(0, 0, 0, 0.07);
+  --color-bg-sidebar: rgba(246, 246, 246, 0.80);
+
+  /* ─── Text ─── */
+  --color-text-primary: #1D1D1F;
+  --color-text-secondary: #6E6E73;
+  --color-text-tertiary: #AEAEB2;
+  --color-text-inverse: #FFFFFF;
+
+  /* ─── Accent palette ─── */
+  --color-accent: #007AFF;
+  --color-accent-hover: #0066D6;
+  --color-accent-light: rgba(0, 122, 255, 0.12);
+  --color-success: #34C759;
+  --color-warning: #FF9500;
+  --color-danger: #FF3B30;
+
+  /* ─── Borders ─── */
+  --color-border: rgba(0, 0, 0, 0.10);
+  --color-border-light: rgba(0, 0, 0, 0.05);
+  --color-divider: rgba(0, 0, 0, 0.06);
+
+  /* ─── Note colors (Apple palette) ─── */
+  --color-note-yellow: #FFF9DB;
+  --color-note-green: #E8F8E8;
+  --color-note-blue: #E3F2FD;
+  --color-note-pink: #FDE8F0;
+  --color-note-purple: #F0E6FF;
+  --color-note-orange: #FFF3E0;
+  --color-note-gray: #F5F5F7;
+
+  /* ─── Elevation & depth ─── */
+  --color-shadow: rgba(0, 0, 0, 0.03);
+  --color-shadow-md: rgba(0, 0, 0, 0.06);
+  --color-shadow-lg: rgba(0, 0, 0, 0.10);
+
+  /* ─── Radius ─── */
+  --radius-xs: 6px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --radius-2xl: 24px;
+  --radius-full: 9999px;
+
+  /* ─── Typography ─── */
+  --font-sans: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+
+  /* ─── Motion ─── */
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-smooth: cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+
+/* ══════════════════════════════════════
+   Dark theme
+   ══════════════════════════════════════ */
+.dark {
+  --color-bg-primary: #0D0D0F;
+  --color-bg-secondary: #1C1C1E;
+  --color-bg-tertiary: #2C2C2E;
+  --color-bg-elevated: #1C1C1E;
+  --color-bg-accent: #3A3520;
+  --color-bg-glass: rgba(28, 28, 30, 0.55);
+  --color-bg-glass-heavy: rgba(28, 28, 30, 0.75);
+  --color-bg-hover: rgba(255, 255, 255, 0.06);
+  --color-bg-active: rgba(255, 255, 255, 0.10);
+  --color-bg-sidebar: rgba(22, 22, 24, 0.80);
+
+  --color-text-primary: #F5F5F7;
+  --color-text-secondary: #98989D;
+  --color-text-tertiary: #636366;
+  --color-text-inverse: #1D1D1F;
+
+  --color-border: rgba(255, 255, 255, 0.10);
+  --color-border-light: rgba(255, 255, 255, 0.06);
+  --color-divider: rgba(255, 255, 255, 0.08);
+
+  --color-note-yellow: #3A3520;
+  --color-note-green: #1A3A1A;
+  --color-note-blue: #1A2A3A;
+  --color-note-pink: #3A1A2A;
+  --color-note-purple: #2A1A3A;
+  --color-note-orange: #3A2A1A;
+  --color-note-gray: #2C2C2E;
+
+  --color-shadow: rgba(0, 0, 0, 0.25);
+  --color-shadow-md: rgba(0, 0, 0, 0.35);
+  --color-shadow-lg: rgba(0, 0, 0, 0.50);
+}
+
+/* ══════════════════════════════════════
+   Base
+   ══════════════════════════════════════ */
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+html, body, #root {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  font-family: var(--font-sans);
+  background: var(--color-bg-primary);
+  color: var(--color-text-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Disable spell-check underlines everywhere */
+[spellcheck="false"], .tiptap, .ProseMirror {
+  -webkit-text-decoration-skip: none;
+}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: var(--color-text-tertiary);
+  border-radius: var(--radius-full);
+  opacity: 0.5;
+}
+::-webkit-scrollbar-thumb:hover { background: var(--color-text-secondary); }
+
+/* ── Selection ── */
+::selection {
+  background: var(--color-accent-light);
+  color: var(--color-text-primary);
+}
+
+/* ══════════════════════════════════════
+   Liquid glass utility
+   ══════════════════════════════════════ */
+.glass {
+  background: var(--color-bg-glass);
+  backdrop-filter: blur(30px) saturate(180%);
+  -webkit-backdrop-filter: blur(30px) saturate(180%);
+}
+
+.glass-heavy {
+  background: var(--color-bg-glass-heavy);
+  backdrop-filter: blur(40px) saturate(200%);
+  -webkit-backdrop-filter: blur(40px) saturate(200%);
+}
+
+/* ══════════════════════════════════════
+   TipTap editor
+   ══════════════════════════════════════ */
+.tiptap {
+  outline: none;
+  min-height: 100%;
+  font-size: 15px;
+  line-height: 1.7;
+  color: var(--color-text-primary);
+}
+
+.tiptap p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  color: var(--color-text-tertiary);
+  pointer-events: none;
+  height: 0;
+}
+
+.tiptap h1 { font-size: 28px; font-weight: 700; margin: 24px 0 8px; line-height: 1.3; }
+.tiptap h2 { font-size: 22px; font-weight: 600; margin: 20px 0 6px; line-height: 1.35; }
+.tiptap h3 { font-size: 18px; font-weight: 600; margin: 16px 0 4px; line-height: 1.4; }
+
+.tiptap p { margin: 0 0 4px; }
+.tiptap ul, .tiptap ol { padding-left: 24px; margin: 4px 0; }
+.tiptap li { margin: 2px 0; }
+
+.tiptap blockquote {
+  border-left: 3px solid var(--color-accent);
+  padding-left: 16px;
+  margin: 8px 0;
+  color: var(--color-text-secondary);
+}
+
+.tiptap code {
+  background: var(--color-bg-hover);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 13px;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+}
+
+.tiptap pre {
+  background: var(--color-bg-secondary);
+  padding: 16px;
+  border-radius: var(--radius-md);
+  margin: 8px 0;
+  overflow-x: auto;
+}
+.tiptap pre code { background: none; padding: 0; }
+
+.tiptap mark {
+  background: var(--color-note-yellow);
+  padding: 1px 2px;
+  border-radius: 2px;
+}
+
+/* ── Task lists ── */
+.tiptap ul[data-type="taskList"] { list-style: none; padding-left: 0; }
+.tiptap ul[data-type="taskList"] li { display: flex; align-items: flex-start; gap: 8px; }
+.tiptap ul[data-type="taskList"] li label { margin-top: 3px; }
+.tiptap ul[data-type="taskList"] li label input[type="checkbox"] {
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--color-text-tertiary);
+  border-radius: 4px;
+  cursor: pointer;
+  position: relative;
+  flex-shrink: 0;
+  transition: background 0.2s, border-color 0.2s;
+}
+.tiptap ul[data-type="taskList"] li label input[type="checkbox"]:checked {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+}
+.tiptap ul[data-type="taskList"] li label input[type="checkbox"]:checked::after {
+  content: '✓';
+  position: absolute;
+  top: -1px;
+  left: 2px;
+  color: white;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+/* ── Smooth theme transitions ── */
+body {
+  transition: background-color 0.35s var(--ease-smooth),
+              color 0.35s var(--ease-smooth);
+}
