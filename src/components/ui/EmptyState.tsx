@@ -50,10 +50,10 @@ export function EmptyState({
     >
       <div
         className={`${s.iconBox} flex items-center justify-center
-          bg-gradient-to-br from-accent/15 to-accent/5
-          border border-accent/10
-          text-accent mb-4
-          shadow-[0_1px_2px_rgba(0,0,0,0.04),0_8px_20px_rgba(0,122,255,0.08)]`}
+          bg-gradient-to-br from-text-tertiary/15 to-text-tertiary/5
+          border border-border-light
+          text-text-secondary mb-4
+          shadow-sm`}
       >
         {icon}
       </div>

@@ -14,10 +14,10 @@ export function Input({ label, error, className = "", ...props }: InputProps) {
         </label>
       )}
       <input
-        className={`h-10 px-3.5 bg-bg-secondary border border-border rounded-[--radius-sm]
-          text-[14px] text-text-primary placeholder:text-text-tertiary
+        className={`h-9 px-3.5 bg-bg-secondary/50 border border-border rounded-[--radius-sm]
+          text-[13px] text-text-primary placeholder:text-text-tertiary
           outline-none transition-all duration-150
-          focus:border-accent focus:ring-2 focus:ring-accent/20
+          focus:border-border/60 focus:ring-4 focus:ring-text-secondary/5
           ${error ? "border-danger" : ""} ${className}`}
         spellCheck={false}
         autoComplete="off"

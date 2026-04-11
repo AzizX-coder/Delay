@@ -51,17 +51,17 @@ export function NotesList() {
         {/* Search */}
         <div className="relative">
           <Search
-            size={14}
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary pointer-events-none"
+            size={16}
+            className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-tertiary pointer-events-none"
           />
           <input
             type="text"
             placeholder="Search notes..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full h-9 pl-9 pr-3 bg-bg-primary/70 border border-border-light
+            className="w-full h-9 pl-10 pr-3 bg-bg-primary/70 border border-border-light
               rounded-xl text-[13px] text-text-primary placeholder:text-text-tertiary
-              outline-none focus:border-accent/40 focus:ring-2 focus:ring-accent/10
+              outline-none focus:border-border/40 focus:ring-2 focus:ring-text-secondary/10
               transition-all"
             spellCheck={false}
           />

@@ -140,7 +140,7 @@ export function CalendarPage() {
 
         <div className="flex items-center gap-2">
           {/* View toggle */}
-          <div className="flex bg-bg-secondary rounded-lg p-0.5 border border-border-light">
+          <div className="flex gap-0.5 bg-bg-secondary rounded-lg p-0.5 border border-border-light">
             {viewButtons.map((vb) => (
               <button
                 key={vb.view}

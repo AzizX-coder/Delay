@@ -93,7 +93,10 @@ autoUpdater.on("error", (err) => sendUpdaterEvent("error", String(err?.message |
 autoUpdater.on("download-progress", (p) => sendUpdaterEvent("progress", p));
 autoUpdater.on("update-downloaded", (info) => sendUpdaterEvent("downloaded", info));
 
-app.whenReady().then(createWindow);
+app.whenReady().then(() => {
+  app.setAppUserModelId("com.delay.app");
+  createWindow();
+});
 
 app.on("window-all-closed", () => {
   if (process.platform !== "darwin") app.quit();

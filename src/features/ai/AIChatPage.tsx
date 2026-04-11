@@ -86,16 +86,15 @@ export function AIChatPage() {
             </motion.button>
           </div>
 
-          {/* Status */}
           <div
-            className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-[12px] mb-2
+            className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-[12px] mb-2 border border-border-light
               ${
                 ollamaOnline
-                  ? "bg-success/10 text-success"
-                  : "bg-danger/10 text-danger"
+                  ? "bg-bg-primary text-text-secondary"
+                  : "bg-danger/5 text-danger border-danger/10"
               }`}
           >
-            {ollamaOnline ? <Wifi size={12} /> : <WifiOff size={12} />}
+            {ollamaOnline ? <Wifi size={12} className="text-text-tertiary" /> : <WifiOff size={12} />}
             {ollamaOnline ? "Ollama Connected" : "Ollama Offline"}
           </div>
         </div>
@@ -257,8 +256,8 @@ export function AIChatPage() {
                     className={`max-w-[80%] px-4 py-2.5 rounded-2xl text-[14px] leading-relaxed
                       ${
                         msg.role === "user"
-                          ? "bg-accent text-white rounded-br-md"
-                          : "bg-bg-secondary text-text-primary rounded-bl-md"
+                          ? "bg-text-primary text-text-inverse rounded-br-md"
+                          : "bg-bg-secondary text-text-primary rounded-bl-md border border-border-light"
                       }`}
                   >
                     <div className="whitespace-pre-wrap">{msg.content}</div>
