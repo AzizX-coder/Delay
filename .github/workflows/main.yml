@@ -1,5 +1,8 @@
 name: Release Platform Builds
 
+permissions:
+  contents: write
+
 on:
   push:
     tags:
