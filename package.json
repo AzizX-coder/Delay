@@ -1,6 +1,6 @@
 {
   "name": "delay",
-  "version": "1.2.6",
+  "version": "1.2.7",
   "description": "Notes, tasks, calendar & AI — beautifully organized.",
   "author": "AzizX-coder",
   "license": "Apache-2.0",
@@ -40,6 +40,7 @@
         }
       ],
       "icon": "public/icon.ico",
+      "requestedExecutionLevel": "asInvoker",
       "artifactName": "Delay-Setup-${version}.${ext}"
     },
     "publish": [
@@ -62,7 +63,6 @@
       "uninstallerIcon": "public/icon.ico",
       "installerHeaderIcon": "public/icon.ico",
       "deleteAppDataOnUninstall": false,
-      "requestedExecutionLevel": "asInvoker",
       "artifactName": "Delay-Setup-${version}.${ext}"
     },
     "mac": {
