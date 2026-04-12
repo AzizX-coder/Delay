@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { db, generateId, now } from "@/lib/database";
 import { streamChat } from "@/lib/ollama";
+import { processAgentRequest } from "@/lib/agent";
 import type { AIConversation, AIMessage } from "@/types/ai";
 
 interface AIState {
@@ -16,7 +17,7 @@ interface AIState {
   createConversation: () => Promise<string>;
   deleteConversation: (id: string) => Promise<void>;
   setActiveConversation: (id: string | null) => void;
-  sendMessage: (content: string) => Promise<void>;
+  sendMessage: (content: string, useAgent?: boolean) => Promise<void>;
   setModel: (model: string) => void;
   stopStreaming: () => void;
 }
@@ -100,7 +101,7 @@ export const useAIStore = create<AIState>((set, get) => ({
     if (id) get().loadMessages(id);
   },
 
-  sendMessage: async (content) => {
+  sendMessage: async (content, useAgent = false) => {
     const { activeConversationId, messages, model } = get();
     let convoId = activeConversationId;
 
@@ -108,11 +109,17 @@ export const useAIStore = create<AIState>((set, get) => ({
       convoId = await get().createConversation();
     }
 
+    // Determine actual user content (strip prefix from UI)
+    const prefix = "[AGENT MODE] You are Delay Agent. You can create notes, tasks, and help the user organize. Respond with structured, clear answers. ";
+    const isAgentFromPrefix = content.startsWith(prefix);
+    const actualContent = isAgentFromPrefix ? content.slice(prefix.length) : content;
+    const isAgentMode = useAgent || isAgentFromPrefix;
+
     const userMsg: AIMessage = {
       id: generateId(),
       conversation_id: convoId,
       role: "user",
-      content,
+      content: actualContent,
       created_at: now(),
     };
 
@@ -124,7 +131,7 @@ export const useAIStore = create<AIState>((set, get) => ({
 
       // Update conversation title from first message
       if (updatedMessages.filter((m) => m.role === "user").length === 1) {
-        const title = content.slice(0, 50) + (content.length > 50 ? "..." : "");
+        const title = actualContent.slice(0, 50) + (actualContent.length > 50 ? "..." : "");
         await db.aiConversations.update(convoId, { title, updated_at: now() });
         set((state) => ({
           conversations: state.conversations.map((c) =>
@@ -140,15 +147,39 @@ export const useAIStore = create<AIState>((set, get) => ({
     abortController = new AbortController();
 
     try {
-      const chatMessages = updatedMessages.map((m) => ({
-        role: m.role,
-        content: m.content,
-      }));
+      if (isAgentMode) {
+        // Run agent loop
+        await processAgentRequest(
+          actualContent,
+          (chunk) => {
+            if (abortController?.signal.aborted) return;
+            fullContent += chunk;
+            set({ streamingContent: fullContent });
+          },
+          async (prompt, onV) => {
+            const chatMessages = [
+              ...updatedMessages.slice(0, -1).map((m) => ({ role: m.role, content: m.content })),
+              { role: "user" as const, content: prompt }
+            ];
+            for await (const token of streamChat(model, chatMessages)) {
+              if (abortController?.signal.aborted) throw new Error("Aborted");
+              onV(token);
+            }
+            return "";
+          }
+        );
+      } else {
+        // Standard chat
+        const chatMessages = updatedMessages.map((m) => ({
+          role: m.role,
+          content: m.content,
+        }));
 
-      for await (const token of streamChat(model, chatMessages)) {
-        if (abortController?.signal.aborted) break;
-        fullContent += token;
-        set({ streamingContent: fullContent });
+        for await (const token of streamChat(model, chatMessages)) {
+          if (abortController?.signal.aborted) break;
+          fullContent += token;
+          set({ streamingContent: fullContent });
+        }
       }
 
       const assistantMsg: AIMessage = {
@@ -188,7 +219,7 @@ export const useAIStore = create<AIState>((set, get) => ({
 
   setModel: (model) => set({ model }),
 
-  stopStreaming: () => {
+  stopStreaming: async () => {
     abortController?.abort();
     const { streamingContent, activeConversationId } = get();
     if (streamingContent && activeConversationId) {
@@ -204,6 +235,11 @@ export const useAIStore = create<AIState>((set, get) => ({
         isStreaming: false,
         streamingContent: "",
       }));
+      try {
+        await db.aiMessages.add(assistantMsg);
+      } catch {
+        // silent
+      }
     } else {
       set({ isStreaming: false, streamingContent: "" });
     }

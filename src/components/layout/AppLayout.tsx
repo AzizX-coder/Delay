@@ -1,6 +1,7 @@
 import { Outlet } from "react-router-dom";
 import { TitleBar } from "./TitleBar";
 import { NavigationRail } from "./NavigationRail";
+import { UpdateToast } from "@/components/ui/UpdateToast";
 
 export function AppLayout() {
   return (
@@ -12,6 +13,7 @@ export function AppLayout() {
           <Outlet />
         </main>
       </div>
+      <UpdateToast />
     </div>
   );
 }

@@ -4,7 +4,7 @@ import {
   StickyNote,
   CheckSquare,
   Calendar,
-  Bot,
+  Sparkles,
   Settings,
 } from "lucide-react";
 
@@ -12,7 +12,7 @@ const NAV_ITEMS = [
   { path: "/notes", icon: StickyNote, label: "Notes" },
   { path: "/tasks", icon: CheckSquare, label: "Tasks" },
   { path: "/calendar", icon: Calendar, label: "Calendar" },
-  { path: "/ai", icon: Bot, label: "AI" },
+  { path: "/ai", icon: Sparkles, label: "AI" },
   { path: "/settings", icon: Settings, label: "Settings" },
 ] as const;
 

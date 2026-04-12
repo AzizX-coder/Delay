@@ -2,20 +2,40 @@ import { useEffect, useState, useRef } from "react";
 import { useAIStore } from "@/stores/aiStore";
 import { useSettingsStore } from "@/stores/settingsStore";
 import { listOllamaModels, checkOllamaStatus } from "@/lib/ollama";
+import { MarkdownRenderer } from "@/components/ui/MarkdownRenderer";
+import { useThemeStore } from "@/stores/themeStore";
+import data from "@emoji-mart/data";
+import Picker from "@emoji-mart/react";
 import { motion, AnimatePresence } from "motion/react";
 import {
   Plus,
   Send,
   Square,
-  Bot,
   User,
   Trash2,
   ChevronDown,
   Wifi,
   WifiOff,
   MessageSquare,
+  Mic,
+  MicOff,
+  Sparkles,
+  Zap,
+  Smile,
 } from "lucide-react";
 import type { OllamaModel } from "@/types/ai";
+
+// Gemini-style 4-pointed star icon
+function GeminiStar({ size = 14, className = "" }: { size?: number; className?: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className}>
+      <path
+        d="M12 2L14.4 9.6L22 12L14.4 14.4L12 22L9.6 14.4L2 12L9.6 9.6L12 2Z"
+        fill="currentColor"
+      />
+    </svg>
+  );
+}
 
 export function AIChatPage() {
   const {
@@ -33,13 +53,18 @@ export function AIChatPage() {
     setModel,
     stopStreaming,
   } = useAIStore();
+  const { theme } = useThemeStore();
 
   const [input, setInput] = useState("");
   const [models, setModels] = useState<OllamaModel[]>([]);
   const [ollamaOnline, setOllamaOnline] = useState(false);
   const [showModelPicker, setShowModelPicker] = useState(false);
+  const [agentMode, setAgentMode] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const recognitionRef = useRef<any>(null);
 
   useEffect(() => {
     loadConversations();
@@ -53,7 +78,10 @@ export function AIChatPage() {
 
   const handleSend = () => {
     if (!input.trim() || isStreaming) return;
-    sendMessage(input.trim());
+    const prefix = agentMode
+      ? "[AGENT MODE] You are Delay Agent. You can create notes, tasks, and help the user organize. Respond with structured, clear answers. "
+      : "";
+    sendMessage(prefix + input.trim());
     setInput("");
     inputRef.current?.focus();
   };
@@ -63,6 +91,42 @@ export function AIChatPage() {
       e.preventDefault();
       handleSend();
     }
+  };
+
+  const toggleVoiceRecord = () => {
+    if (isRecording) {
+      recognitionRef.current?.stop();
+      setIsRecording(false);
+      return;
+    }
+
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) return;
+
+    const recognition = new SpeechRecognition();
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.lang = "en-US";
+
+    let transcript = "";
+    recognition.onresult = (event: any) => {
+      transcript = "";
+      for (let i = 0; i < event.results.length; i++) {
+        transcript += event.results[i][0].transcript;
+      }
+      setInput(transcript);
+    };
+
+    recognition.onend = () => {
+      setIsRecording(false);
+      if (transcript.trim()) {
+        setInput(transcript.trim());
+      }
+    };
+
+    recognition.start();
+    recognitionRef.current = recognition;
+    setIsRecording(true);
   };
 
   return (
@@ -138,7 +202,7 @@ export function AIChatPage() {
 
           {conversations.length === 0 && (
             <div className="flex flex-col items-center justify-center py-12 text-text-tertiary">
-              <Bot size={24} />
+              <GeminiStar size={24} />
               <p className="text-[12px] mt-2">No conversations yet</p>
             </div>
           )}
@@ -148,7 +212,7 @@ export function AIChatPage() {
       {/* Chat area */}
       <div className="flex-1 flex flex-col">
         {/* Model selector bar */}
-        <div className="flex items-center gap-2 px-5 py-2.5 border-b border-border-light">
+        <div className="flex items-center gap-3 px-5 py-2.5 border-b border-border-light">
           <span className="text-[12px] text-text-tertiary">Model:</span>
           <div className="relative">
             <button
@@ -193,27 +257,27 @@ export function AIChatPage() {
                       : "Ollama is offline"}
                   </div>
                 )}
-                {/* Always show default model option */}
-                {!models.find((m) => m.name === "glm-5:cloud") && (
-                  <button
-                    onClick={() => {
-                      setModel("glm-5:cloud");
-                      setShowModelPicker(false);
-                    }}
-                    className={`w-full text-left px-3 py-2 rounded-lg text-[13px]
-                      transition-colors cursor-pointer
-                      ${
-                        model === "glm-5:cloud"
-                          ? "bg-accent/10 text-accent font-medium"
-                          : "text-text-secondary hover:bg-bg-hover"
-                      }`}
-                  >
-                    glm-5:cloud (default)
-                  </button>
-                )}
               </motion.div>
             )}
           </div>
+
+          <div className="flex-1" />
+
+          {/* Agent Mode toggle */}
+          <motion.button
+            whileTap={{ scale: 0.95 }}
+            onClick={() => setAgentMode(!agentMode)}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-medium
+              transition-all cursor-pointer border
+              ${
+                agentMode
+                  ? "bg-accent/15 text-accent border-accent/30"
+                  : "bg-bg-secondary text-text-secondary border-border-light hover:bg-bg-hover"
+              }`}
+          >
+            <Zap size={12} />
+            Agent
+          </motion.button>
         </div>
 
         {/* Messages */}
@@ -221,7 +285,7 @@ export function AIChatPage() {
           {messages.length === 0 && !isStreaming ? (
             <div className="h-full flex flex-col items-center justify-center text-text-tertiary">
               <div className="w-16 h-16 rounded-3xl bg-accent/10 flex items-center justify-center mb-4">
-                <Bot size={28} className="text-accent" />
+                <GeminiStar size={28} className="text-accent" />
               </div>
               <p className="text-[16px] font-medium text-text-secondary">
                 How can I help you?
@@ -230,6 +294,12 @@ export function AIChatPage() {
                 Ask me anything. I can help with writing, analysis,
                 coding, brainstorming, and more.
               </p>
+              {agentMode && (
+                <div className="flex items-center gap-1.5 mt-3 px-3 py-1.5 rounded-lg bg-accent/10 text-accent text-[12px]">
+                  <Zap size={12} />
+                  Agent Mode — I can create notes, tasks & documents
+                </div>
+              )}
             </div>
           ) : (
             <div className="space-y-4 max-w-3xl mx-auto">
@@ -249,7 +319,7 @@ export function AIChatPage() {
                 >
                   {msg.role === "assistant" && (
                     <div className="w-7 h-7 rounded-full bg-accent/15 flex items-center justify-center shrink-0 mt-0.5">
-                      <Bot size={14} className="text-accent" />
+                      <GeminiStar size={14} className="text-accent" />
                     </div>
                   )}
                   <div
@@ -260,7 +330,11 @@ export function AIChatPage() {
                           : "bg-bg-secondary text-text-primary rounded-bl-md border border-border-light"
                       }`}
                   >
-                    <div className="whitespace-pre-wrap">{msg.content}</div>
+                    {msg.role === "assistant" ? (
+                      <MarkdownRenderer content={msg.content} />
+                    ) : (
+                      <div className="whitespace-pre-wrap">{msg.content}</div>
+                    )}
                   </div>
                   {msg.role === "user" && (
                     <div className="w-7 h-7 rounded-full bg-bg-secondary flex items-center justify-center shrink-0 mt-0.5">
@@ -278,13 +352,11 @@ export function AIChatPage() {
                   className="flex gap-3"
                 >
                   <div className="w-7 h-7 rounded-full bg-accent/15 flex items-center justify-center shrink-0 mt-0.5">
-                    <Bot size={14} className="text-accent" />
+                    <GeminiStar size={14} className="text-accent" />
                   </div>
-                  <div className="max-w-[80%] px-4 py-2.5 rounded-2xl rounded-bl-md bg-bg-secondary text-text-primary text-[14px] leading-relaxed">
-                    <div className="whitespace-pre-wrap">
-                      {streamingContent}
-                      <span className="inline-block w-1.5 h-4 bg-accent/60 animate-pulse ml-0.5 rounded-sm" />
-                    </div>
+                  <div className="max-w-[80%] px-4 py-2.5 rounded-2xl rounded-bl-md bg-bg-secondary text-text-primary text-[14px] leading-relaxed border border-border-light">
+                    <MarkdownRenderer content={streamingContent} />
+                    <span className="inline-block w-1.5 h-4 bg-accent/60 animate-pulse ml-0.5 rounded-sm" />
                   </div>
                 </motion.div>
               )}
@@ -297,9 +369,9 @@ export function AIChatPage() {
                   className="flex gap-3"
                 >
                   <div className="w-7 h-7 rounded-full bg-accent/15 flex items-center justify-center shrink-0">
-                    <Bot size={14} className="text-accent" />
+                    <GeminiStar size={14} className="text-accent" />
                   </div>
-                  <div className="px-4 py-3 rounded-2xl rounded-bl-md bg-bg-secondary">
+                  <div className="px-4 py-3 rounded-2xl rounded-bl-md bg-bg-secondary border border-border-light">
                     <div className="flex gap-1">
                       {[0, 1, 2].map((i) => (
                         <motion.div
@@ -330,13 +402,16 @@ export function AIChatPage() {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Type a message..."
+              placeholder={isRecording ? "Listening..." : "Type a message..."}
               rows={1}
-              className="w-full resize-none px-4 py-3 pr-12 bg-bg-secondary
-                border border-border-light rounded-2xl text-[14px]
+              className={`w-full resize-none px-4 py-3 pr-24 bg-bg-secondary
+                border rounded-2xl text-[14px]
                 text-text-primary placeholder:text-text-tertiary
-                outline-none focus:border-accent/40 focus:ring-2 focus:ring-accent/10
-                transition-all max-h-32"
+                outline-none focus:ring-2 transition-all max-h-32
+                ${isRecording
+                  ? "border-danger/40 focus:ring-danger/10"
+                  : "border-border-light focus:border-accent/40 focus:ring-accent/10"
+                }`}
               style={{
                 height: "auto",
                 minHeight: "48px",
@@ -348,22 +423,67 @@ export function AIChatPage() {
               }}
               spellCheck={false}
             />
-            <motion.button
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
-              onClick={isStreaming ? stopStreaming : handleSend}
-              disabled={!isStreaming && !input.trim()}
-              className={`absolute right-2.5 bottom-2.5 w-8 h-8 flex items-center justify-center
-                rounded-xl transition-colors cursor-pointer
-                disabled:opacity-30 disabled:cursor-not-allowed
-                ${
-                  isStreaming
-                    ? "bg-danger text-white hover:bg-danger/80"
-                    : "bg-accent text-white hover:bg-accent-hover"
-                }`}
-            >
-              {isStreaming ? <Square size={14} /> : <Send size={14} />}
-            </motion.button>
+            {showEmojiPicker && (
+              <div className="absolute bottom-[60px] right-2 z-50 shadow-2xl rounded-xl border border-border-light bg-bg-elevated overflow-hidden">
+                <Picker
+                  data={data}
+                  set="apple"
+                  theme={theme === "dark" ? "dark" : "light"}
+                  onEmojiSelect={(emoji: any) => {
+                    setInput(prev => prev + emoji.native);
+                    setShowEmojiPicker(false);
+                    inputRef.current?.focus();
+                  }}
+                />
+              </div>
+            )}
+            <div className="absolute right-2.5 bottom-2.5 flex items-center gap-1">
+              {/* Emoji button */}
+              <motion.button
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+                onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                className={`w-8 h-8 flex items-center justify-center rounded-xl transition-colors cursor-pointer
+                  ${showEmojiPicker
+                    ? "bg-accent/10 text-accent"
+                    : "bg-transparent text-text-secondary hover:bg-bg-hover hover:text-text-primary"
+                  }`}
+              >
+                <Smile size={16} />
+              </motion.button>
+
+              {/* Voice record button */}
+              <motion.button
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+                onClick={toggleVoiceRecord}
+                className={`w-8 h-8 flex items-center justify-center rounded-xl transition-colors cursor-pointer
+                  ${isRecording
+                    ? "bg-danger text-white animate-pulse"
+                    : "bg-bg-hover text-text-secondary hover:text-text-primary"
+                  }`}
+              >
+                {isRecording ? <MicOff size={14} /> : <Mic size={14} />}
+              </motion.button>
+
+              {/* Send button */}
+              <motion.button
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+                onClick={isStreaming ? stopStreaming : handleSend}
+                disabled={!isStreaming && !input.trim()}
+                className={`w-8 h-8 flex items-center justify-center
+                  rounded-xl transition-colors cursor-pointer
+                  disabled:opacity-30 disabled:cursor-not-allowed
+                  ${
+                    isStreaming
+                      ? "bg-danger text-white hover:bg-danger/80"
+                      : "bg-accent text-white hover:bg-accent-hover"
+                  }`}
+              >
+                {isStreaming ? <Square size={14} /> : <Send size={14} />}
+              </motion.button>
+            </div>
           </div>
         </div>
       </div>

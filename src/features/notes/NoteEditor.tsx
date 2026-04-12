@@ -10,8 +10,11 @@ import { TextStyle } from "@tiptap/extension-text-style";
 import Color from "@tiptap/extension-color";
 import Typography from "@tiptap/extension-typography";
 import Link from "@tiptap/extension-link";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNotesStore } from "@/stores/notesStore";
+import { useThemeStore } from "@/stores/themeStore";
+import data from "@emoji-mart/data";
+import Picker from "@emoji-mart/react";
 import { motion } from "motion/react";
 import {
   Bold,
@@ -26,6 +29,8 @@ import {
   Quote,
   Code,
   Highlighter,
+  Smile,
+  X,
   AlignLeft,
   AlignCenter,
   AlignRight,
@@ -37,8 +42,10 @@ interface NoteEditorProps {
 
 export function NoteEditor({ noteId }: NoteEditorProps) {
   const { notes, updateNote } = useNotesStore();
+  const { theme } = useThemeStore();
   const note = notes.find((n) => n.id === noteId);
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
 
   const editor = useEditor({
     extensions: [
@@ -113,7 +120,7 @@ export function NoteEditor({ noteId }: NoteEditorProps) {
       }
     >
       {/* Toolbar */}
-      <div className="flex items-center gap-0.5 px-6 py-2 border-b border-border-light overflow-x-auto">
+      <div className="relative flex items-center gap-0.5 px-6 py-2 border-b border-border-light overflow-x-auto">
         <ToolbarButton
           active={editor.isActive("bold")}
           onClick={() => editor.chain().focus().toggleBold().run()}
@@ -134,6 +141,27 @@ export function NoteEditor({ noteId }: NoteEditorProps) {
           onClick={() => editor.chain().focus().toggleStrike().run()}
           icon={<Strikethrough size={15} />}
         />
+        <Divider />
+        <div className="relative">
+          <ToolbarButton
+            active={showEmojiPicker}
+            onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+            icon={<Smile size={15} />}
+          />
+          {showEmojiPicker && (
+            <div className="absolute top-full left-0 mt-2 z-50 shadow-2xl rounded-xl border border-border-light bg-bg-elevated overflow-hidden">
+              <Picker
+                data={data}
+                set="apple"
+                theme={theme === "dark" ? "dark" : "light"}
+                onEmojiSelect={(emoji: any) => {
+                  editor.chain().focus().insertContent(emoji.native).run();
+                  setShowEmojiPicker(false);
+                }}
+              />
+            </div>
+          )}
+        </div>
         <Divider />
         <ToolbarButton
           active={editor.isActive("heading", { level: 1 })}

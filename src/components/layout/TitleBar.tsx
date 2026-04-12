@@ -18,40 +18,43 @@ export function TitleBar() {
 
       <div className="flex-1" />
 
-      {/* Window controls */}
+      {/* Window controls — clean outlined style */}
       {isElectron && (
         <div
           className="flex items-center -mr-2"
           style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
         >
+          {/* Minimize: thin horizontal line */}
           <button
             onClick={() => window.electronAPI?.minimize()}
             className="w-[46px] h-[32px] flex items-center justify-center
               text-text-secondary hover:bg-bg-hover transition-colors rounded-md cursor-pointer"
             aria-label="Minimize"
           >
-            <svg width="10" height="1" viewBox="0 0 10 1">
-              <rect width="10" height="1" fill="currentColor" />
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+              <path d="M2 6h8" stroke="currentColor" strokeWidth="1" strokeLinecap="round" />
             </svg>
           </button>
+          {/* Maximize: rounded square */}
           <button
             onClick={() => window.electronAPI?.maximize()}
             className="w-[46px] h-[32px] flex items-center justify-center
               text-text-secondary hover:bg-bg-hover transition-colors rounded-md cursor-pointer"
             aria-label="Maximize"
           >
-            <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-              <rect x="0.5" y="0.5" width="9" height="9" stroke="currentColor" strokeWidth="1" />
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+              <rect x="1.5" y="1.5" width="9" height="9" rx="2" stroke="currentColor" strokeWidth="1" />
             </svg>
           </button>
+          {/* Close: X with rounded ends */}
           <button
             onClick={() => window.electronAPI?.close()}
             className="w-[46px] h-[32px] flex items-center justify-center
               text-text-secondary hover:bg-[#E81123] hover:text-white transition-colors rounded-md cursor-pointer"
             aria-label="Close"
           >
-            <svg width="10" height="10" viewBox="0 0 10 10">
-              <path d="M1 1L9 9M9 1L1 9" stroke="currentColor" strokeWidth="1.2" />
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+              <path d="M2.5 2.5l7 7M9.5 2.5l-7 7" stroke="currentColor" strokeWidth="1" strokeLinecap="round" />
             </svg>
           </button>
         </div>
