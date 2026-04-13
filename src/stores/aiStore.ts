@@ -11,6 +11,7 @@ interface AIState {
   isStreaming: boolean;
   streamingContent: string;
   model: string;
+  mode: "chat" | "agent";
   loading: boolean;
   loadConversations: () => Promise<void>;
   loadMessages: (conversationId: string) => Promise<void>;
@@ -19,6 +20,7 @@ interface AIState {
   setActiveConversation: (id: string | null) => void;
   sendMessage: (content: string, useAgent?: boolean) => Promise<void>;
   setModel: (model: string) => void;
+  setMode: (mode: "chat" | "agent") => void;
   stopStreaming: () => void;
 }
 
@@ -31,6 +33,7 @@ export const useAIStore = create<AIState>((set, get) => ({
   isStreaming: false,
   streamingContent: "",
   model: "glm-5:cloud",
+  mode: "agent",
   loading: true,
 
   loadConversations: async () => {
@@ -48,7 +51,12 @@ export const useAIStore = create<AIState>((set, get) => ({
         .where("conversation_id")
         .equals(conversationId)
         .sortBy("created_at");
-      set({ messages, activeConversationId: conversationId });
+      const conversation = get().conversations.find(c => c.id === conversationId);
+      set({ 
+        messages, 
+        activeConversationId: conversationId,
+        mode: conversation?.mode || "agent"
+      });
     } catch {
       // silent
     }
@@ -57,11 +65,12 @@ export const useAIStore = create<AIState>((set, get) => ({
   createConversation: async () => {
     const id = generateId();
     const timestamp = now();
-    const { model } = get();
+    const { model, mode } = get();
     const convo: AIConversation = {
       id,
       title: "New Chat",
       model,
+      mode,
       created_at: timestamp,
       updated_at: timestamp,
     };
@@ -97,8 +106,11 @@ export const useAIStore = create<AIState>((set, get) => ({
   },
 
   setActiveConversation: (id) => {
-    set({ activeConversationId: id, messages: [] });
-    if (id) get().loadMessages(id);
+    if (!id) {
+      set({ activeConversationId: null, messages: [] });
+      return;
+    }
+    get().loadMessages(id);
   },
 
   sendMessage: async (content, useAgent = false) => {
@@ -144,6 +156,7 @@ export const useAIStore = create<AIState>((set, get) => ({
     }
 
     let fullContent = "";
+    let fullThoughts = "";
     abortController = new AbortController();
 
     try {
@@ -151,29 +164,40 @@ export const useAIStore = create<AIState>((set, get) => ({
         // Run agent loop
         await processAgentRequest(
           actualContent,
-          (chunk) => {
+          (chunk, thoughtChunk) => {
             if (abortController?.signal.aborted) return;
-            fullContent += chunk;
-            set({ streamingContent: fullContent });
+            if (chunk) {
+              fullContent += chunk;
+              set({ streamingContent: fullContent });
+            }
+            if (thoughtChunk) {
+              fullThoughts += thoughtChunk;
+              // We'll store thoughts in state if needed, or just append to the message at the end
+            }
           },
           async (prompt, onV) => {
             const chatMessages = [
-              ...updatedMessages.slice(0, -1).map((m) => ({ role: m.role, content: m.content })),
+              ...updatedMessages.map((m) => ({ role: m.role, content: m.content })),
               { role: "user" as const, content: prompt }
             ];
+            let reasoning = "";
             for await (const token of streamChat(model, chatMessages)) {
               if (abortController?.signal.aborted) throw new Error("Aborted");
               onV(token);
+              reasoning += token;
             }
-            return "";
+            return reasoning;
           }
         );
       } else {
-        // Standard chat
-        const chatMessages = updatedMessages.map((m) => ({
-          role: m.role,
-          content: m.content,
-        }));
+        // Standard chat - force "ChatGPT" style (no complexity)
+        const chatMessages = [
+          { role: "system", content: "You are a helpful AI assistant. Keep your responses clear and concise. Use standard text formatting. Avoid using tables or complex structures unless absolutely necessary." },
+          ...updatedMessages.map((m) => ({
+            role: m.role,
+            content: m.content,
+          }))
+        ];
 
         for await (const token of streamChat(model, chatMessages)) {
           if (abortController?.signal.aborted) break;
@@ -187,6 +211,7 @@ export const useAIStore = create<AIState>((set, get) => ({
         conversation_id: convoId,
         role: "assistant",
         content: fullContent,
+        thoughts: fullThoughts || undefined,
         created_at: now(),
       };
 
@@ -218,6 +243,17 @@ export const useAIStore = create<AIState>((set, get) => ({
   },
 
   setModel: (model) => set({ model }),
+
+  setMode: (mode) => {
+    const { activeConversationId } = get();
+    set({ mode });
+    if (activeConversationId) {
+      db.aiConversations.update(activeConversationId, { mode });
+      set(state => ({
+        conversations: state.conversations.map(c => c.id === activeConversationId ? { ...c, mode } : c)
+      }));
+    }
+  },
 
   stopStreaming: async () => {
     abortController?.abort();

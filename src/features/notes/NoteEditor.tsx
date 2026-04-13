@@ -10,12 +10,18 @@ import { TextStyle } from "@tiptap/extension-text-style";
 import Color from "@tiptap/extension-color";
 import Typography from "@tiptap/extension-typography";
 import Link from "@tiptap/extension-link";
+import FontFamily from "@tiptap/extension-font-family";
+import Table from "@tiptap/extension-table";
+import TableRow from "@tiptap/extension-table-row";
+import TableCell from "@tiptap/extension-table-cell";
+import TableHeader from "@tiptap/extension-table-header";
 import { useEffect, useRef, useState } from "react";
 import { useNotesStore } from "@/stores/notesStore";
+import { useAIStore } from "@/stores/aiStore";
 import { useThemeStore } from "@/stores/themeStore";
 import data from "@emoji-mart/data";
 import Picker from "@emoji-mart/react";
-import { motion } from "motion/react";
+import { motion, AnimatePresence } from "motion/react";
 import {
   Bold,
   Italic,
@@ -30,10 +36,16 @@ import {
   Code,
   Highlighter,
   Smile,
-  X,
+  Mic,
+  MicOff,
   AlignLeft,
   AlignCenter,
   AlignRight,
+  Type,
+  Table as TableIcon,
+  Plus,
+  Trash2,
+  MoreVertical,
 } from "lucide-react";
 
 interface NoteEditorProps {
@@ -42,10 +54,13 @@ interface NoteEditorProps {
 
 export function NoteEditor({ noteId }: NoteEditorProps) {
   const { notes, updateNote } = useNotesStore();
+  const { sendMessage } = useAIStore();
   const { theme } = useThemeStore();
   const note = notes.find((n) => n.id === noteId);
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout>>(undefined);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
+  const recognitionRef = useRef<any>(null);
 
   const editor = useEditor({
     extensions: [
@@ -61,13 +76,18 @@ export function NoteEditor({ noteId }: NoteEditorProps) {
       Underline,
       TextAlign.configure({ types: ["heading", "paragraph"] }),
       TextStyle,
+      FontFamily,
       Color,
       Typography,
       Link.configure({ openOnClick: false }),
+      Table.configure({ resizable: true }),
+      TableRow,
+      TableHeader,
+      TableCell,
     ],
     editorProps: {
       attributes: {
-        class: "tiptap outline-none min-h-full px-8 py-6",
+        class: "tiptap outline-none min-h-full px-12 py-10 max-w-4xl mx-auto prose dark:prose-invert prose-sm sm:prose-base focus:outline-none",
         spellcheck: "false",
       },
     },
@@ -87,6 +107,64 @@ export function NoteEditor({ noteId }: NoteEditorProps) {
     },
   });
 
+  // Voice Dictation Logic
+  const toggleRecording = () => {
+    if (isRecording) {
+      recognitionRef.current?.stop();
+      setIsRecording(false);
+      return;
+    }
+
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      alert("Speech recognition not supported in this browser.");
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.lang = "en-US";
+
+    recognition.onstart = () => setIsRecording(true);
+    recognition.onresult = (event: any) => {
+      const transcript = Array.from(event.results)
+        .map((result: any) => result[0])
+        .map((result) => result.transcript)
+        .join("");
+      
+      if (event.results[0].isFinal) {
+        // Send to AI for formatting when finished or use as is
+        // For now, we'll let the user stop it manually to send it to AI
+      }
+    };
+
+    recognition.onend = async () => {
+      setIsRecording(false);
+      const finalTranscript = recognition.lastTranscript; // We'd need to track this better
+      // Real implementation would capture the final result
+    };
+
+    // Improved recording handler
+    let fullTranscript = "";
+    recognition.onresult = (event: any) => {
+      fullTranscript = Array.from(event.results)
+        .map((result: any) => result[0].transcript)
+        .join("");
+    };
+
+    recognition.onend = async () => {
+      setIsRecording(false);
+      if (fullTranscript.trim()) {
+        // Send to Agent to convert to a note
+        await sendMessage(`Convert this voice dictation into a beautifully formatted note for my document "${note?.title}": ${fullTranscript}`, true);
+      }
+    };
+
+    recognitionRef.current = recognition;
+    recognition.start();
+  };
+
   useEffect(() => {
     if (editor && note) {
       const currentJSON = JSON.stringify(editor.getJSON());
@@ -99,60 +177,95 @@ export function NoteEditor({ noteId }: NoteEditorProps) {
     }
   }, [noteId]);
 
-  useEffect(() => {
-    return () => {
-      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
-    };
-  }, []);
-
   if (!editor || !note) return null;
 
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      transition={{ duration: 0.2 }}
-      className="flex flex-col h-full"
-      style={
-        note.color
-          ? { backgroundColor: `var(--color-note-${note.color})` }
-          : undefined
-      }
+      className="flex flex-col h-full bg-bg-primary"
     >
-      {/* Toolbar */}
-      <div className="relative flex items-center gap-0.5 px-6 py-2 border-b border-border-light overflow-x-auto">
-        <ToolbarButton
-          active={editor.isActive("bold")}
-          onClick={() => editor.chain().focus().toggleBold().run()}
-          icon={<Bold size={15} />}
-        />
-        <ToolbarButton
-          active={editor.isActive("italic")}
-          onClick={() => editor.chain().focus().toggleItalic().run()}
-          icon={<Italic size={15} />}
-        />
-        <ToolbarButton
-          active={editor.isActive("underline")}
-          onClick={() => editor.chain().focus().toggleUnderline().run()}
-          icon={<UnderlineIcon size={15} />}
-        />
-        <ToolbarButton
-          active={editor.isActive("strike")}
-          onClick={() => editor.chain().focus().toggleStrike().run()}
-          icon={<Strikethrough size={15} />}
-        />
-        <Divider />
-        <div className="relative">
+      {/* Designer Toolbar (Icons Panel) */}
+      <div className="flex items-center justify-center p-3 border-b border-border/40 backdrop-blur-md sticky top-0 z-40 gap-1 overflow-x-auto whitespace-nowrap">
+        <div className="flex items-center bg-bg-secondary/50 p-1 rounded-xl border border-border/40 shadow-sm gap-0.5">
           <ToolbarButton
-            active={showEmojiPicker}
-            onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-            icon={<Smile size={15} />}
+            active={editor.isActive("bold")}
+            onClick={() => editor.chain().focus().toggleBold().run()}
+            icon={<Bold size={16} />}
+            tooltip="Bold"
           />
-          {showEmojiPicker && (
-            <div className="absolute top-full left-0 mt-2 z-50 shadow-2xl rounded-xl border border-border-light bg-bg-elevated overflow-hidden">
+          <ToolbarButton
+            active={editor.isActive("italic")}
+            onClick={() => editor.chain().focus().toggleItalic().run()}
+            icon={<Italic size={16} />}
+            tooltip="Italic"
+          />
+          <ToolbarButton
+            active={editor.isActive("underline")}
+            onClick={() => editor.chain().focus().toggleUnderline().run()}
+            icon={<UnderlineIcon size={16} />}
+            tooltip="Underline"
+          />
+        </div>
+
+        <div className="flex items-center bg-bg-secondary/50 p-1 rounded-xl border border-border/40 shadow-sm gap-0.5">
+          <ToolbarButton
+            active={editor.isActive("heading", { level: 1 })}
+            onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
+            icon={<Heading1 size={16} />}
+          />
+          <ToolbarButton
+            active={editor.isActive("heading", { level: 2 })}
+            onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
+            icon={<Heading2 size={16} />}
+          />
+        </div>
+
+        <div className="flex items-center bg-bg-secondary/50 p-1 rounded-xl border border-border/40 shadow-sm gap-0.5">
+          <ToolbarButton
+            active={editor.isActive("bulletList")}
+            onClick={() => editor.chain().focus().toggleBulletList().run()}
+            icon={<List size={16} />}
+          />
+          <ToolbarButton
+            active={editor.isActive("taskList")}
+            onClick={() => editor.chain().focus().toggleTaskList().run()}
+            icon={<ListChecks size={16} />}
+          />
+        </div>
+
+        <div className="flex items-center bg-bg-secondary/50 p-1 rounded-xl border border-border/40 shadow-sm gap-0.5">
+          <ToolbarButton
+            active={false}
+            onClick={() => editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()}
+            icon={<TableIcon size={16} />}
+          />
+          <ToolbarButton
+            active={false}
+            onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+            icon={<Smile size={16} />}
+          />
+        </div>
+
+        <div className="flex items-center bg-bg-secondary/50 p-1 rounded-xl border border-border/40 shadow-sm gap-0.5">
+          <button
+            onClick={toggleRecording}
+            className={`w-9 h-9 flex items-center justify-center rounded-lg transition-all
+              ${isRecording 
+                ? "bg-danger text-white animate-pulse" 
+                : "text-text-secondary hover:bg-bg-hover"}`}
+          >
+            {isRecording ? <MicOff size={18} /> : <Mic size={18} />}
+          </button>
+        </div>
+
+        {showEmojiPicker && (
+          <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 z-50">
+            <div className="fixed inset-0" onClick={() => setShowEmojiPicker(false)} />
+            <div className="relative shadow-2xl rounded-2xl overflow-hidden border border-border/60">
               <Picker
                 data={data}
-                set="apple"
+                set="native"
                 theme={theme === "dark" ? "dark" : "light"}
                 onEmojiSelect={(emoji: any) => {
                   editor.chain().focus().insertContent(emoji.native).run();
@@ -160,76 +273,13 @@ export function NoteEditor({ noteId }: NoteEditorProps) {
                 }}
               />
             </div>
-          )}
-        </div>
-        <Divider />
-        <ToolbarButton
-          active={editor.isActive("heading", { level: 1 })}
-          onClick={() =>
-            editor.chain().focus().toggleHeading({ level: 1 }).run()
-          }
-          icon={<Heading1 size={15} />}
-        />
-        <ToolbarButton
-          active={editor.isActive("heading", { level: 2 })}
-          onClick={() =>
-            editor.chain().focus().toggleHeading({ level: 2 }).run()
-          }
-          icon={<Heading2 size={15} />}
-        />
-        <Divider />
-        <ToolbarButton
-          active={editor.isActive("bulletList")}
-          onClick={() => editor.chain().focus().toggleBulletList().run()}
-          icon={<List size={15} />}
-        />
-        <ToolbarButton
-          active={editor.isActive("orderedList")}
-          onClick={() => editor.chain().focus().toggleOrderedList().run()}
-          icon={<ListOrdered size={15} />}
-        />
-        <ToolbarButton
-          active={editor.isActive("taskList")}
-          onClick={() => editor.chain().focus().toggleTaskList().run()}
-          icon={<ListChecks size={15} />}
-        />
-        <Divider />
-        <ToolbarButton
-          active={editor.isActive("blockquote")}
-          onClick={() => editor.chain().focus().toggleBlockquote().run()}
-          icon={<Quote size={15} />}
-        />
-        <ToolbarButton
-          active={editor.isActive("code")}
-          onClick={() => editor.chain().focus().toggleCode().run()}
-          icon={<Code size={15} />}
-        />
-        <ToolbarButton
-          active={editor.isActive("highlight")}
-          onClick={() => editor.chain().focus().toggleHighlight().run()}
-          icon={<Highlighter size={15} />}
-        />
-        <Divider />
-        <ToolbarButton
-          active={editor.isActive({ textAlign: "left" })}
-          onClick={() => editor.chain().focus().setTextAlign("left").run()}
-          icon={<AlignLeft size={15} />}
-        />
-        <ToolbarButton
-          active={editor.isActive({ textAlign: "center" })}
-          onClick={() => editor.chain().focus().setTextAlign("center").run()}
-          icon={<AlignCenter size={15} />}
-        />
-        <ToolbarButton
-          active={editor.isActive({ textAlign: "right" })}
-          onClick={() => editor.chain().focus().setTextAlign("right").run()}
-          icon={<AlignRight size={15} />}
-        />
+          </div>
+        )}
       </div>
 
-      {/* Editor */}
-      <div className="flex-1 overflow-y-auto">
-        <EditorContent editor={editor} className="h-full" />
+      {/* Editor Surface */}
+      <div className="flex-1 overflow-y-auto bg-bg-primary">
+        <EditorContent editor={editor} className="min-h-full" />
       </div>
     </motion.div>
   );
@@ -239,29 +289,27 @@ function ToolbarButton({
   active,
   onClick,
   icon,
+  tooltip,
 }: {
   active: boolean;
   onClick: () => void;
   icon: React.ReactNode;
+  tooltip?: string;
 }) {
   return (
     <button
       onClick={onClick}
-      className={`w-7 h-7 flex items-center justify-center rounded-md
-        transition-colors duration-100 cursor-pointer
-        ${
-          active
-            ? "bg-accent/15 text-accent"
-            : "text-text-tertiary hover:text-text-primary hover:bg-bg-hover"
+      title={tooltip}
+      className={`w-8 h-8 flex items-center justify-center rounded-lg
+        transition-all cursor-pointer
+        ${active
+          ? "bg-accent text-bg-primary shadow-sm"
+          : "text-text-secondary hover:text-text-primary hover:bg-bg-hover"
         }`}
     >
       {icon}
     </button>
   );
-}
-
-function Divider() {
-  return <div className="w-px h-5 bg-border mx-1" />;
 }
 
 function tryParseJSON(str: string): object | string {
@@ -277,14 +325,13 @@ function extractTitle(doc: Record<string, unknown>): string {
   if (!content) return "";
   for (const node of content) {
     if (node.type === "heading" || node.type === "paragraph") {
-      const innerContent = node.content as
-        | Array<{ text?: string }>
-        | undefined;
+      const innerContent = node.content as Array<{ text?: string }> | undefined;
       if (innerContent) {
         const text = innerContent.map((c) => c.text || "").join("");
-        if (text.trim()) return text.trim().slice(0, 100);
+        if (text.trim()) return text.trim().slice(0, 50);
       }
     }
   }
   return "";
 }
+

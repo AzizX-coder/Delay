@@ -3,21 +3,22 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Delay — The Ultimate Productivity Agent</title>
-  <meta name="description" content="A beautiful local-first desktop app for notes, tasks, calendar and autonomous AI.">
+  <title>Delay v1.3.0 — The First Agentic OS for Focus</title>
+  <meta name="description" content="Autonomous productivity suite for high-performance minds. Notes, Tasks, and Calendar integrated with a local-first AI Agent.">
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
 
     :root {
-      --bg: #030303;
-      --bg-elevated: rgba(20, 20, 20, 0.6);
-      --text: #F3F4F6;
-      --text-muted: #9CA3AF;
+      --bg: #000000;
+      --bg-accent: #0A0A0A;
+      --accent: #FFFFFF;
+      --accent-glow: #6366F1;
+      --text: #FFFFFF;
+      --text-dim: #888888;
       --border: rgba(255, 255, 255, 0.08);
-      --accent: #E0E7FF;
-      --glow: #4F46E5;
+      --glass: rgba(20, 20, 20, 0.4);
     }
 
     html { scroll-behavior: smooth; }
@@ -27,226 +28,283 @@
       background: var(--bg);
       color: var(--text);
       -webkit-font-smoothing: antialiased;
-      line-height: 1.6;
+      line-height: 1.5;
       overflow-x: hidden;
     }
 
-    ::selection { background: var(--text); color: var(--bg); }
+    /* ─── Modern Scrollbar ─── */
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
 
-    /* ─── Ambient Liquid Background ─── */
-    .ambient-bg {
-      position: fixed; inset: 0; z-index: -1; pointer-events: none; overflow: hidden;
+    /* ─── Background FX ─── */
+    .hero-bg {
+      position: fixed; inset: 0; z-index: -1; pointer-events: none;
     }
-    .ambient-glow {
-      position: absolute; border-radius: 50%; filter: blur(120px); opacity: 0.15;
-      animation: float 20s ease-in-out infinite alternate;
+    .orb {
+      position: absolute; border-radius: 50%; filter: blur(140px); opacity: 0.15;
+      animation: drift 25s infinite alternate ease-in-out;
     }
-    .glow-1 { top: -10%; left: -10%; width: 60vw; height: 60vw; background: #3B82F6; }
-    .glow-2 { bottom: -10%; right: -10%; width: 50vw; height: 50vw; background: #8B5CF6; animation-delay: -5s; }
-    .glow-3 { top: 40%; left: 30%; width: 40vw; height: 40vw; background: #06B6D4; animation-duration: 25s; filter: blur(150px); }
+    .orb-1 { top: -10%; left: -10%; width: 50vw; height: 50vw; background: #6366F1; }
+    .orb-2 { bottom: -10%; right: -10%; width: 40vw; height: 40vw; background: #8B5CF6; animation-delay: -5s; }
+    .orb-3 { top: 40%; transform: translateX(-50%); left: 50%; width: 30vw; height: 30vw; background: #06B6D4; opacity: 0.1; }
 
-    @keyframes float {
-      0% { transform: translateY(0) scale(1); }
-      100% { transform: translateY(-50px) scale(1.1); }
-    }
-
-    /* Grid overlay */
-    body::after {
-      content: ''; position: fixed; inset: 0; z-index: -1;
-      background-image: linear-gradient(var(--border) 1px, transparent 1px),
-                        linear-gradient(90deg, var(--border) 1px, transparent 1px);
-      background-size: 64px 64px; mask-image: radial-gradient(circle at center, black, transparent 80%);
-      -webkit-mask-image: radial-gradient(circle at center, black, transparent 80%);
+    @keyframes drift {
+      from { transform: translate(0, 0) scale(1); }
+      to { transform: translate(40px, -40px) scale(1.1); }
     }
 
-    /* ─── Nav ─── */
+    body::before {
+      content: ""; position: fixed; inset: 0; z-index: -1;
+      background-image: 
+        radial-gradient(circle at 2px 2px, rgba(255,255,255,0.03) 1px, transparent 0);
+      background-size: 32px 32px;
+    }
+
+    /* ─── Premium Glass Nav ─── */
     nav {
-      position: fixed; top:1.5rem; left:50%; transform:translateX(-50%); z-index:100;
-      padding: 0.75rem 1.5rem; width: 90%; max-width: 800px;
-      backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-      background: rgba(10, 10, 10, 0.4); border: 1px solid var(--border);
-      border-radius: 100px; display:flex; align-items:center; justify-content:space-between;
-      box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+      position: fixed; top: 1.5rem; left: 50%; transform: translateX(-50%); z-index: 1000;
+      display: flex; align-items: center; justify-content: space-between;
+      width: 90%; max-width: 900px; padding: 0.75rem 1.5rem;
+      background: var(--glass); border: 1px solid var(--border);
+      backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
+      border-radius: 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.5);
     }
-    .nav-brand { display:flex; gap:0.5rem; align-items:center; font-weight:700; font-size:1.1rem; color:var(--text); text-decoration:none; letter-spacing: -0.02em; }
-    .nav-links { display:flex; gap:1.5rem; align-items:center; }
-    .nav-links a { color:var(--text-muted); text-decoration:none; font-size:0.9rem; font-weight:500; transition:color .2s; }
-    .nav-links a:hover { color:var(--text); }
+    .brand { display: flex; align-items: center; gap: 0.75rem; font-weight: 800; font-size: 1.25rem; letter-spacing: -0.04em; color: #fff; text-decoration: none; }
+    .brand img { border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.4); }
     
-    .btn { display:inline-flex; align-items:center; justify-content:center; gap:0.5rem; padding:0.6rem 1.25rem; border-radius:100px; font-size:0.9rem; font-weight:600; text-decoration:none; transition: all .3s cubic-bezier(0.4, 0, 0.2, 1); cursor:pointer; border:none; }
-    .btn-nav { background: var(--text); color: var(--bg); padding:0.5rem 1.25rem; }
-    .btn-nav:hover { transform: scale(1.05); box-shadow: 0 0 20px rgba(255,255,255,0.2); }
+    .nav-links { display: flex; align-items: center; gap: 2rem; }
+    .nav-links a { font-size: 0.85rem; font-weight: 600; color: var(--text-dim); text-decoration: none; transition: 0.2s; text-transform: uppercase; letter-spacing: 0.05em; }
+    .nav-links a:hover { color: #fff; }
 
-    /* ─── Hero ─── */
-    .hero { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 10rem 1.5rem 6rem; position: relative; }
-    .badge { display:inline-flex; align-items:center; gap:0.5rem; padding:0.4rem 1rem; border-radius:100px; font-size:0.8rem; font-weight:600; color:var(--accent); border:1px solid rgba(224, 231, 255, 0.1); background: rgba(224, 231, 255, 0.03); margin-bottom:2rem; backdrop-filter: blur(10px); }
-    .badge-dot { width: 6px; height: 6px; background: currentColor; border-radius: 50%; box-shadow: 0 0 10px currentColor; animation: pulse 2s infinite; }
-    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+    .btn {
+      display: inline-flex; align-items: center; gap: 0.6rem; padding: 0.8rem 1.75rem;
+      border-radius: 16px; font-weight: 700; font-size: 0.95rem; text-decoration: none;
+      transition: 0.3s cubic-bezier(0.23, 1, 0.32, 1); cursor: pointer; border: none;
+    }
+    .btn-white { background: #fff; color: #000; }
+    .btn-white:hover { transform: translateY(-3px) scale(1.02); box-shadow: 0 10px 30px rgba(255,255,255,0.25); }
+    .btn-outline { background: transparent; border: 1px solid var(--border); color: #fff; backdrop-filter: blur(10px); }
+    .btn-outline:hover { background: rgba(255,255,255,0.05); transform: translateY(-3px); }
 
-    .hero h1 { font-size: clamp(3rem, 8vw, 5.5rem); font-weight: 800; letter-spacing:-0.03em; line-height:1.1; margin-bottom:1.5rem; max-width: 900px; background: linear-gradient(to right, #fff, #9ca3af); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-    .hero .tagline { font-family: 'Inter', sans-serif; font-size:1.15rem; color:var(--text-muted); max-width:600px; line-height:1.6; margin-bottom:3rem; }
-
-    .btn-primary { background: linear-gradient(135deg, #FFF, #E2E8F0); color: #000; padding:1rem 2rem; font-size: 1rem; box-shadow: 0 0 40px rgba(255, 255, 255, 0.1); }
-    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 0 60px rgba(255, 255, 255, 0.2); }
+    /* ─── Hero Section ─── */
+    .hero { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 12rem 1.5rem 6rem; position: relative; }
     
-    .btn-secondary { background: rgba(255, 255, 255, 0.05); color: var(--text); border: 1px solid var(--border); padding:1rem 2rem; font-size: 1rem; }
-    .btn-secondary:hover { background: rgba(255, 255, 255, 0.1); transform: translateY(-2px); }
+    .version-tag {
+      display: flex; align-items: center; gap: 0.75rem; background: rgba(99, 102, 241, 0.1);
+      border: 1px solid rgba(99, 102, 241, 0.2); border-radius: 100px;
+      padding: 0.5rem 1.25rem; font-size: 0.85rem; font-weight: 700; color: #818CF8;
+      margin-bottom: 2.5rem; letter-spacing: 0.02em; animation: slideUp 0.6s ease-out;
+    }
+    .dot { width: 8px; height: 8px; border-radius: 50%; background: #6366F1; box-shadow: 0 0 12px #6366F1; animation: blink 2s infinite; }
+    @keyframes blink { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.4; transform: scale(0.8); } }
 
-    /* ─── Mockup App Window ─── */
-    .app-preview { margin-top: 5rem; width: 100%; max-width: 1100px; border-radius: 24px; border: 1px solid var(--border); background: var(--bg-elevated); backdrop-filter: blur(40px); box-shadow: 0 30px 100px rgba(0,0,0,0.8), 0 0 40px rgba(79, 70, 229, 0.15); overflow: hidden; transform: perspective(1000px) rotateX(2deg); transition: transform 0.5s; position: relative; }
-    .app-preview:hover { transform: perspective(1000px) rotateX(0deg); }
-    .app-header { display: flex; align-items: center; padding: 1rem; border-bottom: 1px solid var(--border); }
-    .window-controls { display: flex; gap: 8px; }
-    .control { width: 12px; height: 12px; border-radius: 50%; }
-    .control.close { background: #FF5F56; } .control.min { background: #FFBD2E; } .control.max { background: #27C93F; }
-    .app-content { height: 600px; background: url('https://raw.githubusercontent.com/AzizX-coder/Delay/main/public/icon.png') center/100px no-repeat; opacity: 0.1; }
+    .hero h1 {
+      font-size: clamp(3.5rem, 9vw, 6.5rem); font-weight: 900; letter-spacing: -0.05em; line-height: 0.95;
+      margin-bottom: 2rem; max-width: 1000px; 
+      background: linear-gradient(135deg, #fff 0%, #888 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    .hero p { font-size: 1.25rem; color: var(--text-dim); max-width: 650px; margin-bottom: 3.5rem; font-weight: 500; }
 
-    /* ─── Features Layout ─── */
-    .features { padding: 8rem 1.5rem; max-width: 1200px; margin: 0 auto; }
-    .section-title { text-align: center; font-size: 2.5rem; font-weight: 700; margin-bottom: 4rem; letter-spacing: -0.02em; }
-    .bento-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; }
-    .bento-card { background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 24px; padding: 2.5rem; backdrop-filter: blur(20px); transition: all 0.3s ease; position: relative; overflow: hidden; }
-    .bento-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent); opacity: 0; transition: opacity 0.3s; }
-    .bento-card:hover { transform: translateY(-5px); border-color: rgba(255,255,255,0.15); box-shadow: 0 20px 40px rgba(0,0,0,0.4); }
-    .bento-card:hover::before { opacity: 1; }
-    .bento-large { grid-column: span 2; }
+    /* ─── App Preview Window ─── */
+    .preview-container {
+      width: 100%; max-width: 1100px; position: relative; margin-top: 4rem;
+      perspective: 1200px; animation: slideUp 1s ease-out 0.2s both;
+    }
+    .preview-window {
+      background: var(--bg-accent); border: 1px solid var(--border); border-radius: 28px;
+      overflow: hidden; box-shadow: 0 40px 100px rgba(0,0,0,0.8), 0 0 80px rgba(99, 102, 241, 0.1);
+      transform: rotateX(8deg); transition: 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+    }
+    .preview-container:hover .preview-window { transform: rotateX(0deg) translateY(-10px); }
     
-    .feature-icon-wrapper { width: 48px; height: 48px; border-radius: 12px; background: rgba(255,255,255,0.05); display: flex; align-items: center; justify-content: center; margin-bottom: 1.5rem; border: 1px solid var(--border); color: var(--accent); }
-    .bento-card h3 { font-size: 1.5rem; font-weight: 600; margin-bottom: 1rem; color: #FFF; }
-    .bento-card p { font-family: 'Inter', sans-serif; color: var(--text-muted); font-size: 0.95rem; line-height: 1.6; }
+    .window-header { display: flex; align-items: center; padding: 1.25rem; border-bottom: 1px solid var(--border); background: rgba(0,0,0,0.2); }
+    .dots { display: flex; gap: 8px; }
+    .dots span { width: 12px; height: 12px; border-radius: 50%; opacity: 0.7; }
+    
+    .preview-body { height: 500px; display: grid; grid-template-columns: 240px 1fr; }
+    .sidebar-mock { border-right: 1px solid var(--border); padding: 2rem; display: flex; flex-direction: column; gap: 1rem; }
+    .item-mock { height: 32px; border-radius: 10px; background: rgba(255,255,255,0.03); width: 100%; }
+    .item-mock.active { background: rgba(99, 102, 241, 0.1); border: 1px solid rgba(99, 102, 241, 0.2); }
+    
+    .content-mock { padding: 3rem; display: flex; flex-direction: column; gap: 1.5rem; }
+    .title-mock { height: 48px; width: 60%; background: rgba(255,255,255,0.05); border-radius: 12px; }
+    .para-mock { height: 20px; width: 100%; background: rgba(255,255,255,0.02); border-radius: 6px; }
 
-    @media (max-width: 900px) { .bento-large { grid-column: span 1; } .bento-grid { grid-template-columns: 1fr; } .app-preview { height: 400px; } }
-    @media (max-width: 600px) { nav { width: 95%; padding: 0.75rem 1rem; } .nav-links a.hide-mobile { display: none; } }
+    /* ─── Features Bento ─── */
+    .section-title { font-size: 3rem; font-weight: 800; text-align: center; margin-bottom: 5rem; letter-spacing: -0.04em; }
+    .bento {
+      max-width: 1200px; margin: 0 auto; display: grid; 
+      grid-template-columns: repeat(6, 1fr); grid-template-rows: repeat(2, 350px); gap: 1.5rem; padding: 0 1.5rem 10rem;
+    }
+    .card {
+      background: var(--bg-accent); border: 1px solid var(--border); border-radius: 32px;
+      padding: 3rem; display: flex; flex-direction: column; justify-content: flex-end;
+      position: relative; overflow: hidden; transition: 0.4s;
+    }
+    .card:hover { border-color: rgba(255,255,255,0.2); transform: translateY(-10px); }
+    .card h3 { font-size: 1.75rem; font-weight: 800; margin-bottom: 1rem; letter-spacing: -0.02em; }
+    .card p { color: var(--text-dim); font-size: 1rem; line-height: 1.6; font-weight: 500; }
+    
+    .card-icon {
+      position: absolute; top: 3rem; left: 3rem; width: 56px; height: 56px;
+      background: rgba(255,255,255,0.03); border: 1px solid var(--border);
+      border-radius: 18px; display: flex; align-items: center; justify-content: center;
+      color: #6366F1;
+    }
+
+    .bento-1 { grid-column: span 4; }
+    .bento-2 { grid-column: span 2; }
+    .bento-3 { grid-column: span 2; }
+    .bento-4 { grid-column: span 4; }
 
     /* ─── Footer ─── */
-    footer { border-top: 1px solid var(--border); padding: 4rem 1.5rem; text-align: center; position: relative; background: rgba(10,10,10,0.5); backdrop-filter: blur(20px); }
-    footer p { font-family: 'Inter', sans-serif; color: var(--text-dim); font-size: 0.9rem; }
-    footer a { color: var(--text); text-decoration: none; font-weight: 500; }
-    footer a:hover { text-decoration: underline; }
+    footer { border-top: 1px solid var(--border); padding: 6rem 1.5rem; text-align: center; }
+    footer p { color: var(--text-dim); font-size: 0.9rem; font-weight: 500; }
+    footer a { color: #fff; text-decoration: none; font-weight: 700; }
+
+    @keyframes slideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+
+    @media (max-width: 900px) {
+      .bento { grid-template-columns: 1fr; grid-template-rows: auto; }
+      .bento-1, .bento-2, .bento-3, .bento-4 { grid-column: span 1; }
+      .preview-body { grid-template-columns: 1fr; }
+      .sidebar-mock { display: none; }
+      .nav-links { display: none; }
+      .hero h1 { font-size: 3.5rem; }
+    }
   </style>
 </head>
 <body>
 
-<div class="ambient-bg">
-  <div class="ambient-glow glow-1"></div>
-  <div class="ambient-glow glow-2"></div>
-  <div class="ambient-glow glow-3"></div>
+<div class="hero-bg">
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+  <div class="orb orb-3"></div>
 </div>
 
 <nav>
-  <a href="#" class="nav-brand">
-    <img src="https://raw.githubusercontent.com/AzizX-coder/Delay/main/public/icon.png" alt="Delay Logo" width="22" height="22" style="border-radius: 4px;" />
+  <a href="#" class="brand">
+    <img src="https://raw.githubusercontent.com/AzizX-coder/Delay/main/public/icon.png" alt="Delay Logo" width="28" height="28">
     Delay
   </a>
   <div class="nav-links">
-    <a href="#features" class="hide-mobile">Platform</a>
-    <a href="https://github.com/AzizX-coder/Delay" class="hide-mobile">GitHub</a>
-    <a href="#download" class="btn btn-nav download-btn">Download</a>
+    <a href="#features">Engine</a>
+    <a href="https://github.com/AzizX-coder/Delay">History</a>
   </div>
+  <a href="https://github.com/AzizX-coder/Delay/releases/latest" class="btn btn-white download-btn">Get v1.3.0</a>
 </nav>
 
 <section class="hero">
-  <div class="badge" id="version-badge">
-    <div class="badge-dot"></div>
-    Delay v1.2.5 — The Agentic Update
+  <div class="version-tag" id="v-tag">
+    <div class="dot"></div>
+    Delay v1.3.0 Agentic Update is now public
   </div>
+  <h1>Think faster.<br>Execute autonomously.</h1>
+  <p>The first local-first productivity OS that doesn't just store your data—it executes it. Notes, Tasks, and Calendar unified by a powerful autonomous agent.</p>
   
-  <h1>One workspace. Infinite intelligence.</h1>
-  <p class="tagline">A beautifully crafted unified system for your Notes, Tasks, and Calendar—powered seamlessly by an advanced autonomous local AI.</p>
-
-  <div class="cta-group" id="download">
-    <a href="https://github.com/AzizX-coder/Delay/releases/latest" class="btn btn-primary download-btn">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+  <div style="display: flex; gap: 1rem;">
+    <a href="https://github.com/AzizX-coder/Delay/releases/latest" class="btn btn-white download-btn">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
       Download for Windows
     </a>
-    <a href="https://github.com/AzizX-coder/Delay" class="btn btn-secondary">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></svg>
-      Source Code
+    <a href="https://github.com/AzizX-coder/Delay" class="btn btn-outline">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></svg>
+      GitHub
     </a>
   </div>
 
-  <div class="app-preview">
-    <div class="app-header">
-      <div class="window-controls">
-        <div class="control close"></div>
-        <div class="control min"></div>
-        <div class="control max"></div>
+  <div class="preview-container">
+    <div class="preview-window">
+      <div class="window-header">
+        <div class="dots">
+          <span style="background: #FF5F56;"></span>
+          <span style="background: #FFBD2E;"></span>
+          <span style="background: #27C93F;"></span>
+        </div>
+      </div>
+      <div class="preview-body">
+        <div class="sidebar-mock">
+          <div class="item-mock active"></div>
+          <div class="item-mock"></div>
+          <div class="item-mock"></div>
+          <div style="margin-top: auto;" class="item-mock"></div>
+        </div>
+        <div class="content-mock">
+          <div class="title-mock"></div>
+          <div class="para-mock"></div>
+          <div class="para-mock" style="width: 80%;"></div>
+          <div class="para-mock" style="width: 90%;"></div>
+          <div style="margin-top: 2rem; border-radius: 20px; background: rgba(99, 102, 241, 0.05); border: 1px dashed rgba(99, 102, 241, 0.2); padding: 2rem;">
+            <div style="height: 20px; width: 40%; background: #6366F1; border-radius: 4px; opacity: 0.4;"></div>
+          </div>
+        </div>
       </div>
     </div>
-    <div class="app-content"></div>
   </div>
 </section>
 
-<section class="features" id="features">
-  <h2 class="section-title">Built for absolute focus.</h2>
-  <div class="bento-grid">
-    
-    <div class="bento-card bento-large">
-      <div class="feature-icon-wrapper">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L14.4 9.6L22 12L14.4 14.4L12 22L9.6 14.4L2 12L9.6 9.6L12 2Z"/></svg>
-      </div>
-      <h3>Autonomous Agentic AI</h3>
-      <p>A built-in strong loop LLM agent linked intelligently to your app stores. Delay's Agent can parse voice STT queries, scrape live web results via DuckDuckGo, and directly orchestrate your Tasks and Notes asynchronously inside the UI while you focus on what matters.</p>
+<h2 class="section-title" id="features">Built for the Agentic Era</h2>
+<div class="bento">
+  <div class="card bento-1">
+    <div class="card-icon">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2L14.4 9.6L22 12L14.4 14.4L12 22L9.6 14.4L2 12L9.6 9.6L12 2Z"/></svg>
     </div>
-
-    <div class="bento-card">
-      <div class="feature-icon-wrapper">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-      </div>
-      <h3>Local-First Privacy</h3>
-      <p>No telemetry, no tracking payloads, and no cloud log-ins required. Delay operates in total isolation, persisting data to IndexedDB natively inside an advanced Chromium shell.</p>
-    </div>
-
-    <div class="bento-card">
-      <div class="feature-icon-wrapper">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15.5 3H5a2 2 0 0 0-2 2v14c0 1.1.9 2 2 2h14a2 2 0 0 0 2-2V8.5L15.5 3Z"/><path d="M14 3v6h6"/></svg>
-      </div>
-      <h3>IDE-Class Notes</h3>
-      <p>Type in a beautiful fluid Tiptap editor with multi-tab interface support, rich typography, code fences, and an integrated native Apple-styled emoji picker wrapper.</p>
-    </div>
-
-    <div class="bento-card bento-large">
-      <div class="feature-icon-wrapper">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-      </div>
-      <h3>Advanced Scheduling</h3>
-      <p>Visually parse your agenda with dynamically rendering Month, Week, and Day views. Seamlessly organize Events, Tasks, and Reminders natively without relying on tedious third-party integrations.</p>
-    </div>
-
+    <h3>Autonomous Engine</h3>
+    <p>Delay v1.3.0 introduces a true agentic loop. Your AI can now think recursively, execute tools to manage your workspace, and solve complex planning tasks without leaving the app.</p>
   </div>
-</section>
+  <div class="card bento-2">
+    <div class="card-icon">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+    </div>
+    <h3>Voice-to-Note</h3>
+    <p>Capture fleeting thoughts instantly. Record voice queries and watch as the agent formats them into structured notes with perfect markdown.</p>
+  </div>
+  <div class="card bento-3">
+    <div class="card-icon">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+    </div>
+    <h3>Zero Cloud.</h3>
+    <p>Privacy is not a feature; it's the foundation. Everything runs locally on your machine. Your data never leaves your device.</p>
+  </div>
+  <div class="card bento-4">
+    <div class="card-icon">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+    </div>
+    <h3>Multimodal Intelligence</h3>
+    <p>Switch between classic Chat mode for quick answers or the new Agent mode for complex autonomous task solving across your notes, tasks, and calendar events.</p>
+  </div>
+</div>
 
 <footer>
-  <p>Engineered by <a href="https://github.com/AzizX-coder">AzizX</a> under the Apache-2.0 License.</p>
-  <p style="margin-top:0.5rem; opacity:0.6; font-size:0.8rem;">Powered by Electron, React, Tailwind & Vite</p>
+  <p>© 2026 Delay Project. Open Source under Apache-2.0.</p>
+  <p style="margin-top: 1rem; opacity: 0.5;">Crafted by <a href="https://github.com/AzizX-coder">AzizX</a></p>
 </footer>
 
 <script>
-  async function fetchLatestRelease() {
+  async function setup() {
     try {
-      const res = await fetch('https://api.github.com/repos/AzizX-coder/Delay/releases/latest');
-      if (!res.ok) throw new Error('API error');
+      const res = await fetch("https://api.github.com/repos/AzizX-coder/Delay/releases/latest");
       const data = await res.json();
-      
-      const exeAsset = data.assets.find(a => a.name.endsWith('.exe'));
-      if (exeAsset) {
-        document.querySelectorAll('.download-btn').forEach(btn => {
-          btn.href = exeAsset.browser_download_url;
+      const exe = data.assets.find(a => a.name.endsWith(".exe"));
+      if (exe) {
+        document.querySelectorAll(".download-btn").forEach(b => {
+          b.href = exe.browser_download_url;
+          if (b.classList.contains("nav-btn")) b.textContent = `Get ${data.tag_name}`;
         });
       }
-
-      const badge = document.getElementById('version-badge');
-      if (badge && data.tag_name) {
-        badge.innerHTML = `<div class="badge-dot"></div>Delay ${data.tag_name} — The Agentic Update`;
+      const tag = document.getElementById("v-tag");
+      if (tag && data.tag_name) {
+        tag.innerHTML = `<div class="dot"></div>Delay ${data.tag_name} Agentic Update is now public`;
       }
-    } catch (err) {
-      document.querySelectorAll('.download-btn').forEach(btn => {
-        btn.href = 'https://github.com/AzizX-coder/Delay/releases/latest';
-      });
+    } catch (e) {
+      console.error("Failed to fetch latest release", e);
     }
   }
-  fetchLatestRelease();
+  setup();
 </script>
 
 </body>
 </html>
+

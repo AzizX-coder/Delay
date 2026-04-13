@@ -22,8 +22,10 @@ import {
   Sparkles,
   Zap,
   Smile,
+  ChevronRight,
+  Brain,
 } from "lucide-react";
-import type { OllamaModel } from "@/types/ai";
+import type { OllamaModel, AIMessage } from "@/types/ai";
 
 // Gemini-style 4-pointed star icon
 function GeminiStar({ size = 14, className = "" }: { size?: number; className?: string }) {
@@ -45,12 +47,14 @@ export function AIChatPage() {
     isStreaming,
     streamingContent,
     model,
+    mode,
     loadConversations,
     createConversation,
     deleteConversation,
     setActiveConversation,
     sendMessage,
     setModel,
+    setMode,
     stopStreaming,
   } = useAIStore();
   const { theme } = useThemeStore();
@@ -59,7 +63,6 @@ export function AIChatPage() {
   const [models, setModels] = useState<OllamaModel[]>([]);
   const [ollamaOnline, setOllamaOnline] = useState(false);
   const [showModelPicker, setShowModelPicker] = useState(false);
-  const [agentMode, setAgentMode] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -78,11 +81,11 @@ export function AIChatPage() {
 
   const handleSend = () => {
     if (!input.trim() || isStreaming) return;
-    const prefix = agentMode
-      ? "[AGENT MODE] You are Delay Agent. You can create notes, tasks, and help the user organize. Respond with structured, clear answers. "
-      : "";
-    sendMessage(prefix + input.trim());
+    sendMessage(input.trim(), mode === "agent");
     setInput("");
+    if (inputRef.current) {
+      inputRef.current.style.height = "48px";
+    }
     inputRef.current?.focus();
   };
 
@@ -130,60 +133,57 @@ export function AIChatPage() {
   };
 
   return (
-    <div className="flex h-full">
+    <div className="flex h-full bg-bg-primary">
       {/* Conversations sidebar */}
-      <div className="w-64 h-full flex flex-col border-r border-border-light bg-bg-secondary/30">
-        <div className="p-3">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-[15px] font-semibold text-text-primary">
-              AI Chat
+      <div className="w-64 h-full flex flex-col border-r border-border/40 bg-bg-secondary/40 backdrop-blur-md">
+        <div className="p-4">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-[16px] font-bold text-text-primary tracking-tight">
+              Intelligence
             </h2>
             <motion.button
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
               onClick={createConversation}
-              className="w-7 h-7 flex items-center justify-center rounded-lg
-                bg-accent text-text-inverse cursor-pointer
-                hover:bg-accent-hover transition-colors"
+              className="w-8 h-8 flex items-center justify-center rounded-xl
+                bg-accent text-bg-primary shadow-lg shadow-accent/20 cursor-pointer
+                hover:opacity-90 transition-all"
             >
-              <Plus size={16} />
+              <Plus size={18} />
             </motion.button>
           </div>
 
           <div
-            className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-[12px] mb-2 border border-border-light
-              ${
-                ollamaOnline
-                  ? "bg-bg-primary text-text-secondary"
+            className={`flex items-center gap-2 px-3 py-2 rounded-xl text-[12px] font-medium border
+              ${ollamaOnline
+                  ? "bg-bg-primary/50 text-success border-success/20"
                   : "bg-danger/5 text-danger border-danger/10"
               }`}
           >
-            {ollamaOnline ? <Wifi size={12} className="text-text-tertiary" /> : <WifiOff size={12} />}
+            <div className={`w-2 h-2 rounded-full ${ollamaOnline ? "bg-success animate-pulse" : "bg-danger"}`} />
             {ollamaOnline ? "Ollama Connected" : "Ollama Offline"}
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto px-2 pb-2">
+        <div className="flex-1 overflow-y-auto px-2 pb-4 space-y-1">
           <AnimatePresence mode="popLayout">
             {conversations.map((convo) => (
               <motion.div
                 key={convo.id}
                 layout
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
-                transition={{ type: "spring", stiffness: 400, damping: 30 }}
                 onClick={() => setActiveConversation(convo.id)}
-                className={`group flex items-center gap-2 px-2.5 py-2 mb-0.5
-                  rounded-[--radius-sm] cursor-pointer transition-colors
-                  ${
-                    activeConversationId === convo.id
-                      ? "bg-accent/10 text-accent"
+                className={`group flex items-center gap-2.5 px-3 py-2.5 
+                  rounded-xl cursor-pointer transition-all duration-200
+                  ${activeConversationId === convo.id
+                      ? "bg-accent/10 text-accent shadow-sm"
                       : "text-text-secondary hover:bg-bg-hover hover:text-text-primary"
                   }`}
               >
-                <MessageSquare size={14} className="shrink-0" />
-                <span className="text-[13px] truncate flex-1">
+                {convo.mode === "agent" ? <Zap size={14} className="shrink-0" /> : <MessageSquare size={14} className="shrink-0" />}
+                <span className="text-[13px] font-medium truncate flex-1">
                   {convo.title}
                 </span>
                 <button
@@ -191,298 +191,202 @@ export function AIChatPage() {
                     e.stopPropagation();
                     deleteConversation(convo.id);
                   }}
-                  className="hidden group-hover:flex items-center justify-center w-5 h-5
-                    rounded text-text-tertiary hover:text-danger transition-colors"
+                  className="opacity-0 group-hover:opacity-100 flex items-center justify-center w-6 h-6
+                    rounded-lg text-text-tertiary hover:text-danger hover:bg-danger/10 transition-all"
                 >
-                  <Trash2 size={12} />
+                  <Trash2 size={13} />
                 </button>
               </motion.div>
             ))}
           </AnimatePresence>
-
-          {conversations.length === 0 && (
-            <div className="flex flex-col items-center justify-center py-12 text-text-tertiary">
-              <GeminiStar size={24} />
-              <p className="text-[12px] mt-2">No conversations yet</p>
-            </div>
-          )}
         </div>
       </div>
 
       {/* Chat area */}
-      <div className="flex-1 flex flex-col">
-        {/* Model selector bar */}
-        <div className="flex items-center gap-3 px-5 py-2.5 border-b border-border-light">
-          <span className="text-[12px] text-text-tertiary">Model:</span>
+      <div className="flex-1 flex flex-col relative overflow-hidden">
+        {/* Header with Mode Switcher */}
+        <div className="flex items-center gap-4 px-6 py-3 border-b border-border/40 backdrop-blur-xl sticky top-0 z-30">
+          <div className="flex items-center bg-bg-secondary/50 p-1 rounded-xl border border-border/30">
+            <button
+              onClick={() => setMode("chat")}
+              className={`flex items-center gap-2 px-4 py-1.5 rounded-lg text-[13px] font-semibold transition-all cursor-pointer
+                ${mode === "chat" ? "bg-bg-primary text-text-primary shadow-sm" : "text-text-tertiary hover:text-text-secondary"}`}
+            >
+              <MessageSquare size={14} />
+              Chat
+            </button>
+            <button
+              onClick={() => setMode("agent")}
+              className={`flex items-center gap-2 px-4 py-1.5 rounded-lg text-[13px] font-semibold transition-all cursor-pointer
+                ${mode === "agent" ? "bg-accent text-bg-primary shadow-sm" : "text-text-tertiary hover:text-text-secondary"}`}
+            >
+              <Zap size={14} />
+              Agent
+            </button>
+          </div>
+
+          <div className="h-6 w-px bg-border/40 mx-2" />
+
           <div className="relative">
             <button
               onClick={() => setShowModelPicker(!showModelPicker)}
-              className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg
-                bg-bg-secondary border border-border-light text-[13px] font-medium
-                text-text-primary hover:bg-bg-hover transition-colors cursor-pointer"
+              className="flex items-center gap-2 px-3 py-1.5 rounded-xl
+                bg-bg-secondary/50 border border-border/30 text-[12px] font-bold
+                text-text-secondary hover:text-text-primary hover:bg-bg-hover transition-all cursor-pointer"
             >
               {model}
-              <ChevronDown size={12} />
+              <ChevronDown size={14} />
             </button>
             {showModelPicker && (
-              <motion.div
-                initial={{ opacity: 0, y: -4 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="absolute top-full left-0 mt-1 w-64 max-h-48 overflow-y-auto
-                  bg-bg-elevated border border-border rounded-xl shadow-lg z-20 p-1"
-              >
-                {models.length > 0 ? (
-                  models.map((m) => (
+              <>
+                <div className="fixed inset-0 z-40" onClick={() => setShowModelPicker(false)} />
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95, y: -10 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  className="absolute top-full left-0 mt-2 w-72 max-h-64 overflow-y-auto
+                    bg-bg-elevated border border-border/60 rounded-2xl shadow-2xl z-50 p-1.5 backdrop-blur-xl"
+                >
+                  {models.map((m) => (
                     <button
                       key={m.name}
                       onClick={() => {
                         setModel(m.name);
                         setShowModelPicker(false);
                       }}
-                      className={`w-full text-left px-3 py-2 rounded-lg text-[13px]
-                        transition-colors cursor-pointer
-                        ${
-                          model === m.name
-                            ? "bg-accent/10 text-accent font-medium"
-                            : "text-text-secondary hover:bg-bg-hover"
-                        }`}
+                      className={`w-full text-left px-3 py-2.5 rounded-xl text-[13px] font-medium
+                        transition-all cursor-pointer
+                        ${model === m.name ? "bg-accent text-bg-primary" : "text-text-secondary hover:bg-bg-hover hover:text-text-primary"}`}
                     >
                       {m.name}
                     </button>
-                  ))
-                ) : (
-                  <div className="px-3 py-4 text-center text-[13px] text-text-tertiary">
-                    {ollamaOnline
-                      ? "No models found"
-                      : "Ollama is offline"}
-                  </div>
-                )}
-              </motion.div>
+                  ))}
+                </motion.div>
+              </>
             )}
           </div>
-
-          <div className="flex-1" />
-
-          {/* Agent Mode toggle */}
-          <motion.button
-            whileTap={{ scale: 0.95 }}
-            onClick={() => setAgentMode(!agentMode)}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-medium
-              transition-all cursor-pointer border
-              ${
-                agentMode
-                  ? "bg-accent/15 text-accent border-accent/30"
-                  : "bg-bg-secondary text-text-secondary border-border-light hover:bg-bg-hover"
-              }`}
-          >
-            <Zap size={12} />
-            Agent
-          </motion.button>
         </div>
 
         {/* Messages */}
-        <div className="flex-1 overflow-y-auto px-5 py-4">
+        <div className="flex-1 overflow-y-auto px-6 py-6 pb-32">
           {messages.length === 0 && !isStreaming ? (
-            <div className="h-full flex flex-col items-center justify-center text-text-tertiary">
-              <div className="w-16 h-16 rounded-3xl bg-accent/10 flex items-center justify-center mb-4">
-                <GeminiStar size={28} className="text-accent" />
-              </div>
-              <p className="text-[16px] font-medium text-text-secondary">
-                How can I help you?
+            <div className="h-full flex flex-col items-center justify-center">
+              <motion.div 
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                className="w-20 h-20 rounded-[32px] bg-gradient-to-tr from-accent to-accent/40 flex items-center justify-center mb-6 shadow-2xl shadow-accent/20"
+              >
+                <GeminiStar size={40} className="text-bg-primary" />
+              </motion.div>
+              <h2 className="text-[24px] font-bold text-text-primary tracking-tight mb-2 text-center">
+                I am your Delay {mode === "agent" ? "Agent" : "Assistant"}
+              </h2>
+              <p className="text-[14px] text-text-tertiary text-center max-w-sm mb-8">
+                {mode === "agent" 
+                  ? "I can manage your life autonomously. Try asking me to 'Create a note about my day' or 'Schedule a meeting tomorrow'." 
+                  : "How can I help you today? I am ready for pure, smart conversation."}
               </p>
-              <p className="text-[13px] mt-1 text-center max-w-sm">
-                Ask me anything. I can help with writing, analysis,
-                coding, brainstorming, and more.
-              </p>
-              {agentMode && (
-                <div className="flex items-center gap-1.5 mt-3 px-3 py-1.5 rounded-lg bg-accent/10 text-accent text-[12px]">
-                  <Zap size={12} />
-                  Agent Mode — I can create notes, tasks & documents
-                </div>
-              )}
             </div>
           ) : (
-            <div className="space-y-4 max-w-3xl mx-auto">
+            <div className="space-y-8 max-w-4xl mx-auto">
               {messages.map((msg) => (
-                <motion.div
-                  key={msg.id}
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{
-                    type: "spring",
-                    stiffness: 400,
-                    damping: 30,
-                  }}
-                  className={`flex gap-3 ${
-                    msg.role === "user" ? "justify-end" : ""
-                  }`}
-                >
-                  {msg.role === "assistant" && (
-                    <div className="w-7 h-7 rounded-full bg-accent/15 flex items-center justify-center shrink-0 mt-0.5">
-                      <GeminiStar size={14} className="text-accent" />
-                    </div>
-                  )}
-                  <div
-                    className={`max-w-[80%] px-4 py-2.5 rounded-2xl text-[14px] leading-relaxed
-                      ${
-                        msg.role === "user"
-                          ? "bg-text-primary text-text-inverse rounded-br-md"
-                          : "bg-bg-secondary text-text-primary rounded-bl-md border border-border-light"
-                      }`}
-                  >
-                    {msg.role === "assistant" ? (
-                      <MarkdownRenderer content={msg.content} />
-                    ) : (
-                      <div className="whitespace-pre-wrap">{msg.content}</div>
-                    )}
-                  </div>
-                  {msg.role === "user" && (
-                    <div className="w-7 h-7 rounded-full bg-bg-secondary flex items-center justify-center shrink-0 mt-0.5">
-                      <User size={14} className="text-text-secondary" />
-                    </div>
-                  )}
-                </motion.div>
+                <ChatMessage key={msg.id} msg={msg} />
               ))}
 
-              {/* Streaming message */}
               {isStreaming && streamingContent && (
-                <motion.div
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="flex gap-3"
-                >
-                  <div className="w-7 h-7 rounded-full bg-accent/15 flex items-center justify-center shrink-0 mt-0.5">
-                    <GeminiStar size={14} className="text-accent" />
-                  </div>
-                  <div className="max-w-[80%] px-4 py-2.5 rounded-2xl rounded-bl-md bg-bg-secondary text-text-primary text-[14px] leading-relaxed border border-border-light">
-                    <MarkdownRenderer content={streamingContent} />
-                    <span className="inline-block w-1.5 h-4 bg-accent/60 animate-pulse ml-0.5 rounded-sm" />
-                  </div>
-                </motion.div>
+                <ChatMessage 
+                  msg={{ 
+                    id: "streaming", 
+                    role: "assistant", 
+                    content: streamingContent, 
+                    conversation_id: "", 
+                    created_at: 0 
+                  }} 
+                  isStreaming={true} 
+                />
               )}
 
-              {/* Loading indicator */}
               {isStreaming && !streamingContent && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="flex gap-3"
-                >
-                  <div className="w-7 h-7 rounded-full bg-accent/15 flex items-center justify-center shrink-0">
-                    <GeminiStar size={14} className="text-accent" />
+                <div className="flex gap-4">
+                  <div className="w-8 h-8 rounded-full bg-accent/10 flex items-center justify-center animate-pulse">
+                    <Brain size={16} className="text-accent" />
                   </div>
-                  <div className="px-4 py-3 rounded-2xl rounded-bl-md bg-bg-secondary border border-border-light">
+                  <div className="flex items-center gap-1.5 px-4 py-2 bg-bg-secondary/40 rounded-2xl border border-border/20">
+                    <span className="text-[11px] font-bold uppercase tracking-widest text-text-tertiary">Thinking</span>
                     <div className="flex gap-1">
-                      {[0, 1, 2].map((i) => (
-                        <motion.div
-                          key={i}
-                          className="w-1.5 h-1.5 rounded-full bg-text-tertiary"
-                          animate={{ opacity: [0.3, 1, 0.3] }}
-                          transition={{
-                            repeat: Infinity,
-                            duration: 1,
-                            delay: i * 0.2,
-                          }}
-                        />
-                      ))}
+                      {[0,1,2].map(i => <div key={i} className="w-1 h-1 bg-accent rounded-full animate-bounce" style={{ animationDelay: `${i * 0.1}s` }} />)}
                     </div>
                   </div>
-                </motion.div>
+                </div>
               )}
-              <div ref={messagesEndRef} />
+              <div ref={messagesEndRef} className="h-4" />
             </div>
           )}
         </div>
 
-        {/* Input area */}
-        <div className="px-5 pb-4 pt-2">
-          <div className="max-w-3xl mx-auto relative">
-            <textarea
-              ref={inputRef}
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder={isRecording ? "Listening..." : "Type a message..."}
-              rows={1}
-              className={`w-full resize-none px-4 py-3 pr-24 bg-bg-secondary
-                border rounded-2xl text-[14px]
-                text-text-primary placeholder:text-text-tertiary
-                outline-none focus:ring-2 transition-all max-h-32
-                ${isRecording
-                  ? "border-danger/40 focus:ring-danger/10"
-                  : "border-border-light focus:border-accent/40 focus:ring-accent/10"
-                }`}
-              style={{
-                height: "auto",
-                minHeight: "48px",
-              }}
-              onInput={(e) => {
-                const target = e.target as HTMLTextAreaElement;
-                target.style.height = "auto";
-                target.style.height = Math.min(target.scrollHeight, 128) + "px";
-              }}
-              spellCheck={false}
-            />
-            {showEmojiPicker && (
-              <div className="absolute bottom-[60px] right-2 z-50 shadow-2xl rounded-xl border border-border-light bg-bg-elevated overflow-hidden">
-                <Picker
-                  data={data}
-                  set="apple"
-                  theme={theme === "dark" ? "dark" : "light"}
-                  onEmojiSelect={(emoji: any) => {
-                    setInput(prev => prev + emoji.native);
-                    setShowEmojiPicker(false);
-                    inputRef.current?.focus();
-                  }}
-                />
+        {/* Floating Input area */}
+        <div className="absolute bottom-0 inset-x-0 p-6 bg-gradient-to-t from-bg-primary via-bg-primary to-transparent pointer-events-none">
+          <div className="max-w-3xl mx-auto pointer-events-auto">
+            <div className={`relative p-1.5 rounded-[24px] bg-bg-secondary/80 backdrop-blur-xl border shadow-2xl transition-all duration-300
+                ${isRecording ? "border-danger ring-4 ring-danger/10" : "border-border/40 focus-within:border-accent/40 focus-within:ring-4 focus-within:ring-accent/5"}`}>
+              <textarea
+                ref={inputRef}
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder={isRecording ? "Speak now..." : `Ask your ${mode}...`}
+                rows={1}
+                className="w-full resize-none p-4 pr-32 bg-transparent text-[15px] font-medium text-text-primary placeholder:text-text-tertiary outline-none max-h-48"
+                style={{ height: "48px" }}
+                onInput={(e) => {
+                  const target = e.target as HTMLTextAreaElement;
+                  target.style.height = "auto";
+                  target.style.height = Math.min(target.scrollHeight, 192) + "px";
+                }}
+              />
+              
+              <div className="absolute right-3.5 bottom-3.5 flex items-center gap-2">
+                <button
+                  onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                  className={`w-10 h-10 flex items-center justify-center rounded-xl transition-all cursor-pointer
+                    ${showEmojiPicker ? "bg-accent/10 text-accent" : "text-text-tertiary hover:bg-bg-hover hover:text-text-primary"}`}
+                >
+                  <Smile size={20} />
+                </button>
+
+                <button
+                  onClick={toggleVoiceRecord}
+                  className={`w-10 h-10 flex items-center justify-center rounded-xl transition-all cursor-pointer
+                    ${isRecording ? "bg-danger text-white animate-pulse" : "bg-bg-hover text-text-tertiary hover:text-text-primary"}`}
+                >
+                  {isRecording ? <MicOff size={18} /> : <Mic size={18} />}
+                </button>
+
+                <button
+                  onClick={isStreaming ? stopStreaming : handleSend}
+                  disabled={!isStreaming && !input.trim()}
+                  className={`w-10 h-10 flex items-center justify-center rounded-xl transition-all shadow-lg cursor-pointer
+                    ${isStreaming ? "bg-danger text-white" : "bg-accent text-bg-primary"}`}
+                >
+                  {isStreaming ? <Square size={16} fill="white" /> : <Send size={18} />}
+                </button>
               </div>
-            )}
-            <div className="absolute right-2.5 bottom-2.5 flex items-center gap-1">
-              {/* Emoji button */}
-              <motion.button
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.9 }}
-                onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                className={`w-8 h-8 flex items-center justify-center rounded-xl transition-colors cursor-pointer
-                  ${showEmojiPicker
-                    ? "bg-accent/10 text-accent"
-                    : "bg-transparent text-text-secondary hover:bg-bg-hover hover:text-text-primary"
-                  }`}
-              >
-                <Smile size={16} />
-              </motion.button>
 
-              {/* Voice record button */}
-              <motion.button
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.9 }}
-                onClick={toggleVoiceRecord}
-                className={`w-8 h-8 flex items-center justify-center rounded-xl transition-colors cursor-pointer
-                  ${isRecording
-                    ? "bg-danger text-white animate-pulse"
-                    : "bg-bg-hover text-text-secondary hover:text-text-primary"
-                  }`}
-              >
-                {isRecording ? <MicOff size={14} /> : <Mic size={14} />}
-              </motion.button>
-
-              {/* Send button */}
-              <motion.button
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.9 }}
-                onClick={isStreaming ? stopStreaming : handleSend}
-                disabled={!isStreaming && !input.trim()}
-                className={`w-8 h-8 flex items-center justify-center
-                  rounded-xl transition-colors cursor-pointer
-                  disabled:opacity-30 disabled:cursor-not-allowed
-                  ${
-                    isStreaming
-                      ? "bg-danger text-white hover:bg-danger/80"
-                      : "bg-accent text-white hover:bg-accent-hover"
-                  }`}
-              >
-                {isStreaming ? <Square size={14} /> : <Send size={14} />}
-              </motion.button>
+              {showEmojiPicker && (
+                <div className="absolute bottom-full right-0 mb-4 z-50">
+                  <div className="fixed inset-0" onClick={() => setShowEmojiPicker(false)} />
+                  <div className="relative shadow-2xl rounded-2xl overflow-hidden border border-border/60">
+                    <Picker
+                      data={data}
+                      set="native"
+                      theme={theme === "dark" ? "dark" : "light"}
+                      onEmojiSelect={(emoji: any) => {
+                        setInput(prev => prev + emoji.native);
+                        setShowEmojiPicker(false);
+                      }}
+                    />
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -490,3 +394,63 @@ export function AIChatPage() {
     </div>
   );
 }
+
+function ChatMessage({ msg, isStreaming = false }: { msg: Partial<AIMessage>; isStreaming?: boolean }) {
+  const [expandedThoughts, setExpandedThoughts] = useState(false);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      className={`flex gap-4 ${msg.role === "user" ? "flex-row-reverse" : ""}`}
+    >
+      <div className={`w-9 h-9 rounded-2xl shrink-0 flex items-center justify-center text-bg-primary shadow-lg overflow-hidden
+        ${msg.role === "user" ? "bg-text-secondary" : "bg-gradient-to-br from-accent to-accent/40"}`}>
+        {msg.role === "user" ? <User size={18} /> : <GeminiStar size={20} />}
+      </div>
+
+      <div className={`flex flex-col gap-2 max-w-[85%] ${msg.role === "user" ? "items-end" : ""}`}>
+        {/* Thoughts (Glubs) */}
+        {msg.thoughts && (
+          <div className="mb-2 w-full">
+            <button
+              onClick={() => setExpandedThoughts(!expandedThoughts)}
+              className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-bg-secondary/40 border border-border/20 text-[11px] font-bold text-text-tertiary hover:text-text-secondary transition-all cursor-pointer"
+            >
+              <Brain size={12} className={expandedThoughts ? "text-accent" : ""} />
+              THOUGHTS (GLUB)
+              <ChevronRight size={12} className={`transition-transform duration-200 ${expandedThoughts ? "rotate-90" : ""}`} />
+            </button>
+            <AnimatePresence>
+              {expandedThoughts && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: "auto", opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  className="overflow-hidden bg-bg-secondary/20 border-l-2 border-accent/20 ml-4 pl-4 mt-2"
+                >
+                  <p className="py-2 text-[12px] text-text-tertiary leading-relaxed font-medium italic">
+                    {msg.thoughts}
+                  </p>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        )}
+
+        <div className={`px-5 py-4 rounded-[24px] text-[15px] leading-relaxed shadow-sm
+          ${msg.role === "user" 
+            ? "bg-text-primary text-bg-primary rounded-tr-sm" 
+            : "bg-bg-secondary/60 text-text-primary border border-border/20 rounded-tl-sm backdrop-blur-sm"}`}>
+          {msg.role === "assistant" ? (
+            <MarkdownRenderer content={msg.content || ""} />
+          ) : (
+            <div className="whitespace-pre-wrap">{msg.content}</div>
+          )}
+          {isStreaming && <span className="inline-block w-2 h-4 bg-accent/60 animate-pulse ml-1 rounded-sm" />}
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+

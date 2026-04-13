@@ -16,6 +16,7 @@ interface TasksState {
   toggleTask: (id: string) => Promise<void>;
   deleteTask: (id: string) => Promise<void>;
   createTaskList: (name: string, color?: string, icon?: string) => Promise<string>;
+  updateTaskList: (id: string, data: Partial<TaskList>) => Promise<void>;
   deleteTaskList: (id: string) => Promise<void>;
   setActiveView: (view: TaskView) => void;
   getFilteredTasks: () => Task[];
@@ -122,6 +123,17 @@ export const useTasksStore = create<TasksState>((set, get) => ({
     return id;
   },
 
+  updateTaskList: async (id, data) => {
+    set((state) => ({
+      taskLists: state.taskLists.map((l) => (l.id === id ? { ...l, ...data } : l)),
+    }));
+    try {
+      await db.taskLists.update(id, data);
+    } catch {
+      // silent
+    }
+  },
+
   deleteTaskList: async (id) => {
     if (id === "inbox") return;
     set((state) => ({
@@ -130,11 +142,15 @@ export const useTasksStore = create<TasksState>((set, get) => ({
     }));
     try {
       await db.taskLists.delete(id);
-      // Move tasks to inbox
+      // Move tasks to inbox instead of leaving them orphaned
       const orphaned = await db.tasks.where("list_id").equals(id).toArray();
       for (const t of orphaned) {
         await db.tasks.update(t.id, { list_id: "inbox" });
       }
+      // Update local state for tasks as well
+      set((state) => ({
+        tasks: state.tasks.map((t) => (t.list_id === id ? { ...t, list_id: "inbox" } : t)),
+      }));
     } catch {
       // silent
     }

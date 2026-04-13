@@ -21,17 +21,25 @@ export default function App() {
   const { initTheme } = useThemeStore();
   const { onboarding_completed, loading, initSettings } = useSettingsStore();
   const [ready, setReady] = useState(false);
+  const [showSplash, setShowSplash] = useState(true);
 
   useEffect(() => {
     async function init() {
       await initSettings();
       await initTheme();
       setReady(true);
+      
+      // Ensure splash shows for at least 2.5s for a premium feel
+      const timer = setTimeout(() => {
+        setShowSplash(false);
+      }, 2500);
+      
+      return () => clearTimeout(timer);
     }
     init();
   }, []);
 
-  if (!ready || loading) {
+  if (!ready || loading || showSplash) {
     return <SplashScreen />;
   }
 

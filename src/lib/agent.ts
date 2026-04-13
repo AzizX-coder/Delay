@@ -9,18 +9,14 @@ interface ToolCall {
 
 export async function processAgentRequest(
   input: string,
-  onStream: (text: string) => void,
+  onUpdate: (chunk: string | null, thought?: string | null) => void,
   callOllama: (prompt: string, onV: (v: string) => void) => Promise<string>
 ) {
-  const systemPrompt = `You are Delay Agent, an advanced autonomous assistant built into the Delay desktop app.
-You have the ability to execute tools to help the user.
-Available tools:
-1. createNote(title: string, content: string): Creates a new note.
-2. createTask(title: string, listId: string = "default"): Creates a new task.
-3. getTasks(): Returns all default tasks.
-4. searchWeb(query: string): Searches the web for current information.
+  const systemPrompt = `You are Delay Agent, a hyper-autonomous assistant. 
+You think deeply before acting. You have full access to the user's workspace.
 
-If you want to use a tool, output exactly this JSON block and nothing else in the message:
+When you think, use <think>...</think> tags.
+When you act, use exactly this JSON block:
 \`\`\`json
 {
   "tool_call": {
@@ -29,93 +25,106 @@ If you want to use a tool, output exactly this JSON block and nothing else in th
   }
 }
 \`\`\`
-If you do not want to use a tool, just respond naturally to the user.`;
+
+Available tools:
+1. createNote(title: string, content: string)
+2. updateNote(id: string, updates: Partial<Note>)
+3. deleteNote(id: string)
+4. createTask(title: string, listId: string = "inbox")
+5. updateTask(id: string, updates: Partial<Task>)
+6. deleteTask(id: string)
+7. getTasks(): Returns current pending tasks.
+8. searchWeb(query: string): Real-time DuckDuckGo search.
+9. createCalendarEvent(title: string, start: number, end: number)
+
+Be autonomous. If asked to "clean up my notes", find them and delete them.
+Your Glubs (thoughts) should be detailed.`;
 
   const fullPrompt = `${systemPrompt}\n\nUser: ${input}\nAgent:`;
-  let agentResponse = "";
+  let currentResponse = "";
+  let isThinking = false;
 
-  // 1. Initial reasoning loop
-  await callOllama(fullPrompt, (chunk) => {
-    agentResponse += chunk;
-    onStream(chunk);
+  await callOllama(fullPrompt, (token) => {
+    currentResponse += token;
+    
+    // Simple tag-based thought detection
+    if (token.includes("<think>")) isThinking = true;
+    
+    if (isThinking) {
+      onUpdate(null, token);
+    } else {
+      onUpdate(token, null);
+    }
+    
+    if (token.includes("</think>")) isThinking = false;
   });
 
-  // Check if agent requested a tool call
-  const toolCallMatch = agentResponse.match(/```json\n(.*?)\n```/s);
-  if (toolCallMatch) {
+  // Tool handling loop
+  const toolMatch = currentResponse.match(/```json\n(.*?)\n```/s);
+  if (toolMatch) {
     try {
-      const parsed = JSON.parse(toolCallMatch[1]);
+      const parsed = JSON.parse(toolMatch[1]);
       if (parsed.tool_call) {
-        onStream("\n\n*Executing tool: " + parsed.tool_call.name + "...*\n\n");
-        const toolResult = await executeTool(parsed.tool_call);
+        onUpdate(`\n\n*Working: ${parsed.tool_call.name}...*\n\n`);
+        const result = await executeTool(parsed.tool_call);
         
-        const finalPrompt = `${fullPrompt}${agentResponse}\nSystem Tool Result: ${toolResult}\nAgent (explain what you did based on the result without requesting another tool):`;
-        
-        let finalResponse = "";
-        await callOllama(finalPrompt, (chunk) => {
-          finalResponse += chunk;
-          onStream(chunk);
-        });
-        return agentResponse + "\n\n" + finalResponse;
+        const finalPrompt = `${fullPrompt}${currentResponse}\nSystem Result: ${result}\nAgent (Confirm exactly what was done):`;
+        await callOllama(finalPrompt, (token) => onUpdate(token));
       }
-    } catch {
-      // Not a valid JSON tool call
+    } catch (e) {
+      onUpdate(`\nError parsing agent intent: ${e}`);
     }
   }
-
-  return agentResponse;
 }
 
 async function executeTool(toolCall: ToolCall): Promise<string> {
   try {
-    switch (toolCall.name) {
+    const { name, arguments: args } = toolCall;
+    
+    switch (name) {
       case "createNote": {
-        const { createNote, updateNote } = useNotesStore.getState();
-        const id = await createNote();
-        await updateNote(id, {
-          title: toolCall.arguments.title,
-          content_text: toolCall.arguments.content,
-          content: JSON.stringify({
-            type: "doc",
-            content: [
-              {
-                type: "paragraph",
-                content: [{ type: "text", text: toolCall.arguments.content }],
-              },
-            ],
-          }),
+        const id = await useNotesStore.getState().createNote();
+        await useNotesStore.getState().updateNote(id, { 
+          title: args.title, 
+          content_text: args.content,
+          content: JSON.stringify({ type: "doc", content: [{ type: "paragraph", content: [{ type: "text", text: args.content }] }] })
         });
-        return `Successfully created note "${toolCall.arguments.title}"`;
+        return `Created note: ${args.title} (ID: ${id})`;
       }
-      case "createTask": {
-        const { createTask } = useTasksStore.getState();
-        let listId = "inbox"; // fallback to default
-        if (toolCall.arguments.listId !== "default") {
-          listId = toolCall.arguments.listId;
-        }
-        await createTask(toolCall.arguments.title, listId);
-        return `Successfully created task "${toolCall.arguments.title}"`;
-      }
-      case "getTasks": {
-        const { tasks } = useTasksStore.getState();
-        const listTasks = tasks.filter((t) => t.list_id === "inbox" && !t.completed);
-        return listTasks.length === 0 
-          ? "No pending tasks in inbox." 
-          : JSON.stringify(listTasks.map(t => ({ id: t.id, title: t.title })));
-      }
-      case "searchWeb": {
-        // DuckDuckGo instant answers API - free, no key
-        const res = await fetch(`https://api.duckduckgo.com/?q=${encodeURIComponent(toolCall.arguments.query)}&format=json`);
-        const json = await res.json();
-        if (json.AbstractText) {
-          return json.AbstractText;
-        }
-        return "No instant answer found. The user will need to manually search.";
-      }
+      case "updateNote":
+        await useNotesStore.getState().updateNote(args.id, args.updates);
+        return `Updated note ${args.id}`;
+      case "deleteNote":
+        await useNotesStore.getState().deleteNote(args.id);
+        return `Deleted note ${args.id}`;
+      case "createTask":
+        await useTasksStore.getState().createTask(args.title, args.listId);
+        return `Created task: ${args.title}`;
+      case "updateTask":
+        await useTasksStore.getState().updateTask(args.id, args.updates);
+        return `Updated task ${args.id}`;
+      case "deleteTask":
+        await useTasksStore.getState().deleteTask(args.id);
+        return `Deleted task ${args.id}`;
+      case "getTasks":
+        return JSON.stringify(useTasksStore.getState().tasks.filter(t => !t.completed).slice(0, 10));
+      case "searchWeb":
+        const res = await fetch(`https://api.duckduckgo.com/?q=${encodeURIComponent(args.query)}&format=json`);
+        const data = await res.json();
+        return data.AbstractText || "No abstract found, tell user to browse manually.";
+      case "createCalendarEvent":
+        await useCalendarStore.getState().createEvent({
+          title: args.title,
+          start_time: args.start,
+          end_time: args.end,
+          all_day: 0
+        });
+        return `Created calendar event: ${args.title}`;
       default:
-        return `Error: Tool ${toolCall.name} not recognized.`;
+        return "Unknown tool";
     }
-  } catch (error: any) {
-    return `Error executing tool: ${error.message}`;
+  } catch (err: any) {
+    return `Tool Error: ${err.message}`;
   }
 }
+
