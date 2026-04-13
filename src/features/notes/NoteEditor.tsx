@@ -60,6 +60,7 @@ export function NoteEditor({ noteId }: NoteEditorProps) {
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout>>(undefined);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
   const recognitionRef = useRef<any>(null);
 
   const editor = useEditor({
@@ -126,27 +127,8 @@ export function NoteEditor({ noteId }: NoteEditorProps) {
     recognition.interimResults = true;
     recognition.lang = "en-US";
 
-    recognition.onstart = () => setIsRecording(true);
-    recognition.onresult = (event: any) => {
-      const transcript = Array.from(event.results)
-        .map((result: any) => result[0])
-        .map((result) => result.transcript)
-        .join("");
-      
-      if (event.results[0].isFinal) {
-        // Send to AI for formatting when finished or use as is
-        // For now, we'll let the user stop it manually to send it to AI
-      }
-    };
-
-    recognition.onend = async () => {
-      setIsRecording(false);
-      const finalTranscript = recognition.lastTranscript; // We'd need to track this better
-      // Real implementation would capture the final result
-    };
-
-    // Improved recording handler
     let fullTranscript = "";
+    recognition.onstart = () => setIsRecording(true);
     recognition.onresult = (event: any) => {
       fullTranscript = Array.from(event.results)
         .map((result: any) => result[0].transcript)
@@ -156,8 +138,13 @@ export function NoteEditor({ noteId }: NoteEditorProps) {
     recognition.onend = async () => {
       setIsRecording(false);
       if (fullTranscript.trim()) {
-        // Send to Agent to convert to a note
-        await sendMessage(`Convert this voice dictation into a beautifully formatted note for my document "${note?.title}": ${fullTranscript}`, true);
+        try {
+          setIsProcessing(true);
+          // Send to Agent to convert to a note
+          await sendMessage(`Convert this voice dictation into a beautifully formatted note for my document "${note?.title}": ${fullTranscript}`, true);
+        } finally {
+          setIsProcessing(false);
+        }
       }
     };
 
@@ -278,8 +265,36 @@ export function NoteEditor({ noteId }: NoteEditorProps) {
       </div>
 
       {/* Editor Surface */}
-      <div className="flex-1 overflow-y-auto bg-bg-primary">
+      <div className="flex-1 relative overflow-y-auto bg-bg-primary">
         <EditorContent editor={editor} className="min-h-full" />
+        
+        <AnimatePresence>
+          {isProcessing && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-bg-primary/40 backdrop-blur-md"
+            >
+              <div className="flex flex-col items-center gap-4 p-8 rounded-[32px] bg-bg-elevated/80 border border-border/40 shadow-2xl">
+                <div className="relative">
+                  <motion.div
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                    className="w-16 h-16 rounded-full border-2 border-accent/20 border-t-accent"
+                  />
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <Sparkles className="text-accent animate-pulse" size={24} />
+                  </div>
+                </div>
+                <div className="text-center">
+                  <p className="text-[16px] font-bold text-text-primary tracking-tight">Agent is organizing...</p>
+                  <p className="text-[13px] text-text-tertiary">Formatting your thoughts perfectly.</p>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </motion.div>
   );

@@ -1,6 +1,4 @@
-import { useEffect, useState, useRef } from "react";
-import { useCalendarStore } from "@/stores/calendarStore";
-import { motion, AnimatePresence } from "motion/react";
+import { useTasksStore } from "@/stores/tasksStore";
 import {
   ChevronLeft,
   ChevronRight,
@@ -10,6 +8,7 @@ import {
   CalendarCheck,
   Bell,
   X,
+  CheckCircle2,
 } from "lucide-react";
 import {
   format,
@@ -63,8 +62,11 @@ export function CalendarPage() {
   const [showDayDetail, setShowDayDetail] = useState(false);
   const [detailDate, setDetailDate] = useState<Date | null>(null);
 
+  const { loadTasks, tasks, toggleTask, deleteTask: deleteTaskFromStore } = useTasksStore();
+
   useEffect(() => {
     loadEvents();
+    loadTasks();
   }, []);
 
   const monthStart = startOfMonth(currentDate);
@@ -114,15 +116,21 @@ export function CalendarPage() {
       );
     }
 
-    createEvent({
-      title: eventTitle.trim(),
-      description: "",
-      start_time: startTime,
-      end_time: endTime,
-      all_day: eventAllDay ? 1 : 0,
-      color: eventColor,
-      recurrence: null,
-    });
+    if (eventType === "task") {
+      useTasksStore.getState().createTask(eventTitle.trim()).then(id => {
+        useTasksStore.getState().updateTask(id, { due_date: startTime });
+      });
+    } else {
+      createEvent({
+        title: eventTitle.trim(),
+        description: "",
+        start_time: startTime,
+        end_time: endTime,
+        all_day: eventAllDay ? 1 : 0,
+        color: eventColor,
+        recurrence: null,
+      });
+    }
 
     setShowEventModal(false);
   };
@@ -278,33 +286,40 @@ export function CalendarPage() {
                 Add event
               </button>
 
-              {detailEvents.length === 0 ? (
+              {detailEvents.length === 0 && dayTasks.length === 0 ? (
                 <p className="text-[13px] text-text-tertiary text-center py-8">
-                  No events for this day
+                  No activities for this day
                 </p>
               ) : (
                 <div className="space-y-2">
-                  {detailEvents.map((event) => (
+                  {[...detailEvents.map(e => ({ ...e, type: 'event' })), ...dayTasks.map(t => ({ ...t, type: 'task', color: '#10B981' }))].map((item) => (
                     <div
-                      key={event.id}
+                      key={item.id}
                       className="flex items-start gap-3 px-3 py-2.5 rounded-xl bg-bg-secondary border border-border-light"
                     >
-                      <div
-                        className="w-3 h-3 rounded-full mt-1 shrink-0"
-                        style={{ backgroundColor: event.color || EVENT_COLORS[0] }}
-                      />
+                      <div className="shrink-0 mt-1">
+                        {item.type === 'task' ? <CheckCircle2 size={14} className="text-success" /> : (
+                          <div
+                            className="w-3 h-3 rounded-full"
+                             style={{ backgroundColor: item.color || EVENT_COLORS[0] }}
+                          />
+                        )}
+                      </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-[13px] font-medium text-text-primary truncate">
-                          {event.title}
+                        <p className={`text-[13px] font-medium truncate ${item.type === 'task' ? 'text-success' : 'text-text-primary'}`}>
+                          {item.title}
                         </p>
                         <p className="text-[11px] text-text-tertiary">
-                          {event.all_day
+                          {item.type === 'task' ? "Task" : (item.all_day
                             ? "All day"
-                            : `${format(event.start_time * 1000, "h:mm a")} – ${format(event.end_time * 1000, "h:mm a")}`}
+                            : `${format(item.start_time * 1000, "h:mm a")} – ${format(item.end_time * 1000, "h:mm a")}`)}
                         </p>
                       </div>
                       <button
-                        onClick={() => deleteEvent(event.id)}
+                        onClick={() => {
+                          if (item.type === 'task') deleteTaskFromStore(item.id);
+                          else deleteEvent(item.id);
+                        }}
                         className="w-6 h-6 flex items-center justify-center rounded-md shrink-0
                           text-text-tertiary hover:text-danger hover:bg-danger/10
                           transition-colors cursor-pointer"
@@ -454,6 +469,7 @@ function MonthView({
       <div className="grid grid-cols-7 flex-1 gap-px bg-border-light rounded-[--radius-lg] overflow-hidden border border-border-light">
         {days.map((day, i) => {
           const dayEvents = getEventsForDate(day);
+          const dayTasks = useTasksStore.getState().tasks.filter(t => !t.completed && t.due_date && isSameDay(t.due_date * 1000, day));
           const isCurrentMonth = isSameMonth(day, currentDate);
           const today = isToday(day);
 
@@ -479,20 +495,16 @@ function MonthView({
                 </span>
               </div>
               <div className="space-y-0.5">
-                {dayEvents.slice(0, 3).map((event) => (
+                {[...dayEvents.map(e => ({ ...e, type: 'event' })), ...dayTasks.map(t => ({ ...t, type: 'task', color: '#10B981' }))].slice(0, 4).map((item) => (
                   <div
-                    key={event.id}
-                    className="px-1.5 py-0.5 rounded text-[10px] font-medium truncate text-white"
-                    style={{ backgroundColor: event.color || EVENT_COLORS[0] }}
+                    key={item.id}
+                    className={`px-1.5 py-0.5 rounded text-[10px] font-medium truncate 
+                      ${item.type === 'task' ? 'border border-success/30 bg-success/10 text-success' : 'text-white'}`}
+                    style={item.type === 'event' ? { backgroundColor: item.color || EVENT_COLORS[0] } : {}}
                   >
-                    {event.title}
+                    {item.type === 'task' && "✓ "}{item.title}
                   </div>
                 ))}
-                {dayEvents.length > 3 && (
-                  <span className="text-[10px] text-text-tertiary pl-1.5">
-                    +{dayEvents.length - 3} more
-                  </span>
-                )}
               </div>
             </motion.div>
           );

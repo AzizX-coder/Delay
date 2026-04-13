@@ -17,9 +17,10 @@ export const db = new Dexie("DelayDB") as Dexie & {
   events: EntityTable<CalendarEvent, "id">;
   aiConversations: EntityTable<AIConversation, "id">;
   aiMessages: EntityTable<AIMessage, "id">;
+  memories: EntityTable<{ id: string; content: string; created_at: number }, "id">;
 };
 
-db.version(1).stores({
+db.version(2).stores({
   settings: "key",
   notes: "id, pinned, updated_at, deleted_at",
   tasks: "id, list_id, completed, due_date, sort_order, deleted_at",
@@ -27,6 +28,7 @@ db.version(1).stores({
   events: "id, start_time, end_time, deleted_at",
   aiConversations: "id, updated_at",
   aiMessages: "id, conversation_id, created_at",
+  memories: "id, created_at",
 });
 
 // Seed default task list
