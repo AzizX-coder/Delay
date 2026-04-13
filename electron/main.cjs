@@ -15,7 +15,7 @@ function createWindow() {
     minHeight: 620,
     frame: false,
     backgroundColor: "#0D0D0F",
-    icon: path.join(__dirname, process.env.VITE_DEV_SERVER_URL ? "../public/logo.png" : "../dist/logo.png"),
+    icon: path.join(__dirname, process.env.VITE_DEV_SERVER_URL ? "../public/logo.ico" : "../dist/logo.ico"),
     webPreferences: {
       preload: path.join(__dirname, "preload.cjs"),
       contextIsolation: true,
