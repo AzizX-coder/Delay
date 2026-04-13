@@ -1,3 +1,5 @@
+import logoUrl from "@/assets/logo.png";
+
 interface LogoProps {
   size?: number;
   className?: string;
@@ -6,7 +8,7 @@ interface LogoProps {
 export function Logo({ size = 40, className = "" }: LogoProps) {
   return (
     <img
-      src="logo.png"
+      src={logoUrl}
       alt="Delay"
       width={size}
       height={size}
@@ -14,7 +16,7 @@ export function Logo({ size = 40, className = "" }: LogoProps) {
       className={`rounded-xl object-contain ${className}`}
       draggable={false}
       onError={(e) => {
-        // Fallback if logo fails to load for any reason in production
+        // Ultimate fallback to ensure app never blacks out on render
         e.currentTarget.style.display = 'none';
       }}
     />
