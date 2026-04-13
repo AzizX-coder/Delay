@@ -1,5 +1,3 @@
-import logoUrl from "@/assets/logo.png";
-
 interface LogoProps {
   size?: number;
   className?: string;
@@ -8,7 +6,7 @@ interface LogoProps {
 export function Logo({ size = 40, className = "" }: LogoProps) {
   return (
     <img
-      src={logoUrl}
+      src="/logo.png"
       alt="Delay"
       width={size}
       height={size}

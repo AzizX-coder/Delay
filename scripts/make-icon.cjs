@@ -1,8 +1,8 @@
 const fs = require("fs");
 const path = require("path");
 
-const pngPath = path.join(__dirname, "..", "src", "assets", "logo.png");
-const icoPath = path.join(__dirname, "..", "src", "assets", "logo.ico");
+const pngPath = path.join(__dirname, "..", "public", "logo.png");
+const icoPath = path.join(__dirname, "..", "public", "logo.ico");
 
 async function generate() {
   try {

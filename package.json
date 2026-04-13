@@ -27,8 +27,7 @@
     "files": [
       "dist/**/*",
       "electron/**/*",
-      "public/icon.png",
-      "public/icon.ico"
+      "public/**/*"
     ],
     "win": {
       "target": [
@@ -39,7 +38,7 @@
           ]
         }
       ],
-      "icon": "src/assets/logo.ico",
+      "icon": "public/logo.ico",
       "requestedExecutionLevel": "asInvoker",
       "artifactName": "Delay-Setup-${version}.${ext}"
     },
@@ -59,9 +58,9 @@
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
       "shortcutName": "Delay",
-      "installerIcon": "src/assets/logo.ico",
-      "uninstallerIcon": "src/assets/logo.ico",
-      "installerHeaderIcon": "src/assets/logo.ico",
+      "installerIcon": "public/logo.ico",
+      "uninstallerIcon": "public/logo.ico",
+      "installerHeaderIcon": "public/logo.ico",
       "deleteAppDataOnUninstall": false,
       "artifactName": "Delay-Setup-${version}.${ext}"
     },
