@@ -38,6 +38,18 @@ Grab the latest **Delay-Setup-1.3.1.exe** from the [Releases](https://github.com
 
 **Requirements:** Windows 10 or 11 (x64). Optional: [Ollama](https://ollama.com/) for AI features.
 
+### 🛡️ Windows SmartScreen — "Windows protected your PC"
+
+Delay is built by an independent developer and is **not yet code-signed with a paid EV certificate**. That means on first launch Windows may show a blue SmartScreen banner. The app is safe — it's a standard open-source Electron build uploaded to GitHub via a public CI pipeline ([workflow](.github/workflows/main.yml)) which you can audit.
+
+**To install safely:**
+
+1. Double-click `Delay-Setup-1.3.1.exe`.
+2. If SmartScreen appears, click **More info → Run anyway**.
+3. Follow the NSIS installer (you can choose the install directory).
+
+> SmartScreen reputation builds up automatically as more users download the signed installer. A code signing certificate is on the roadmap.
+
 ## 🛠️ Tech Stack
 
 | Layer | Technology |

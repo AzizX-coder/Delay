@@ -1,3 +1,6 @@
+import { useEffect, useState } from "react";
+import { motion, AnimatePresence } from "motion/react";
+import { useCalendarStore } from "@/stores/calendarStore";
 import { useTasksStore } from "@/stores/tasksStore";
 import {
   ChevronLeft,
@@ -142,6 +145,9 @@ export function CalendarPage() {
   ];
 
   const detailEvents = detailDate ? getEventsForDate(detailDate) : [];
+  const dayTasks = detailDate
+    ? tasks.filter((t) => !t.completed && t.due_date && isSameDay(t.due_date * 1000, detailDate))
+    : [];
 
   return (
     <div className="flex flex-col h-full p-6">
@@ -310,9 +316,9 @@ export function CalendarPage() {
                           {item.title}
                         </p>
                         <p className="text-[11px] text-text-tertiary">
-                          {item.type === 'task' ? "Task" : (item.all_day
+                          {item.type === 'task' ? "Task" : ((item as any).all_day
                             ? "All day"
-                            : `${format(item.start_time * 1000, "h:mm a")} – ${format(item.end_time * 1000, "h:mm a")}`)}
+                            : `${format((item as any).start_time * 1000, "h:mm a")} – ${format((item as any).end_time * 1000, "h:mm a")}`)}
                         </p>
                       </div>
                       <button

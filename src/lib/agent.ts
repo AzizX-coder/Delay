@@ -130,7 +130,10 @@ async function executeTool(toolCall: ToolCall): Promise<string> {
           title: args.title,
           start_time: args.start,
           end_time: args.end,
-          all_day: 0
+          all_day: 0,
+          color: "#4F8AE6",
+          description: "",
+          recurrence: "none",
         });
         return `Created calendar event: ${args.title}`;
       case "saveMemory":
