@@ -1,6 +1,4 @@
-<div align="center">
-
-<img src="public/icon.png" alt="Delay" width="112" height="112" style="border-radius: 24px" />
+<img src="public/logo.png" alt="Delay" width="112" height="112" style="border-radius: 24px" />
 
 # Delay
 
@@ -18,25 +16,25 @@
 
 ## ✨ What is Delay?
 
-Delay is a local-first desktop app that puts your **notes**, **tasks**, **calendar**, and a built-in **AI assistant** behind one fluid, Apple-Notes-inspired interface. Everything lives on your device — no accounts, no cloud, no tracking.
+Delay is a local-first desktop **Agentic OS** that puts your **notes**, **tasks**, **calendar**, and a built-in **Recursive AI agent** behind one fluid, Apple-Notes-inspired interface. Everything lives on your device — no accounts, no cloud, no tracking.
 
-## 🧩 Features
+## 🧩 Features (v1.3.1)
 
 | Module | Highlights |
 |--------|-----------|
-| **Notes** | Rich TipTap editor · formatting, checklists, highlights · color-coded notes · zero spell-check underlines |
-| **Tasks** | Priorities & due dates · Inbox / Today / Upcoming / Completed smart views · custom lists |
-| **Calendar** | Month view · color-coded events · quick scheduling · all-day & timed events |
-| **AI** | Chat with local Ollama models · streaming responses · conversation history |
-| **Settings** | Theme (light / dark / system) · language · default AI model · auto-update |
+| **Agentic AI** | Recursive reasoning loop (Glubs) · Semantic long-term memory · Task & Note orchestration |
+| **Notes** | Rich TipTap editor · AI-driven voice dictation · modular icons panel · zero spell-check underlines |
+| **Tasks** | Priorities & due dates · Unified Calendar integration · Inbox / Today / Upcoming views |
+| **Calendar** | Orchestrated view (Events + Tasks) · Month/Week/Day view · Drag-and-drop orchestration |
+| **Identity** | Premium Glassmorphic UI · Dark/Light/System themes · Global Onboarding |
 
 ## 🖥️ Screenshots
 
-> Screenshots coming soon — run the app yourself to see the Liquid UI in action!
+> **Liquid UI v1.3.1**: Explore the new Agentic Mode and Unified Calendar in the latest installer!
 
 ## 📥 Download
 
-Grab the latest **Delay-Setup-1.0.1.exe** from the [Releases](https://github.com/AzizX-coder/Delay/releases/latest) page, or visit the [landing page](https://azizx-coder.github.io/Delay/).
+Grab the latest **Delay-Setup-1.3.1.exe** from the [Releases](https://github.com/AzizX-coder/Delay/releases/latest) page, or visit the [landing page](https://azizx-coder.github.io/Delay/).
 
 **Requirements:** Windows 10 or 11 (x64). Optional: [Ollama](https://ollama.com/) for AI features.
 
