@@ -39,7 +39,7 @@
           ]
         }
       ],
-      "icon": "src/assets/logo.png",
+      "icon": "src/assets/logo.ico",
       "requestedExecutionLevel": "asInvoker",
       "artifactName": "Delay-Setup-${version}.${ext}"
     },
@@ -59,9 +59,9 @@
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
       "shortcutName": "Delay",
-      "installerIcon": "src/assets/logo.png",
-      "uninstallerIcon": "src/assets/logo.png",
-      "installerHeaderIcon": "src/assets/logo.png",
+      "installerIcon": "src/assets/logo.ico",
+      "uninstallerIcon": "src/assets/logo.ico",
+      "installerHeaderIcon": "src/assets/logo.ico",
       "deleteAppDataOnUninstall": false,
       "artifactName": "Delay-Setup-${version}.${ext}"
     },
