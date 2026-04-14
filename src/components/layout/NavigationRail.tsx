@@ -7,18 +7,20 @@ import {
   Sparkles,
   Settings,
 } from "lucide-react";
+import { useT } from "@/lib/i18n";
 
 const NAV_ITEMS = [
-  { path: "/notes", icon: StickyNote, label: "Notes" },
-  { path: "/tasks", icon: CheckSquare, label: "Tasks" },
-  { path: "/calendar", icon: Calendar, label: "Calendar" },
-  { path: "/ai", icon: Sparkles, label: "AI" },
-  { path: "/settings", icon: Settings, label: "Settings" },
+  { path: "/notes", icon: StickyNote, key: "app.notes" },
+  { path: "/tasks", icon: CheckSquare, key: "app.tasks" },
+  { path: "/calendar", icon: Calendar, key: "app.calendar" },
+  { path: "/ai", icon: Sparkles, key: "app.ai" },
+  { path: "/settings", icon: Settings, key: "app.settings" },
 ] as const;
 
 export function NavigationRail() {
   const location = useLocation();
   const navigate = useNavigate();
+  const t = useT();
 
   return (
     <nav
@@ -28,13 +30,14 @@ export function NavigationRail() {
       {NAV_ITEMS.map((item) => {
         const isActive = location.pathname.startsWith(item.path);
         const Icon = item.icon;
+        const label = t(item.key);
         return (
           <button
             key={item.path}
             onClick={() => navigate(item.path)}
             className="group relative flex flex-col items-center justify-center
               w-[52px] h-[48px] rounded-xl transition-colors duration-200 cursor-pointer"
-            title={item.label}
+            title={label}
           >
             {isActive && (
               <motion.div
@@ -59,7 +62,7 @@ export function NavigationRail() {
                   : "text-text-tertiary group-hover:text-text-secondary"
               }`}
             >
-              {item.label}
+              {label}
             </span>
           </button>
         );

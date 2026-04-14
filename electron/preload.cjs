@@ -6,6 +6,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
   close: () => ipcRenderer.send("window-close"),
   isElectron: true,
   getVersion: () => ipcRenderer.invoke("get-app-version"),
+  relaunch: () => ipcRenderer.send("app-relaunch"),
   updater: {
     check: () => ipcRenderer.invoke("updater-check"),
     download: () => ipcRenderer.invoke("updater-download"),

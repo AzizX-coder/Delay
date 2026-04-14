@@ -17,7 +17,6 @@ import {
   WifiOff,
   MessageSquare,
   Mic,
-  MicOff,
   Sparkles,
   Zap,
   Smile,
@@ -26,6 +25,8 @@ import {
 } from "lucide-react";
 import type { OllamaModel, AIMessage } from "@/types/ai";
 import { AgentMessage } from "./AgentMessage";
+import { VoiceBadge } from "@/components/ui/VoiceBadge";
+import { useT } from "@/lib/i18n";
 
 // Gemini-style 4-pointed star icon
 function GeminiStar({ size = 14, className = "" }: { size?: number; className?: string }) {
@@ -58,16 +59,19 @@ export function AIChatPage() {
     stopStreaming,
   } = useAIStore();
   const { theme } = useThemeStore();
+  const t = useT();
 
   const [input, setInput] = useState("");
   const [models, setModels] = useState<OllamaModel[]>([]);
   const [ollamaOnline, setOllamaOnline] = useState(false);
   const [showModelPicker, setShowModelPicker] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
+  const [liveTranscript, setLiveTranscript] = useState("");
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const recognitionRef = useRef<any>(null);
+  const silenceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     loadConversations();
@@ -96,44 +100,79 @@ export function AIChatPage() {
     }
   };
 
-  const toggleVoiceRecord = () => {
-    if (isRecording) {
+  const stopVoice = () => {
+    try {
       recognitionRef.current?.stop();
-      setIsRecording(false);
-      return;
-    }
+    } catch {}
+    if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
+    setIsRecording(false);
+  };
 
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    if (!SpeechRecognition) return;
+  const toggleVoiceRecord = () => {
+    if (isRecording) return stopVoice();
 
-    const recognition = new SpeechRecognition();
+    const SR =
+      (window as any).SpeechRecognition ||
+      (window as any).webkitSpeechRecognition;
+    if (!SR) return;
+
+    const recognition = new SR();
     recognition.continuous = true;
     recognition.interimResults = true;
-    recognition.lang = "en-US";
+    recognition.lang = navigator.language || "en-US";
 
     let transcript = "";
+    const resetSilence = () => {
+      if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
+      silenceTimerRef.current = setTimeout(() => {
+        try {
+          recognition.stop();
+        } catch {}
+      }, 2000);
+    };
+
+    recognition.onstart = () => {
+      setIsRecording(true);
+      setLiveTranscript("");
+      resetSilence();
+    };
     recognition.onresult = (event: any) => {
       transcript = "";
       for (let i = 0; i < event.results.length; i++) {
         transcript += event.results[i][0].transcript;
       }
       setInput(transcript);
+      setLiveTranscript(transcript);
+      resetSilence();
     };
-
+    recognition.onerror = () => stopVoice();
     recognition.onend = () => {
+      if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
       setIsRecording(false);
-      if (transcript.trim()) {
-        setInput(transcript.trim());
-      }
+      setLiveTranscript("");
+      if (transcript.trim()) setInput(transcript.trim());
     };
 
     recognition.start();
     recognitionRef.current = recognition;
-    setIsRecording(true);
   };
 
+  useEffect(() => {
+    return () => {
+      if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
+      try {
+        recognitionRef.current?.stop();
+      } catch {}
+    };
+  }, []);
+
   return (
-    <div className="flex h-full bg-bg-primary">
+    <div className="flex h-full bg-bg-primary relative">
+      <VoiceBadge
+        active={isRecording}
+        transcript={liveTranscript}
+        onStop={stopVoice}
+      />
       {/* Conversations sidebar */}
       <div className="w-64 h-full flex flex-col border-r border-border/40 bg-bg-secondary/40 backdrop-blur-md">
         <div className="p-4">
@@ -278,12 +317,13 @@ export function AIChatPage() {
                 <GeminiStar size={40} className="text-bg-primary" />
               </motion.div>
               <h2 className="text-[24px] font-bold text-text-primary tracking-tight mb-2 text-center">
-                I am your Delay {mode === "agent" ? "Agent" : "Assistant"}
+                {t("chat.agent_title")}{" "}
+                {mode === "agent" ? "Agent" : "Assistant"}
               </h2>
               <p className="text-[14px] text-text-tertiary text-center max-w-sm mb-8">
-                {mode === "agent" 
-                  ? "I can manage your life autonomously. Try asking me to 'Create a note about my day' or 'Schedule a meeting tomorrow'." 
-                  : "How can I help you today? I am ready for pure, smart conversation."}
+                {mode === "agent"
+                  ? t("chat.agent_sub_agent")
+                  : t("chat.agent_sub_chat")}
               </p>
             </div>
           ) : (
@@ -311,7 +351,7 @@ export function AIChatPage() {
                     <Brain size={16} className="text-accent" />
                   </div>
                   <div className="flex items-center gap-1.5 px-4 py-2 bg-bg-secondary/40 rounded-2xl border border-border/20">
-                    <span className="text-[11px] font-bold uppercase tracking-widest text-text-tertiary">Thinking</span>
+                    <span className="text-[11px] font-bold uppercase tracking-widest text-text-tertiary">{t("chat.thinking")}</span>
                     <div className="flex gap-1">
                       {[0,1,2].map(i => <div key={i} className="w-1 h-1 bg-accent rounded-full animate-bounce" style={{ animationDelay: `${i * 0.1}s` }} />)}
                     </div>
@@ -333,7 +373,11 @@ export function AIChatPage() {
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder={isRecording ? "Speak now..." : `Ask your ${mode}...`}
+                placeholder={
+                  isRecording
+                    ? t("chat.speak_now")
+                    : `${t("chat.placeholder")} ${mode}…`
+                }
                 rows={1}
                 className="w-full resize-none p-4 pr-32 bg-transparent text-[15px] font-medium text-text-primary placeholder:text-text-tertiary outline-none max-h-48"
                 style={{ height: "48px" }}
@@ -356,9 +400,9 @@ export function AIChatPage() {
                 <button
                   onClick={toggleVoiceRecord}
                   className={`w-10 h-10 flex items-center justify-center rounded-xl transition-all cursor-pointer
-                    ${isRecording ? "bg-danger text-white animate-pulse" : "bg-bg-hover text-text-tertiary hover:text-text-primary"}`}
+                    ${isRecording ? "bg-danger/10 text-danger" : "bg-bg-hover text-text-tertiary hover:text-text-primary"}`}
                 >
-                  {isRecording ? <MicOff size={18} /> : <Mic size={18} />}
+                  <Mic size={18} />
                 </button>
 
                 <button

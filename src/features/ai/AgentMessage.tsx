@@ -117,7 +117,18 @@ export function AgentMessage({
     <div className="space-y-2 w-full">
       {segments.map((seg, i) => {
         if (seg.kind === "thought") {
-          return <ThoughtBubble key={i} text={seg.text} />;
+          const nextTool = segments
+            .slice(i + 1)
+            .find((s) => s.kind === "tool") as
+            | { kind: "tool"; name: string }
+            | undefined;
+          return (
+            <ThoughtBubble
+              key={i}
+              text={seg.text}
+              upcomingTool={nextTool?.name}
+            />
+          );
         }
         if (seg.kind === "tool") {
           return <ToolCard key={i} name={seg.name} args={seg.args} done />;
@@ -157,9 +168,16 @@ export function AgentMessage({
   );
 }
 
-function ThoughtBubble({ text }: { text: string }) {
+function ThoughtBubble({
+  text,
+  upcomingTool,
+}: {
+  text: string;
+  upcomingTool?: string;
+}) {
   const [open, setOpen] = useState(false);
   const preview = text.trim().split("\n")[0].slice(0, 80);
+  const toolLabel = upcomingTool ? TOOL_LABELS[upcomingTool] ?? upcomingTool : null;
 
   return (
     <motion.div
@@ -174,21 +192,40 @@ function ThoughtBubble({ text }: { text: string }) {
         className="w-full flex items-center gap-2 px-3 py-2 text-left cursor-pointer
           hover:bg-bg-hover transition-colors"
       >
-        <div
-          className="w-6 h-6 rounded-lg flex items-center justify-center shrink-0
-            bg-gradient-to-br from-accent/20 to-accent/5 text-accent"
-        >
-          <Sparkles size={12} />
+        <div className="relative w-6 h-6 shrink-0">
+          <motion.span
+            animate={{ scale: [1, 1.25, 1], opacity: [0.5, 0, 0.5] }}
+            transition={{ duration: 1.8, repeat: Infinity }}
+            className="absolute inset-0 rounded-lg bg-accent/20"
+          />
+          <div className="relative w-6 h-6 rounded-lg flex items-center justify-center
+            bg-gradient-to-br from-accent/25 to-accent/5 text-accent">
+            <Sparkles size={12} />
+          </div>
         </div>
-        <span className="text-[12px] font-medium text-text-secondary">
-          Glub — thinking
+        <span className="text-[12px] font-semibold text-text-secondary">
+          Glub
         </span>
+        {toolLabel ? (
+          <span
+            className="text-[11px] font-medium text-accent px-2 py-0.5 rounded-full
+              bg-accent/10 border border-accent/15 whitespace-nowrap"
+          >
+            {toolLabel}
+          </span>
+        ) : (
+          <span className="text-[11px] font-medium text-text-tertiary">
+            thinking
+          </span>
+        )}
         <span className="text-[12px] text-text-tertiary truncate flex-1">
           {preview}
         </span>
         <ChevronDown
           size={14}
-          className={`text-text-tertiary transition-transform ${open ? "rotate-180" : ""}`}
+          className={`text-text-tertiary transition-transform ${
+            open ? "rotate-180" : ""
+          }`}
         />
       </button>
       {open && (

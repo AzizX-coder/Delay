@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useTasksStore } from "@/stores/tasksStore";
 import { useThemeStore } from "@/stores/themeStore";
+import { useT } from "@/lib/i18n";
 import { motion, AnimatePresence } from "motion/react";
 import {
   Plus,
@@ -44,6 +45,7 @@ export function TasksPage() {
     getFilteredTasks,
   } = useTasksStore();
   const { theme } = useThemeStore();
+  const t = useT();
 
   const [newTaskTitle, setNewTaskTitle] = useState("");
   const [showListModal, setShowListModal] = useState(false);
@@ -235,8 +237,8 @@ export function TasksPage() {
               <EmptyState
                 size="lg"
                 icon={<div className="p-4 rounded-[28px] bg-accent/10 text-accent mb-4"><CheckCircle2 size={32} /></div>}
-                title={activeView === "completed" ? "Archive is clean" : "Peak Productivity"}
-                description={activeView === "completed" ? "Finished tasks live here. Go get some done!" : "You've finished everything here. Relax or add something new above."}
+                title={activeView === "completed" ? "Archive is clean" : t("notes.peak")}
+                description={activeView === "completed" ? "Finished tasks live here. Go get some done!" : t("notes.peak_sub")}
               />
             ) : (
               filteredTasks.map((task) => (

@@ -33,8 +33,43 @@ function renderMarkdown(raw: string): string {
   let inList = false;
   let listType: "ul" | "ol" = "ul";
 
+  const closeList = () => {
+    if (inList) {
+      result.push(listType === "ul" ? "</ul>" : "</ol>");
+      inList = false;
+    }
+  };
+
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
+
+    // Tables: header | header + separator + rows
+    if (
+      /^\s*\|.+\|\s*$/.test(line) &&
+      i + 1 < lines.length &&
+      /^\s*\|?\s*:?-+:?\s*(\|\s*:?-+:?\s*)+\|?\s*$/.test(lines[i + 1])
+    ) {
+      closeList();
+      const header = splitRow(line);
+      i += 2;
+      const rows: string[][] = [];
+      while (i < lines.length && /^\s*\|.+\|\s*$/.test(lines[i])) {
+        rows.push(splitRow(lines[i]));
+        i++;
+      }
+      i--;
+      result.push(
+        `<table class="md-table"><thead><tr>${header
+          .map((c) => `<th>${inlineFormat(c)}</th>`)
+          .join("")}</tr></thead><tbody>${rows
+          .map(
+            (r) =>
+              `<tr>${r.map((c) => `<td>${inlineFormat(c)}</td>`).join("")}</tr>`
+          )
+          .join("")}</tbody></table>`
+      );
+      continue;
+    }
 
     // Code blocks
     if (line.trimStart().startsWith("```")) {
@@ -146,6 +181,11 @@ function renderMarkdown(raw: string): string {
   }
 
   return result.join("\n");
+}
+
+function splitRow(line: string): string[] {
+  const trimmed = line.trim().replace(/^\|/, "").replace(/\|$/, "");
+  return trimmed.split("|").map((c) => c.trim());
 }
 
 function inlineFormat(text: string): string {

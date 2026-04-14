@@ -24,6 +24,7 @@ import {
 import { LANGUAGES } from "@/types/settings";
 import type { OllamaModel } from "@/types/ai";
 import { Logo } from "@/components/ui/Logo";
+import { useT } from "@/lib/i18n";
 
 export function SettingsPage() {
   const { theme, setTheme } = useThemeStore();
@@ -45,6 +46,8 @@ export function SettingsPage() {
   const [ollamaOnline, setOllamaOnline] = useState(false);
   const [showLangPicker, setShowLangPicker] = useState(false);
   const [showModelPicker, setShowModelPicker] = useState(false);
+  const [pendingLang, setPendingLang] = useState<string | null>(null);
+  const t = useT();
 
   useEffect(() => {
     checkOllamaStatus().then(setOllamaOnline);
@@ -62,13 +65,13 @@ export function SettingsPage() {
           animate={{ opacity: 1, y: 0 }}
           className="text-[28px] font-bold text-text-primary mb-1 tracking-[-0.02em]"
         >
-          Settings
+          {t("settings.title")}
         </motion.h1>
         <p className="text-[13px] text-text-tertiary mb-8">
-          Make Delay feel like yours.
+          {t("settings.subtitle")}
         </p>
 
-        <Section title="Appearance" icon={<Sun size={18} />}>
+        <Section title={t("settings.appearance")} icon={<Sun size={18} />}>
           <div className="grid grid-cols-3 gap-2.5">
             {(
               [
@@ -97,7 +100,7 @@ export function SettingsPage() {
           </div>
         </Section>
 
-        <Section title="Language" icon={<Languages size={18} />}>
+        <Section title={t("settings.language")} icon={<Languages size={18} />}>
           <button
             onClick={() => setShowLangPicker(!showLangPicker)}
             className="w-full flex items-center justify-between px-4 py-3
@@ -128,6 +131,7 @@ export function SettingsPage() {
                     onClick={() => {
                       setSetting("language", lang.code);
                       setShowLangPicker(false);
+                      if (lang.code !== language) setPendingLang(lang.code);
                     }}
                     className={`w-full flex items-center justify-between px-4 py-2.5
                       rounded-lg text-[13px] transition-colors cursor-pointer
@@ -146,9 +150,25 @@ export function SettingsPage() {
               </motion.div>
             )}
           </AnimatePresence>
+          {pendingLang && (
+            <motion.div
+              initial={{ opacity: 0, y: -4 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mt-3 flex items-center justify-between px-3.5 py-2.5 rounded-xl
+                bg-accent/10 border border-accent/20 text-[12.5px] text-accent"
+            >
+              <span>{t("settings.restart_needed")}</span>
+              <button
+                onClick={() => window.electronAPI?.relaunch?.()}
+                className="px-3 py-1.5 rounded-lg bg-accent text-white text-[12px] font-semibold cursor-pointer"
+              >
+                {t("settings.restart_now")}
+              </button>
+            </motion.div>
+          )}
         </Section>
 
-        <Section title="AI Model" icon={<Bot size={18} />}>
+        <Section title={t("settings.ai_model")} icon={<Bot size={18} />}>
           <div
             className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-[12px] mb-3 w-fit
               ${
@@ -212,7 +232,7 @@ export function SettingsPage() {
           </AnimatePresence>
         </Section>
 
-        <Section title="Updates" icon={<Download size={18} />}>
+        <Section title={t("settings.updates")} icon={<Download size={18} />}>
           <UpdatePanel
             status={status}
             currentVersion={currentVersion}
@@ -225,7 +245,7 @@ export function SettingsPage() {
           />
         </Section>
 
-        <Section title="About" icon={<Info size={18} />}>
+        <Section title={t("settings.about")} icon={<Info size={18} />}>
           <div className="flex items-center gap-4">
             <Logo size={56} />
             <div className="flex-1">

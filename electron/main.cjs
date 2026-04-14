@@ -80,6 +80,11 @@ ipcMain.on("updater-quit-and-install", () => {
   autoUpdater.quitAndInstall();
 });
 
+ipcMain.on("app-relaunch", () => {
+  app.relaunch();
+  app.exit(0);
+});
+
 function sendUpdaterEvent(event, payload) {
   if (mainWindow && !mainWindow.isDestroyed()) {
     mainWindow.webContents.send("updater-event", { event, payload });

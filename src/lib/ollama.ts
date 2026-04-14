@@ -31,7 +31,16 @@ export async function* streamChat(
   const res = await fetch(`${OLLAMA_BASE}/api/chat`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ model, messages, stream: true }),
+    body: JSON.stringify({
+      model,
+      messages,
+      stream: true,
+      options: {
+        temperature: 0.4,
+        top_p: 0.9,
+        num_ctx: 4096,
+      },
+    }),
   });
 
   if (!res.ok) {
