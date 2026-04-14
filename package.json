@@ -69,13 +69,13 @@
       "target": [
         "dmg"
       ],
-      "icon": "public/icon.png"
+      "icon": "public/logo.png"
     },
     "linux": {
       "target": [
         "AppImage"
       ],
-      "icon": "public/icon.png"
+      "icon": "public/logo.png"
     }
   },
   "dependencies": {

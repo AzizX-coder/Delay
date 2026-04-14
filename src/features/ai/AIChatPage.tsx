@@ -2,7 +2,6 @@ import { useEffect, useState, useRef } from "react";
 import { useAIStore } from "@/stores/aiStore";
 import { useSettingsStore } from "@/stores/settingsStore";
 import { listOllamaModels, checkOllamaStatus } from "@/lib/ollama";
-import { MarkdownRenderer } from "@/components/ui/MarkdownRenderer";
 import { useThemeStore } from "@/stores/themeStore";
 import data from "@emoji-mart/data";
 import Picker from "@emoji-mart/react";
@@ -26,6 +25,7 @@ import {
   Brain,
 } from "lucide-react";
 import type { OllamaModel, AIMessage } from "@/types/ai";
+import { AgentMessage } from "./AgentMessage";
 
 // Gemini-style 4-pointed star icon
 function GeminiStar({ size = 14, className = "" }: { size?: number; className?: string }) {
@@ -439,15 +439,14 @@ function ChatMessage({ msg, isStreaming = false }: { msg: Partial<AIMessage>; is
         )}
 
         <div className={`px-5 py-4 rounded-[24px] text-[15px] leading-relaxed shadow-sm
-          ${msg.role === "user" 
-            ? "bg-text-primary text-bg-primary rounded-tr-sm" 
+          ${msg.role === "user"
+            ? "bg-text-primary text-bg-primary rounded-tr-sm"
             : "bg-bg-secondary/60 text-text-primary border border-border/20 rounded-tl-sm backdrop-blur-sm"}`}>
           {msg.role === "assistant" ? (
-            <MarkdownRenderer content={msg.content || ""} />
+            <AgentMessage content={msg.content || ""} streaming={isStreaming} />
           ) : (
             <div className="whitespace-pre-wrap">{msg.content}</div>
           )}
-          {isStreaming && <span className="inline-block w-2 h-4 bg-accent/60 animate-pulse ml-1 rounded-sm" />}
         </div>
       </div>
     </motion.div>
