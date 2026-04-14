@@ -1,6 +1,6 @@
 {
   "name": "delay",
-  "version": "1.3.1",
+  "version": "1.4.0",
   "description": "Notes, tasks, calendar & AI — beautifully organized.",
   "author": "AzizX-coder",
   "license": "Apache-2.0",
@@ -39,7 +39,9 @@
         }
       ],
       "icon": "public/logo.ico",
+      "publisherName": "AzizX-coder",
       "requestedExecutionLevel": "asInvoker",
+      "verifyUpdateCodeSignature": false,
       "artifactName": "Delay-Setup-${version}.${ext}"
     },
     "publish": [

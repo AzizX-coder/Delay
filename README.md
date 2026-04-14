@@ -18,7 +18,7 @@
 
 Delay is a local-first desktop **Agentic OS** that puts your **notes**, **tasks**, **calendar**, and a built-in **Recursive AI agent** behind one fluid, Apple-Notes-inspired interface. Everything lives on your device — no accounts, no cloud, no tracking.
 
-## 🧩 Features (v1.3.1)
+## 🧩 Features (v1.4.0)
 
 | Module | Highlights |
 |--------|-----------|
@@ -30,7 +30,7 @@ Delay is a local-first desktop **Agentic OS** that puts your **notes**, **tasks*
 
 ## 🖥️ Screenshots
 
-> **Liquid UI v1.3.1**: Explore the new Agentic Mode and Unified Calendar in the latest installer!
+> **Liquid UI v1.4.0**: Explore the new Agentic Mode and Unified Calendar in the latest installer!
 
 ## 📥 Download
 
@@ -44,11 +44,16 @@ Delay is built by an independent developer and is **not yet code-signed with a p
 
 **To install safely:**
 
-1. Double-click `Delay-Setup-1.3.1.exe`.
-2. If SmartScreen appears, click **More info → Run anyway**.
-3. Follow the NSIS installer (you can choose the install directory).
+1. Download `Delay-Setup-1.4.0.exe` and the matching `SHA256SUMS.txt` from [Releases](https://github.com/AzizX-coder/Delay/releases/latest).
+2. *(Optional but recommended)* verify the download integrity:
+   ```powershell
+   Get-FileHash .\Delay-Setup-1.4.0.exe -Algorithm SHA256
+   ```
+   The hash must match the one in `SHA256SUMS.txt`.
+3. Double-click the installer. If SmartScreen appears, click **More info → Run anyway**.
+4. Follow the NSIS installer (you can choose the install directory).
 
-> SmartScreen reputation builds up automatically as more users download the signed installer. A code signing certificate is on the roadmap.
+> SmartScreen reputation accumulates automatically as more users install. Code-signing via [SignPath Foundation](https://signpath.org/) (free for OSS) is on the roadmap — PRs welcome.
 
 ## 🛠️ Tech Stack
 

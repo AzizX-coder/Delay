@@ -29,7 +29,7 @@ export const useUpdaterStore = create<UpdaterState>((set, get) => ({
   percent: 0,
   error: null,
   initialized: false,
-  currentVersion: "1.0.1",
+  currentVersion: "1.4.0",
 
   init: async () => {
     if (get().initialized) return;

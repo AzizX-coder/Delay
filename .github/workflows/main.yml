@@ -11,7 +11,7 @@ on:
 jobs:
   build:
     runs-on: windows-latest
-    
+
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -30,9 +30,19 @@ jobs:
           $env:WIN_CSC_LINK = ""
           npm run make-icon
           npm run build
-          npx electron-builder --win --config.win.signAndEditExecutable=false --config.directories.output=release
+          npx electron-builder --win --config.directories.output=release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Generate SHA-256 checksums
+        shell: pwsh
+        run: |
+          cd release
+          Get-ChildItem -Filter *.exe | ForEach-Object {
+            $hash = (Get-FileHash -Algorithm SHA256 $_.FullName).Hash.ToLower()
+            "$hash  $($_.Name)" | Out-File -Append -Encoding ascii SHA256SUMS.txt
+          }
+          Get-Content SHA256SUMS.txt
 
       - name: Upload Artifacts to Release
         uses: softprops/action-gh-release@v2
@@ -41,3 +51,21 @@ jobs:
           files: |
             release/*.exe
             release/latest.yml
+            release/SHA256SUMS.txt
+          body: |
+            ## Delay ${{ github.ref_name }}
+
+            Local-first desktop productivity — Notes, Tasks, Calendar, AI.
+
+            ### 📥 Install
+            Download `Delay-Setup-*.exe` below and run it.
+
+            > **Windows SmartScreen warning?** Delay is not yet code-signed.
+            > On the blue Defender dialog click **More info → Run anyway**.
+            > Verify the download integrity against `SHA256SUMS.txt`:
+            > ```powershell
+            > Get-FileHash .\Delay-Setup-*.exe -Algorithm SHA256
+            > ```
+
+            ### 🔄 Auto-update
+            Installed copies update themselves in the background — no action needed.
