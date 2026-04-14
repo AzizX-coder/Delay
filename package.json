@@ -39,7 +39,9 @@
         }
       ],
       "icon": "public/logo.ico",
-      "publisherName": "AzizX-coder",
+      "signtoolOptions": {
+        "publisherName": "AzizX-coder"
+      },
       "requestedExecutionLevel": "asInvoker",
       "verifyUpdateCodeSignature": false,
       "artifactName": "Delay-Setup-${version}.${ext}"
