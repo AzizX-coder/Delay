@@ -366,8 +366,7 @@ export function AIChatPage() {
         {/* Floating Input area */}
         <div className="absolute bottom-0 inset-x-0 p-6 bg-gradient-to-t from-bg-primary via-bg-primary to-transparent pointer-events-none">
           <div className="max-w-3xl mx-auto pointer-events-auto">
-            <div className={`relative p-1.5 rounded-[24px] bg-bg-secondary/80 backdrop-blur-xl border shadow-2xl transition-all duration-300
-                ${isRecording ? "border-danger ring-4 ring-danger/10" : "border-border/40 focus-within:border-accent/40 focus-within:ring-4 focus-within:ring-accent/5"}`}>
+            <div className="relative p-1.5 rounded-[24px] bg-bg-secondary/80 backdrop-blur-xl border border-border/40 shadow-2xl transition-all duration-300 focus-within:border-accent/40 focus-within:ring-4 focus-within:ring-accent/5">
               <textarea
                 ref={inputRef}
                 value={input}

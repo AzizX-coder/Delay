@@ -14,12 +14,12 @@ import {
   CheckCircle,
   Flag,
   Calendar,
-  MoreVertical,
   Smile,
   Edit2,
 } from "lucide-react";
 import { format } from "date-fns";
-import { PRIORITY_COLORS } from "@/types/task";
+import { PRIORITY_COLORS, PRIORITY_LABELS } from "@/types/task";
+import type { Task } from "@/types/task";
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -52,7 +52,7 @@ export function TasksPage() {
   const [listModalData, setListModalData] = useState<{ id?: string, name: string, icon: string }>({ name: "", icon: "📁" });
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
-  const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
+  const [taskDetailTask, setTaskDetailTask] = useState<Task | null>(null);
 
   useEffect(() => {
     loadTasks();
@@ -82,10 +82,10 @@ export function TasksPage() {
   };
 
   const smartViews = [
-    { id: "inbox", label: "Inbox", icon: <Inbox size={18} /> },
-    { id: "today", label: "Today", icon: <CalendarDays size={18} /> },
-    { id: "upcoming", label: "Upcoming", icon: <CalendarClock size={18} /> },
-    { id: "completed", label: "Completed", icon: <CheckCircle2 size={18} /> },
+    { id: "inbox", label: t("tasks.inbox"), icon: <Inbox size={18} /> },
+    { id: "today", label: t("tasks.today"), icon: <CalendarDays size={18} /> },
+    { id: "upcoming", label: t("tasks.upcoming"), icon: <CalendarClock size={18} /> },
+    { id: "completed", label: t("tasks.completed"), icon: <CheckCircle2 size={18} /> },
   ];
 
   return (
@@ -93,7 +93,7 @@ export function TasksPage() {
       {/* Sidebar */}
       <div className="w-64 h-full flex flex-col border-r border-border/40 bg-bg-secondary/30 backdrop-blur-md p-4">
         <h2 className="text-[17px] font-bold text-text-primary tracking-tight px-2 mb-6">
-          Tasks
+          {t("tasks.title")}
         </h2>
 
         {/* Smart views */}
@@ -127,7 +127,7 @@ export function TasksPage() {
         {/* Lists Section */}
         <div className="flex items-center justify-between px-2 mb-3">
           <span className="text-[11px] font-bold text-text-tertiary uppercase tracking-widest">
-            Your Lists
+            {t("tasks.your_lists")}
           </span>
           <button
             onClick={() => {
@@ -201,10 +201,10 @@ export function TasksPage() {
           </div>
           <div className="flex items-center gap-2 text-[14px] text-text-tertiary font-medium">
             <span className="px-2 py-0.5 rounded-md bg-accent/5 text-accent border border-accent/10">
-              {filteredTasks.filter((t) => !t.completed).length} open
+              {filteredTasks.filter((x) => !x.completed).length} {t("tasks.open")}
             </span>
             <span>·</span>
-            <span>{filteredTasks.length} total tasks</span>
+            <span>{filteredTasks.length} {t("tasks.total")}</span>
           </div>
         </motion.div>
 
@@ -216,7 +216,7 @@ export function TasksPage() {
             </div>
             <input
               type="text"
-              placeholder="What needs to be done?"
+              placeholder={t("tasks.placeholder")}
               value={newTaskTitle}
               onChange={(e) => setNewTaskTitle(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleCreateTask()}
@@ -237,8 +237,8 @@ export function TasksPage() {
               <EmptyState
                 size="lg"
                 icon={<div className="p-4 rounded-[28px] bg-accent/10 text-accent mb-4"><CheckCircle2 size={32} /></div>}
-                title={activeView === "completed" ? "Archive is clean" : t("notes.peak")}
-                description={activeView === "completed" ? "Finished tasks live here. Go get some done!" : t("notes.peak_sub")}
+                title={activeView === "completed" ? t("tasks.archive_clean") : t("notes.peak")}
+                description={activeView === "completed" ? t("tasks.archive_sub") : t("notes.peak_sub")}
               />
             ) : (
               filteredTasks.map((task) => (
@@ -313,20 +313,142 @@ export function TasksPage() {
                   </div>
 
                   {/* Actions */}
-                  <button
-                    onClick={() => deleteTask(task.id)}
-                    className="opacity-0 group-hover:opacity-100 flex items-center justify-center w-8 h-8
-                      rounded-xl text-text-tertiary hover:text-danger hover:bg-danger/10
-                      transition-all cursor-pointer"
-                  >
-                    <Trash2 size={16} />
-                  </button>
+                  <div className="opacity-0 group-hover:opacity-100 flex items-center gap-0.5 transition-all">
+                    <button
+                      onClick={() => setTaskDetailTask(task)}
+                      className="flex items-center justify-center w-8 h-8
+                        rounded-xl text-text-tertiary hover:text-accent hover:bg-accent/10
+                        transition-colors cursor-pointer"
+                      title="Edit"
+                    >
+                      <Edit2 size={15} />
+                    </button>
+                    <button
+                      onClick={() => deleteTask(task.id)}
+                      className="flex items-center justify-center w-8 h-8
+                        rounded-xl text-text-tertiary hover:text-danger hover:bg-danger/10
+                        transition-colors cursor-pointer"
+                      title="Delete"
+                    >
+                      <Trash2 size={15} />
+                    </button>
+                  </div>
                 </motion.div>
               ))
             )}
           </AnimatePresence>
         </div>
       </div>
+
+      {/* Task Edit Modal */}
+      <Modal
+        open={!!taskDetailTask}
+        onClose={() => setTaskDetailTask(null)}
+        title={t("tasks.edit_task")}
+        size="sm"
+      >
+        {taskDetailTask && (
+          <div className="space-y-5">
+            <Input
+              label={t("tasks.task_title")}
+              value={taskDetailTask.title}
+              onChange={(e) =>
+                setTaskDetailTask({ ...taskDetailTask, title: e.target.value })
+              }
+              autoFocus
+            />
+
+            <div>
+              <label className="block text-[12px] font-bold text-text-tertiary uppercase tracking-widest mb-2">
+                {t("tasks.description")}
+              </label>
+              <textarea
+                value={taskDetailTask.description || ""}
+                onChange={(e) =>
+                  setTaskDetailTask({ ...taskDetailTask, description: e.target.value })
+                }
+                placeholder={t("tasks.description_ph")}
+                rows={3}
+                className="w-full px-3 py-2.5 bg-bg-secondary border border-border/40
+                  rounded-xl text-[13px] text-text-primary placeholder:text-text-tertiary
+                  outline-none focus:border-accent/40 focus:ring-4 focus:ring-accent/5
+                  transition-all resize-none"
+                spellCheck={false}
+              />
+            </div>
+
+            <div>
+              <label className="block text-[12px] font-bold text-text-tertiary uppercase tracking-widest mb-2">
+                {t("tasks.priority")}
+              </label>
+              <div className="grid grid-cols-4 gap-2">
+                {[0, 1, 2, 3].map((p) => (
+                  <button
+                    key={p}
+                    onClick={() =>
+                      setTaskDetailTask({ ...taskDetailTask, priority: p })
+                    }
+                    className={`flex items-center justify-center gap-1.5 py-2 rounded-xl
+                      text-[12px] font-semibold transition-all cursor-pointer border
+                      ${taskDetailTask.priority === p
+                        ? "bg-accent/10 border-accent/40 text-accent"
+                        : "bg-bg-secondary border-border/30 text-text-secondary hover:border-border"
+                      }`}
+                  >
+                    <Flag size={12} style={{ color: PRIORITY_COLORS[p] }} fill="currentColor" />
+                    {PRIORITY_LABELS[p]}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-[12px] font-bold text-text-tertiary uppercase tracking-widest mb-2">
+                {t("tasks.due_date")}
+              </label>
+              <input
+                type="date"
+                value={
+                  taskDetailTask.due_date
+                    ? new Date(taskDetailTask.due_date * 1000).toISOString().slice(0, 10)
+                    : ""
+                }
+                onChange={(e) =>
+                  setTaskDetailTask({
+                    ...taskDetailTask,
+                    due_date: e.target.value
+                      ? Math.floor(new Date(e.target.value).getTime() / 1000)
+                      : null,
+                  })
+                }
+                className="w-full px-3 py-2.5 bg-bg-secondary border border-border/40
+                  rounded-xl text-[13px] text-text-primary
+                  outline-none focus:border-accent/40 focus:ring-4 focus:ring-accent/5
+                  transition-all"
+              />
+            </div>
+
+            <div className="flex justify-end gap-3 pt-2">
+              <Button variant="ghost" onClick={() => setTaskDetailTask(null)}>
+                {t("common.cancel")}
+              </Button>
+              <Button
+                onClick={async () => {
+                  await updateTask(taskDetailTask.id, {
+                    title: taskDetailTask.title,
+                    description: taskDetailTask.description,
+                    priority: taskDetailTask.priority,
+                    due_date: taskDetailTask.due_date,
+                  });
+                  setTaskDetailTask(null);
+                }}
+              >
+                {t("common.apply")}
+              </Button>
+            </div>
+          </div>
+        )}
+      </Modal>
 
       {/* List Modal (Create/Edit) */}
       <Modal

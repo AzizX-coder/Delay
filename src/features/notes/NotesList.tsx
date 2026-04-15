@@ -7,11 +7,13 @@ import {
   Trash2,
   Palette,
   StickyNote,
+  ChevronDown,
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
-import { useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { NOTE_COLORS } from "@/types/note";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { NOTE_TEMPLATES } from "@/lib/noteTemplates";
 
 export function NotesList() {
   const {
@@ -26,6 +28,36 @@ export function NotesList() {
   } = useNotesStore();
 
   const [colorPickerNoteId, setColorPickerNoteId] = useState<string | null>(null);
+  const [showTemplates, setShowTemplates] = useState(false);
+  const templatesRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!showTemplates) return;
+    const onClick = (e: MouseEvent) => {
+      if (
+        templatesRef.current &&
+        !templatesRef.current.contains(e.target as Node)
+      ) {
+        setShowTemplates(false);
+      }
+    };
+    document.addEventListener("mousedown", onClick);
+    return () => document.removeEventListener("mousedown", onClick);
+  }, [showTemplates]);
+
+  const createFromTemplate = async (templateId: string) => {
+    const tpl = NOTE_TEMPLATES.find((t) => t.id === templateId);
+    if (!tpl) return;
+    const { title, content } = tpl.build();
+    const id = await createNote();
+    const text = extractText(content);
+    await updateNote(id, {
+      title,
+      content: JSON.stringify(content),
+      content_text: text,
+    });
+    setShowTemplates(false);
+  };
 
   return (
     <div className="w-72 h-full flex flex-col border-r border-border-light bg-bg-secondary/40 backdrop-blur-xl">
@@ -35,17 +67,67 @@ export function NotesList() {
           <h2 className="text-[17px] font-semibold text-text-primary tracking-[-0.01em]">
             Notes
           </h2>
-          <motion.button
-            whileHover={{ scale: 1.06 }}
-            whileTap={{ scale: 0.92 }}
-            onClick={createNote}
-            className="w-7 h-7 flex items-center justify-center rounded-lg
-              bg-accent text-text-inverse cursor-pointer
-              hover:bg-accent-hover transition-colors
-              shadow-[0_2px_8px_rgba(0,122,255,0.25)]"
-          >
-            <Plus size={16} />
-          </motion.button>
+          <div ref={templatesRef} className="relative flex items-center">
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.94 }}
+              onClick={createNote}
+              className="h-7 pl-2 pr-1.5 flex items-center gap-1 rounded-l-lg
+                bg-accent text-text-inverse cursor-pointer
+                hover:bg-accent-hover transition-colors
+                shadow-[0_2px_8px_rgba(0,122,255,0.25)]"
+              title="New blank note"
+            >
+              <Plus size={15} />
+            </motion.button>
+            <button
+              onClick={() => setShowTemplates((v) => !v)}
+              className="h-7 w-6 flex items-center justify-center rounded-r-lg
+                bg-accent text-text-inverse cursor-pointer border-l border-white/25
+                hover:bg-accent-hover transition-colors
+                shadow-[0_2px_8px_rgba(0,122,255,0.25)]"
+              title="Templates"
+            >
+              <ChevronDown size={14} />
+            </button>
+            <AnimatePresence>
+              {showTemplates && (
+                <motion.div
+                  initial={{ opacity: 0, y: -4, scale: 0.96 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -4, scale: 0.96 }}
+                  transition={{ duration: 0.15 }}
+                  className="absolute top-full right-0 mt-2 w-64 z-50
+                    rounded-2xl bg-bg-elevated border border-border-light
+                    shadow-2xl p-1.5 backdrop-blur-xl"
+                >
+                  <div className="px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-widest text-text-tertiary">
+                    Templates
+                  </div>
+                  {NOTE_TEMPLATES.map((tpl) => (
+                    <button
+                      key={tpl.id}
+                      onClick={() => createFromTemplate(tpl.id)}
+                      className="w-full flex items-start gap-3 px-2.5 py-2 rounded-xl
+                        text-left cursor-pointer hover:bg-bg-hover transition-colors"
+                    >
+                      <span className="text-[18px] leading-none mt-0.5">
+                        {tpl.icon}
+                      </span>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[13px] font-medium text-text-primary">
+                          {tpl.name}
+                        </p>
+                        <p className="text-[11px] text-text-tertiary truncate">
+                          {tpl.description}
+                        </p>
+                      </div>
+                    </button>
+                  ))}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
         </div>
 
         {/* Search */}
@@ -208,5 +290,12 @@ export function NotesList() {
       </div>
     </div>
   );
+}
+
+function extractText(node: any): string {
+  if (!node) return "";
+  if (node.text) return node.text;
+  if (!Array.isArray(node.content)) return "";
+  return node.content.map(extractText).join(" ").trim();
 }
 

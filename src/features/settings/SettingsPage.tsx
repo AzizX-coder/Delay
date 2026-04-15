@@ -20,7 +20,10 @@ import {
   RefreshCw,
   CheckCircle2,
   AlertCircle,
+  Trash2,
+  AlertTriangle,
 } from "lucide-react";
+import { db } from "@/lib/database";
 import { LANGUAGES } from "@/types/settings";
 import type { OllamaModel } from "@/types/ai";
 import { Logo } from "@/components/ui/Logo";
@@ -47,7 +50,30 @@ export function SettingsPage() {
   const [showLangPicker, setShowLangPicker] = useState(false);
   const [showModelPicker, setShowModelPicker] = useState(false);
   const [pendingLang, setPendingLang] = useState<string | null>(null);
+  const [showWipeConfirm, setShowWipeConfirm] = useState(false);
+  const [wiping, setWiping] = useState(false);
   const t = useT();
+
+  const wipeAllData = async () => {
+    setWiping(true);
+    try {
+      await Promise.all([
+        db.notes.clear(),
+        db.tasks.clear(),
+        db.taskLists.clear(),
+        db.events.clear(),
+        db.aiConversations.clear(),
+        db.aiMessages.clear(),
+        db.memories.clear(),
+        db.settings.clear(),
+      ]);
+      localStorage.clear();
+    } catch (e) {
+      console.error(e);
+    }
+    window.electronAPI?.relaunch?.();
+    window.location.reload();
+  };
 
   useEffect(() => {
     checkOllamaStatus().then(setOllamaOnline);
@@ -243,6 +269,68 @@ export function SettingsPage() {
             onDownload={downloadUpdate}
             onInstall={quitAndInstall}
           />
+        </Section>
+
+        <Section title={t("settings.danger_zone")} icon={<AlertTriangle size={18} />}>
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex-1">
+              <p className="text-[14px] font-medium text-text-primary">
+                {t("settings.wipe_title")}
+              </p>
+              <p className="text-[12px] text-text-tertiary mt-0.5">
+                {t("settings.wipe_sub")}
+              </p>
+            </div>
+            <motion.button
+              whileTap={{ scale: 0.96 }}
+              onClick={() => setShowWipeConfirm(true)}
+              className="flex items-center gap-1.5 px-4 py-2 rounded-lg
+                bg-danger/10 hover:bg-danger/15 border border-danger/30
+                text-[13px] font-medium text-danger transition-colors cursor-pointer shrink-0"
+            >
+              <Trash2 size={14} />
+              {t("settings.wipe_button")}
+            </motion.button>
+          </div>
+
+          <AnimatePresence>
+            {showWipeConfirm && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                className="overflow-hidden"
+              >
+                <div className="mt-4 p-4 rounded-xl bg-danger/10 border border-danger/30">
+                  <div className="flex items-start gap-2 mb-3">
+                    <AlertTriangle size={16} className="text-danger mt-0.5 shrink-0" />
+                    <p className="text-[13px] text-danger">
+                      {t("settings.wipe_confirm")}
+                    </p>
+                  </div>
+                  <div className="flex justify-end gap-2">
+                    <button
+                      onClick={() => setShowWipeConfirm(false)}
+                      disabled={wiping}
+                      className="px-3 py-1.5 rounded-lg bg-bg-secondary
+                        text-[12px] font-medium text-text-primary cursor-pointer
+                        hover:bg-bg-hover transition-colors"
+                    >
+                      {t("common.cancel")}
+                    </button>
+                    <button
+                      onClick={wipeAllData}
+                      disabled={wiping}
+                      className="px-3 py-1.5 rounded-lg bg-danger text-white
+                        text-[12px] font-semibold cursor-pointer hover:opacity-90 transition-opacity"
+                    >
+                      {wiping ? t("settings.wipe_running") : t("settings.wipe_confirm_button")}
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </Section>
 
         <Section title={t("settings.about")} icon={<Info size={18} />}>

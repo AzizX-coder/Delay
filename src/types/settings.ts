@@ -25,4 +25,5 @@ export const LANGUAGES = [
   { code: "ar", name: "Arabic", native: "العربية" },
   { code: "ru", name: "Russian", native: "Русский" },
   { code: "pt", name: "Portuguese", native: "Portugues" },
+  { code: "uz", name: "Uzbek", native: "O'zbekcha" },
 ];

@@ -18,23 +18,24 @@
 
 Delay is a local-first desktop **Agentic OS** that puts your **notes**, **tasks**, **calendar**, and a built-in **Recursive AI agent** behind one fluid, Apple-Notes-inspired interface. Everything lives on your device — no accounts, no cloud, no tracking.
 
-## 🧩 Features (v1.4.0)
+## 🧩 Features (v1.4.2)
 
 | Module | Highlights |
 |--------|-----------|
-| **Agentic AI** | Recursive reasoning loop (Glubs) · Semantic long-term memory · Task & Note orchestration |
-| **Notes** | Rich TipTap editor · AI-driven voice dictation · modular icons panel · zero spell-check underlines |
-| **Tasks** | Priorities & due dates · Unified Calendar integration · Inbox / Today / Upcoming views |
-| **Calendar** | Orchestrated view (Events + Tasks) · Month/Week/Day view · Drag-and-drop orchestration |
-| **Identity** | Premium Glassmorphic UI · Dark/Light/System themes · Global Onboarding |
+| **Autonomous AI** | 15-tool agent with ambient context · multi-step reasoning loop · long-term memory · web search · task/note/calendar orchestration |
+| **Notes** | TipTap editor with **working tables**, task lists & rich formatting · **6 built-in templates** (Daily Journal, Meeting, Project, Brainstorm, Recipe, Blank) · emoji panel · voice dictation with auto-stop |
+| **Tasks** | Full **task editing** modal (title · description · priority · due date) · Inbox / Today / Upcoming / Completed views · custom lists with emoji icons |
+| **Calendar** | Month/Week/Day · events + tasks in one view · drag orchestration |
+| **I18N** | 7 languages — English, Spanish, French, German, Russian, Arabic (RTL), **Uzbek** |
+| **Identity** | Glassmorphic UI · Dark/Light/System themes · Danger-Zone data reset |
 
 ## 🖥️ Screenshots
 
-> **Liquid UI v1.4.0**: Explore the new Agentic Mode and Unified Calendar in the latest installer!
+> **Liquid UI v1.4.2**: Explore the new Agentic Mode and Unified Calendar in the latest installer!
 
 ## 📥 Download
 
-Grab the latest **Delay-Setup-1.3.1.exe** from the [Releases](https://github.com/AzizX-coder/Delay/releases/latest) page, or visit the [landing page](https://azizx-coder.github.io/Delay/).
+Grab the latest **Delay-Setup-1.4.2.exe** from the [Releases](https://github.com/AzizX-coder/Delay/releases/latest) page, or visit the [landing page](https://azizx-coder.github.io/Delay/).
 
 **Requirements:** Windows 10 or 11 (x64). Optional: [Ollama](https://ollama.com/) for AI features.
 
@@ -44,10 +45,10 @@ Delay is built by an independent developer and is **not yet code-signed with a p
 
 **To install safely:**
 
-1. Download `Delay-Setup-1.4.0.exe` and the matching `SHA256SUMS.txt` from [Releases](https://github.com/AzizX-coder/Delay/releases/latest).
+1. Download `Delay-Setup-1.4.2.exe` and the matching `SHA256SUMS.txt` from [Releases](https://github.com/AzizX-coder/Delay/releases/latest).
 2. *(Optional but recommended)* verify the download integrity:
    ```powershell
-   Get-FileHash .\Delay-Setup-1.4.0.exe -Algorithm SHA256
+   Get-FileHash .\Delay-Setup-1.4.2.exe -Algorithm SHA256
    ```
    The hash must match the one in `SHA256SUMS.txt`.
 3. Double-click the installer. If SmartScreen appears, click **More info → Run anyway**.
