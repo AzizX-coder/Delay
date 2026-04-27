@@ -33,6 +33,24 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
           (settings as Record<string, string>)[row.key] = row.value;
         }
       }
+
+      // Migration: Ensure new default modules are captured
+      if (settings.enabled_modules) {
+        const { DEFAULT_MODULES } = await import("@/types/settings");
+        let migrated = false;
+        const nextModules = [...settings.enabled_modules];
+        for (const modId of DEFAULT_MODULES) {
+          if (!nextModules.includes(modId)) {
+            nextModules.push(modId);
+            migrated = true;
+          }
+        }
+        if (migrated) {
+          settings.enabled_modules = nextModules;
+          db.settings.put({ key: "enabled_modules", value: JSON.stringify(nextModules) }).catch(() => {});
+        }
+      }
+
       set({ ...DEFAULT_SETTINGS, ...settings, loading: false });
     } catch {
       set({ loading: false });
