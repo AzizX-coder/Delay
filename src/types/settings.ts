@@ -22,11 +22,12 @@ export const ALL_MODULES = [
   { id: "voice-studio",label: "Voice",         icon: "Mic",            group: "media",     desc: "Smart voice recording" },
   { id: "photo-editor",label: "Photo",         icon: "Image",          group: "media",     desc: "Image editing tools" },
   { id: "video-editor",label: "Video",         icon: "Film",           group: "media",     desc: "Video editing studio" },
+  { id: "studio",      label: "Studio",        icon: "Sparkles",       group: "create",    desc: "Unified Creative Suite" },
   { id: "ai",          label: "AI Agent",      icon: "Sparkles",       group: "system",    desc: "Autonomous assistant" },
 ] as const;
 
 export const DEFAULT_MODULES = [
-  "notes", "tasks", "calendar", "timer", "ai", "code-studio", "disk-flows"
+  "notes", "tasks", "calendar", "timer", "ai", "code-studio", "disk-flows", "studio"
 ];
 
 export const DEFAULT_SETTINGS: AppSettings = {

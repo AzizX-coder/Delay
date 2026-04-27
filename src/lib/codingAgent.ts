@@ -34,6 +34,8 @@ Because you possess FS access, you DO NOT output code blocks unless explaining. 
 | fsList | path? | Read contents of a directory (defaults to workspace root) |
 | fsRead | path | Read text content of a file |
 | fsWrite | path, content | Write (or overwrite) a file to disk |
+| fsMkdir | path | Create a new directory |
+| fsDelete | path | Delete a file or a folder recursively |
 | fsRun | cmd, args[] | Run a terminal command (e.g. { "cmd": "npm", "args": ["install"] }) |
 | finish | — | You are done fulfilling the user request |
 
@@ -129,6 +131,16 @@ Respond with EXACTLY ONE tool call in a fenced JSON block per turn:
         } else {
           result = `Error: ${res.error}`;
         }
+      }
+      else if (tc.name === "fsMkdir") {
+        const p = getAbsolutePath(tc.arguments.path, workspacePath);
+        const res = await electron.fsMkdir(p);
+        result = res.ok ? "Directory created." : `Error: ${res.error}`;
+      }
+      else if (tc.name === "fsDelete") {
+        const p = getAbsolutePath(tc.arguments.path, workspacePath);
+        const res = await electron.fsDelete(p);
+        result = res.ok ? "Target deleted." : `Error: ${res.error}`;
       }
       else if (tc.name === "fsRun") {
         const { cmd, args } = tc.arguments;

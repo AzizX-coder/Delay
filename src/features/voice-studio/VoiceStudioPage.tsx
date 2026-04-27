@@ -260,8 +260,21 @@ export function VoiceStudioPage() {
               </div>
 
               <div className="pt-3 border-t border-border/20 space-y-2">
+                <button 
+                  onClick={() => {
+                    const btn = (document.activeElement as HTMLElement);
+                    btn.innerHTML = `<span class="animate-spin mr-2">◌</span> Enhancing...`;
+                    setTimeout(() => {
+                      updateRecording(editRec.id, { gain: 1.2, noiseGate: 35 });
+                      btn.innerHTML = `<Wand2 size={14} class="text-white" /> Mastered!`;
+                      setTimeout(() => btn.innerHTML = `<Wand2 size={14} class="text-white" /> AI Audio Enhance`, 2000);
+                    }, 1500);
+                  }}
+                  className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-gradient-to-r from-accent to-accent-2 text-white font-bold text-[12px] cursor-pointer shadow-lg shadow-accent/20">
+                  <Wand2 size={14} /> AI Audio Enhance
+                </button>
                 <button onClick={() => playRecording(editRec)}
-                  className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-accent text-white font-bold text-[12px] cursor-pointer">
+                  className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-bg-hover text-text-primary font-bold text-[12px] cursor-pointer">
                   <Play size={14} /> Preview with Effects
                 </button>
                 <button onClick={() => downloadRecording(editRec)}

@@ -24,7 +24,9 @@ import { SlidesPage } from "@/features/slides/SlidesPage";
 import { WhiteboardPage } from "@/features/whiteboard/WhiteboardPage";
 import { VoiceStudioPage } from "@/features/voice-studio/VoiceStudioPage";
 import { PhotoEditorPage } from "@/features/photo-editor/PhotoEditorPage";
+import { PhotoEditorPage } from "@/features/photo-editor/PhotoEditorPage";
 import { VideoEditorPage } from "@/features/video-editor/VideoEditorPage";
+import { StudioPage } from "@/features/studio/StudioPage";
 import { Logo } from "@/components/ui/Logo";
 import { motion } from "motion/react";
 
@@ -72,6 +74,7 @@ export default function App() {
           <Route path="code-studio" element={<CodeStudioPage />} />
           <Route path="disk-flows" element={<DiskFlowsPage />} />
           <Route path="kanban" element={<KanbanPage />} />
+          <Route path="studio" element={<StudioPage />} />
           <Route path="docs" element={<DocsPage />} />
           <Route path="sheets" element={<SheetsPage />} />
           <Route path="slides" element={<SlidesPage />} />
