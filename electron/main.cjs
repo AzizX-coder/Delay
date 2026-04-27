@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, shell } = require("electron");
+const { app, BrowserWindow, ipcMain, shell, dialog } = require("electron");
 const path = require("path");
 const { autoUpdater } = require("electron-updater");
 const { spawn } = require("child_process");
@@ -273,6 +273,31 @@ ipcMain.handle("fs-write", async (_event, filePath, content) => {
   }
 });
 
+ipcMain.handle("fs-mkdir", async (_event, dirPath) => {
+  const fs = require("fs").promises;
+  try {
+    await fs.mkdir(dirPath, { recursive: true });
+    return { ok: true };
+  } catch (err) {
+    return { error: String(err) };
+  }
+});
+
+ipcMain.handle("fs-delete", async (_event, targetPath) => {
+  const fs = require("fs").promises;
+  try {
+    const stat = await fs.stat(targetPath);
+    if (stat.isDirectory()) {
+      await fs.rm(targetPath, { recursive: true, force: true });
+    } else {
+      await fs.unlink(targetPath);
+    }
+    return { ok: true };
+  } catch (err) {
+    return { error: String(err) };
+  }
+});
+
 ipcMain.handle("fs-run", async (_event, cmd, cmdArgs, cwd) => {
   return new Promise((resolve) => {
     const runId = Math.random().toString(36).substring(7);
@@ -310,9 +335,9 @@ ipcMain.handle("fs-run", async (_event, cmd, cmdArgs, cwd) => {
 });
 
 
-function sendDiskFlowEvent(event, payload) {
+function sendDiskFlowEvent(type, data) {
   if (mainWindow && !mainWindow.isDestroyed()) {
-    mainWindow.webContents.send("disk-flow-event", { event, payload });
+    mainWindow.webContents.send("disk-flow-event", { type, ...data });
   }
 }
 

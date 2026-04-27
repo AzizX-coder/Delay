@@ -36,6 +36,8 @@ contextBridge.exposeInMainWorld("electronAPI", {
     fsList: (dirPath) => ipcRenderer.invoke("fs-list", dirPath),
     fsRead: (filePath) => ipcRenderer.invoke("fs-read", filePath),
     fsWrite: (filePath, content) => ipcRenderer.invoke("fs-write", filePath, content),
+    fsMkdir: (dirPath) => ipcRenderer.invoke("fs-mkdir", dirPath),
+    fsDelete: (targetPath) => ipcRenderer.invoke("fs-delete", targetPath),
     fsRun: (cmd, args, cwd) => ipcRenderer.invoke("fs-run", cmd, args, cwd),
     onFsRunData: (runId, cb) => {
       const listener = (_e, data) => cb(data);

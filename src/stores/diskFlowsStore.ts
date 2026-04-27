@@ -5,6 +5,7 @@ import type { DiskFlowDownload } from "@/lib/database";
 interface DiskFlowsState {
   downloads: DiskFlowDownload[];
   loading: boolean;
+  _listenerAttached: boolean;
 
   loadDownloads: () => Promise<void>;
   addDownload: (url: string) => Promise<string>;
@@ -32,6 +33,7 @@ function extractTitle(url: string): string {
 export const useDiskFlowsStore = create<DiskFlowsState>((set, get) => ({
   downloads: [],
   loading: true,
+  _listenerAttached: false,
 
   loadDownloads: async () => {
     try {
@@ -39,6 +41,32 @@ export const useDiskFlowsStore = create<DiskFlowsState>((set, get) => ({
       set({ downloads, loading: false });
     } catch {
       set({ loading: false });
+    }
+
+    // Attach the global event listener ONCE
+    if (!get()._listenerAttached) {
+      const electronAPI = (window as any).electronAPI;
+      if (electronAPI?.diskFlows?.onEvent) {
+        electronAPI.diskFlows.onEvent((data: any) => {
+          if (!data || !data.id) return;
+          if (data.type === "progress") {
+            get().updateDownload(data.id, { progress: data.progress });
+          } else if (data.type === "completed") {
+            get().updateDownload(data.id, {
+              status: "completed",
+              progress: 100,
+              title: data.title || "Downloaded",
+              file_path: data.file_path || null,
+            });
+          } else if (data.type === "error") {
+            get().updateDownload(data.id, {
+              status: "error",
+              error: data.error || "Unknown error",
+            });
+          }
+        });
+        set({ _listenerAttached: true });
+      }
     }
   },
 
@@ -90,7 +118,6 @@ export const useDiskFlowsStore = create<DiskFlowsState>((set, get) => ({
     const download = get().downloads.find((d) => d.id === id);
     if (!download) return;
 
-    // Check if Electron API is available for yt-dlp
     const electronAPI = (window as any).electronAPI;
     if (electronAPI?.diskFlows?.download) {
       get().updateDownload(id, { status: "downloading", progress: 0 });

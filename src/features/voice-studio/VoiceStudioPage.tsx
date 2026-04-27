@@ -1,8 +1,15 @@
 import { useState, useRef, useEffect } from "react";
-import { motion } from "motion/react";
-import { Mic, Square, Play, Pause, Trash2, Download, Clock } from "lucide-react";
+import { motion, AnimatePresence } from "motion/react";
+import {
+  Mic, Square, Play, Pause, Trash2, Download, Clock, Volume2,
+  Settings2, Wand2, FastForward, Rewind, SlidersHorizontal,
+} from "lucide-react";
 
-interface Recording { id: string; name: string; blob: Blob; url: string; duration: number; date: number; }
+interface Recording {
+  id: string; name: string; blob: Blob; url: string; duration: number; date: number;
+  gain: number; speed: number; noiseGate: number;
+}
+
 const uid = () => crypto.randomUUID();
 
 export function VoiceStudioPage() {
@@ -10,17 +17,21 @@ export function VoiceStudioPage() {
   const [isRecording, setIsRecording] = useState(false);
   const [elapsed, setElapsed] = useState(0);
   const [playingId, setPlayingId] = useState<string | null>(null);
-  const [waveform, setWaveform] = useState<number[]>(Array(40).fill(5));
+  const [waveform, setWaveform] = useState<number[]>(Array(50).fill(5));
+  const [editingId, setEditingId] = useState<string | null>(null);
   const mediaRecorder = useRef<MediaRecorder | null>(null);
   const chunks = useRef<Blob[]>([]);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const animFrame = useRef<number | null>(null);
+  const audioCtxRef = useRef<AudioContext | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const sourceNodeRef = useRef<MediaElementAudioSourceNode | null>(null);
+  const gainNodeRef = useRef<GainNode | null>(null);
 
   const startRecording = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } });
       const recorder = new MediaRecorder(stream);
       chunks.current = [];
       recorder.ondataavailable = e => chunks.current.push(e.data);
@@ -28,17 +39,16 @@ export function VoiceStudioPage() {
         const blob = new Blob(chunks.current, { type: "audio/webm" });
         const url = URL.createObjectURL(blob);
         setRecordings(prev => [
-          { id: uid(), name: `Recording ${prev.length + 1}`, blob, url, duration: elapsed, date: Date.now() },
+          { id: uid(), name: `Recording ${prev.length + 1}`, blob, url, duration: elapsed, date: Date.now(), gain: 1, speed: 1, noiseGate: 0 },
           ...prev
         ]);
         stream.getTracks().forEach(t => t.stop());
       };
 
-      // Waveform visualization
       const audioCtx = new AudioContext();
       const source = audioCtx.createMediaStreamSource(stream);
       const analyser = audioCtx.createAnalyser();
-      analyser.fftSize = 128;
+      analyser.fftSize = 256;
       source.connect(analyser);
       analyserRef.current = analyser;
 
@@ -46,9 +56,9 @@ export function VoiceStudioPage() {
         if (!analyserRef.current) return;
         const data = new Uint8Array(analyserRef.current.frequencyBinCount);
         analyserRef.current.getByteFrequencyData(data);
-        const bars = Array.from({ length: 40 }, (_, i) => {
-          const idx = Math.floor(i * data.length / 40);
-          return Math.max(4, (data[idx] / 255) * 60);
+        const bars = Array.from({ length: 50 }, (_, i) => {
+          const idx = Math.floor(i * data.length / 50);
+          return Math.max(3, (data[idx] / 255) * 80);
         });
         setWaveform(bars);
         animFrame.current = requestAnimationFrame(updateWaveform);
@@ -68,16 +78,34 @@ export function VoiceStudioPage() {
     setIsRecording(false);
     if (timerRef.current) clearInterval(timerRef.current);
     if (animFrame.current) cancelAnimationFrame(animFrame.current);
-    setWaveform(Array(40).fill(5));
+    setWaveform(Array(50).fill(5));
   };
 
   const playRecording = (rec: Recording) => {
-    if (audioRef.current) { audioRef.current.pause(); }
+    if (audioRef.current) { audioRef.current.pause(); sourceNodeRef.current = null; }
+
+    const audioCtx = new AudioContext();
     const audio = new Audio(rec.url);
+    audio.playbackRate = rec.speed;
+
+    const source = audioCtx.createMediaElementSource(audio);
+    const gainNode = audioCtx.createGain();
+    gainNode.gain.value = rec.gain;
+    source.connect(gainNode).connect(audioCtx.destination);
+
     audio.play();
-    audio.onended = () => setPlayingId(null);
+    audio.onended = () => { setPlayingId(null); audioCtx.close(); };
     audioRef.current = audio;
+    audioCtxRef.current = audioCtx;
+    sourceNodeRef.current = source;
+    gainNodeRef.current = gainNode;
     setPlayingId(rec.id);
+  };
+
+  const stopPlayback = () => {
+    audioRef.current?.pause();
+    audioCtxRef.current?.close();
+    setPlayingId(null);
   };
 
   const downloadRecording = (rec: Recording) => {
@@ -85,28 +113,44 @@ export function VoiceStudioPage() {
     a.href = rec.url; a.download = `${rec.name}.webm`; a.click();
   };
 
-  const formatTime = (s: number) => `${Math.floor(s/60).toString().padStart(2,"0")}:${(s%60).toString().padStart(2,"0")}`;
+  const updateRecording = (id: string, updates: Partial<Recording>) => {
+    setRecordings(prev => prev.map(r => r.id === id ? { ...r, ...updates } : r));
+  };
+
+  const formatTime = (s: number) => `${Math.floor(s / 60).toString().padStart(2, "0")}:${(s % 60).toString().padStart(2, "0")}`;
+
+  const editRec = recordings.find(r => r.id === editingId);
 
   return (
-    <div className="flex flex-col h-full bg-bg-primary">
-      {/* Recording area */}
-      <div className="flex-1 flex flex-col items-center justify-center gap-8 p-8">
-        {/* Waveform */}
-        <div className="flex items-end gap-[3px] h-[80px]">
-          {waveform.map((h, i) => (
-            <motion.div key={i} animate={{ height: h }}
-              className={`w-[4px] rounded-full ${isRecording ? "bg-accent" : "bg-border/30"}`}
-              transition={{ duration: 0.1 }} />
-          ))}
-        </div>
+    <div className="flex h-full bg-bg-primary">
+      {/* Main recording area */}
+      <div className="flex-1 flex flex-col">
+        <div className="flex-1 flex flex-col items-center justify-center gap-6 p-8">
+          {/* Waveform */}
+          <div className="flex items-end gap-[2px] h-[100px]">
+            {waveform.map((h, i) => (
+              <motion.div key={i} animate={{ height: h }}
+                className={`w-[3px] rounded-full ${isRecording ? "bg-gradient-to-t from-accent to-accent/40" : "bg-border/20"}`}
+                transition={{ duration: 0.08 }} />
+            ))}
+          </div>
 
-        {/* Timer */}
-        <div className="text-[48px] font-black text-text-primary tracking-tight tabular-nums">
-          {formatTime(elapsed)}
-        </div>
+          {/* Timer */}
+          <div className="text-[56px] font-black text-text-primary tracking-tight tabular-nums" style={{ fontVariantNumeric: "tabular-nums" }}>
+            {formatTime(elapsed)}
+          </div>
 
-        {/* Controls */}
-        <div className="flex items-center gap-6">
+          {/* Mic info */}
+          {isRecording && (
+            <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }}
+              className="flex items-center gap-2">
+              <div className="w-2.5 h-2.5 bg-danger rounded-full animate-pulse" />
+              <span className="text-[13px] font-bold text-danger">Recording</span>
+              <span className="text-[11px] text-text-tertiary ml-2">Echo Cancel • Noise Suppress • Auto Gain</span>
+            </motion.div>
+          )}
+
+          {/* Record button */}
           <motion.button
             whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
             onClick={isRecording ? stopRecording : startRecording}
@@ -116,44 +160,119 @@ export function VoiceStudioPage() {
           </motion.button>
         </div>
 
-        {isRecording && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-            className="flex items-center gap-2 text-danger font-bold text-[13px]">
-            <div className="w-2 h-2 bg-danger rounded-full animate-pulse" /> Recording...
-          </motion.div>
-        )}
-      </div>
-
-      {/* Recordings list */}
-      <div className="border-t border-border/40 bg-bg-secondary/30 max-h-[35%] overflow-y-auto">
-        <div className="p-4">
-          <h3 className="text-[11px] font-extrabold text-text-tertiary uppercase tracking-widest mb-3">Recordings ({recordings.length})</h3>
-          <div className="space-y-2">
-            {recordings.map(rec => (
-              <div key={rec.id} className="flex items-center gap-3 p-3 rounded-xl bg-bg-primary border border-border/20 group">
-                <button onClick={() => playRecording(rec)}
-                  className="w-9 h-9 flex items-center justify-center rounded-xl bg-accent/15 text-accent cursor-pointer">
-                  {playingId === rec.id ? <Pause size={14} /> : <Play size={14} />}
-                </button>
-                <div className="flex-1 min-w-0">
-                  <p className="text-[13px] font-bold text-text-primary truncate">{rec.name}</p>
-                  <p className="text-[11px] text-text-tertiary flex items-center gap-2">
-                    <Clock size={10} /> {formatTime(rec.duration)} · {new Date(rec.date).toLocaleDateString()}
-                  </p>
+        {/* Recordings list */}
+        <div className="border-t border-border/40 bg-bg-secondary/30 max-h-[40%] overflow-y-auto">
+          <div className="p-4">
+            <h3 className="text-[11px] font-extrabold text-text-tertiary uppercase tracking-widest mb-3">
+              Library ({recordings.length})
+            </h3>
+            <div className="space-y-2">
+              {recordings.map(rec => (
+                <div key={rec.id}
+                  className={`flex items-center gap-3 p-3 rounded-xl border group transition-all
+                    ${editingId === rec.id ? "bg-accent/5 border-accent/30" : "bg-bg-primary border-border/20"}`}>
+                  <button onClick={() => playingId === rec.id ? stopPlayback() : playRecording(rec)}
+                    className="w-10 h-10 flex items-center justify-center rounded-xl bg-accent/15 text-accent cursor-pointer shrink-0">
+                    {playingId === rec.id ? <Pause size={16} /> : <Play size={16} />}
+                  </button>
+                  <div className="flex-1 min-w-0">
+                    <input value={rec.name} onChange={e => updateRecording(rec.id, { name: e.target.value })}
+                      className="bg-transparent text-[13px] font-bold text-text-primary outline-none w-full" />
+                    <div className="flex items-center gap-3 mt-0.5">
+                      <span className="text-[10px] text-text-tertiary flex items-center gap-1"><Clock size={9} />{formatTime(rec.duration)}</span>
+                      <span className="text-[10px] text-text-tertiary">{new Date(rec.date).toLocaleDateString()}</span>
+                      {rec.speed !== 1 && <span className="text-[9px] text-accent font-bold">{rec.speed}x</span>}
+                      {rec.gain !== 1 && <span className="text-[9px] text-warning font-bold">{Math.round(rec.gain * 100)}% vol</span>}
+                    </div>
+                  </div>
+                  <button onClick={() => setEditingId(editingId === rec.id ? null : rec.id)}
+                    className={`w-8 h-8 flex items-center justify-center rounded-lg cursor-pointer transition-all
+                      ${editingId === rec.id ? "bg-accent text-white" : "opacity-0 group-hover:opacity-100 text-text-tertiary hover:text-accent bg-bg-hover"}`}>
+                    <SlidersHorizontal size={13} />
+                  </button>
+                  <button onClick={() => downloadRecording(rec)} className="opacity-0 group-hover:opacity-100 text-text-tertiary hover:text-accent cursor-pointer"><Download size={14} /></button>
+                  <button onClick={() => { setRecordings(prev => prev.filter(r => r.id !== rec.id)); if (editingId === rec.id) setEditingId(null); }}
+                    className="opacity-0 group-hover:opacity-100 text-text-tertiary hover:text-danger cursor-pointer"><Trash2 size={14} /></button>
                 </div>
-                <button onClick={() => downloadRecording(rec)}
-                  className="opacity-0 group-hover:opacity-100 text-text-tertiary hover:text-accent cursor-pointer transition-all">
-                  <Download size={14} />
-                </button>
-                <button onClick={() => setRecordings(prev => prev.filter(r => r.id !== rec.id))}
-                  className="opacity-0 group-hover:opacity-100 text-text-tertiary hover:text-danger cursor-pointer transition-all">
-                  <Trash2 size={14} />
-                </button>
-              </div>
-            ))}
+              ))}
+              {recordings.length === 0 && (
+                <div className="text-center py-6">
+                  <Mic size={24} className="mx-auto mb-2 text-text-tertiary/20" />
+                  <p className="text-[12px] text-text-tertiary">No recordings yet</p>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
+
+      {/* Audio processing panel */}
+      <AnimatePresence>
+        {editRec && (
+          <motion.div initial={{ width: 0, opacity: 0 }} animate={{ width: 280, opacity: 1 }} exit={{ width: 0, opacity: 0 }}
+            className="h-full border-l border-border/40 bg-bg-secondary/30 flex flex-col overflow-hidden">
+            <div className="p-4 border-b border-border/20">
+              <h3 className="text-[13px] font-bold text-text-primary flex items-center gap-2">
+                <Wand2 size={14} className="text-accent" /> Audio Processing
+              </h3>
+              <p className="text-[10px] text-text-tertiary mt-1 truncate">{editRec.name}</p>
+            </div>
+            <div className="p-4 space-y-5 flex-1 overflow-y-auto">
+              {/* Volume / Gain */}
+              <div className="space-y-2">
+                <div className="flex justify-between">
+                  <span className="text-[11px] font-bold text-text-tertiary flex items-center gap-2"><Volume2 size={12} />Volume Boost</span>
+                  <span className="text-[10px] text-text-tertiary font-mono">{Math.round(editRec.gain * 100)}%</span>
+                </div>
+                <input type="range" min={0} max={3} step={0.05} value={editRec.gain}
+                  onChange={e => updateRecording(editRec.id, { gain: +e.target.value })}
+                  className="w-full accent-accent" />
+              </div>
+
+              {/* Speed */}
+              <div className="space-y-2">
+                <div className="flex justify-between">
+                  <span className="text-[11px] font-bold text-text-tertiary flex items-center gap-2"><FastForward size={12} />Playback Speed</span>
+                  <span className="text-[10px] text-text-tertiary font-mono">{editRec.speed}x</span>
+                </div>
+                <input type="range" min={0.25} max={3} step={0.25} value={editRec.speed}
+                  onChange={e => updateRecording(editRec.id, { speed: +e.target.value })}
+                  className="w-full accent-accent" />
+                <div className="flex gap-1">
+                  {[0.5, 0.75, 1, 1.5, 2].map(s => (
+                    <button key={s} onClick={() => updateRecording(editRec.id, { speed: s })}
+                      className={`flex-1 py-1 rounded-lg text-[9px] font-bold cursor-pointer
+                        ${editRec.speed === s ? "bg-accent text-white" : "bg-bg-hover text-text-tertiary"}`}>{s}x</button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Noise Gate */}
+              <div className="space-y-2">
+                <div className="flex justify-between">
+                  <span className="text-[11px] font-bold text-text-tertiary flex items-center gap-2"><Settings2 size={12} />Noise Gate</span>
+                  <span className="text-[10px] text-text-tertiary font-mono">{editRec.noiseGate}%</span>
+                </div>
+                <input type="range" min={0} max={100} value={editRec.noiseGate}
+                  onChange={e => updateRecording(editRec.id, { noiseGate: +e.target.value })}
+                  className="w-full accent-accent" />
+                <p className="text-[9px] text-text-tertiary/50">Reduces background noise by cutting low-amplitude signals</p>
+              </div>
+
+              <div className="pt-3 border-t border-border/20 space-y-2">
+                <button onClick={() => playRecording(editRec)}
+                  className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-accent text-white font-bold text-[12px] cursor-pointer">
+                  <Play size={14} /> Preview with Effects
+                </button>
+                <button onClick={() => downloadRecording(editRec)}
+                  className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-bg-hover text-text-primary font-bold text-[12px] cursor-pointer">
+                  <Download size={14} /> Export
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

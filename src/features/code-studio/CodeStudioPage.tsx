@@ -227,6 +227,31 @@ export function CodeStudioPage() {
      setShowAIInput(false);
   };
 
+  const handleCreateFile = async () => {
+    if (!workspacePath) return;
+    const name = window.prompt("Enter new file name:");
+    if (!name) return;
+    const electronAPI = (window as any).electronAPI;
+    const fullPath = `${workspacePath}\\${name}`;
+    if (electronAPI?.codeStudio?.fsWrite) {
+      await electronAPI.codeStudio.fsWrite(fullPath, "");
+      useCodeStudioStore.getState().loadFileTree();
+      useCodeStudioStore.getState().openFile(fullPath, name);
+    }
+  };
+
+  const handleCreateFolder = async () => {
+    if (!workspacePath) return;
+    const name = window.prompt("Enter new folder name:");
+    if (!name) return;
+    const electronAPI = (window as any).electronAPI;
+    const fullPath = `${workspacePath}\\${name}`;
+    if (electronAPI?.codeStudio?.fsMkdir) {
+      await electronAPI.codeStudio.fsMkdir(fullPath);
+      useCodeStudioStore.getState().loadFileTree();
+    }
+  };
+
   return (
     <div className="flex h-full text-text-primary overflow-hidden">
       
@@ -236,13 +261,29 @@ export function CodeStudioPage() {
           <h2 className="text-[11px] font-extrabold uppercase tracking-widest text-text-tertiary">
             Explorer
           </h2>
-          <button 
-            onClick={handleOpenFolder}
-            className="w-6 h-6 flex items-center justify-center rounded bg-accent/20 text-accent hover:bg-accent hover:text-white transition-colors"
-            title="Open Workspace"
-          >
-            <FolderOpen size={13} />
-          </button>
+          <div className="flex items-center gap-1">
+            <button 
+              onClick={handleCreateFile}
+              className="w-6 h-6 flex items-center justify-center rounded text-text-tertiary hover:bg-bg-hover hover:text-text-primary transition-colors cursor-pointer"
+              title="New File"
+            >
+              <FileCode size={13} />
+            </button>
+            <button 
+              onClick={handleCreateFolder}
+              className="w-6 h-6 flex items-center justify-center rounded text-text-tertiary hover:bg-bg-hover hover:text-text-primary transition-colors cursor-pointer"
+              title="New Folder"
+            >
+              <Folder size={13} />
+            </button>
+            <button 
+              onClick={handleOpenFolder}
+              className="w-6 h-6 ml-1 flex items-center justify-center rounded bg-accent/20 text-accent hover:bg-accent hover:text-white transition-colors cursor-pointer"
+              title="Open Workspace"
+            >
+              <FolderOpen size={13} />
+            </button>
+          </div>
         </div>
         
         <div className="flex-1 overflow-y-auto py-2">
@@ -254,7 +295,7 @@ export function CodeStudioPage() {
               <p className="text-[12px] text-text-tertiary mb-4">No workspace loaded</p>
               <button 
                 onClick={handleOpenFolder}
-                className="px-3 py-1.5 rounded-lg bg-accent text-white font-bold text-[11.5px]"
+                className="px-3 py-1.5 rounded-lg bg-accent text-white font-bold text-[11.5px] cursor-pointer"
               >
                 Open Folder
               </button>
