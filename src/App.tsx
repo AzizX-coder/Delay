@@ -17,6 +17,14 @@ import { CodeStudioPage } from "@/features/code-studio/CodeStudioPage";
 import { DiskFlowsPage } from "@/features/disk-flows/DiskFlowsPage";
 import { SettingsPage } from "@/features/settings/SettingsPage";
 import { OnboardingFlow } from "@/features/onboarding/OnboardingFlow";
+import { KanbanPage } from "@/features/kanban/KanbanPage";
+import { DocsPage } from "@/features/docs/DocsPage";
+import { SheetsPage } from "@/features/sheets/SheetsPage";
+import { SlidesPage } from "@/features/slides/SlidesPage";
+import { WhiteboardPage } from "@/features/whiteboard/WhiteboardPage";
+import { VoiceStudioPage } from "@/features/voice-studio/VoiceStudioPage";
+import { PhotoEditorPage } from "@/features/photo-editor/PhotoEditorPage";
+import { VideoEditorPage } from "@/features/video-editor/VideoEditorPage";
 import { Logo } from "@/components/ui/Logo";
 import { motion } from "motion/react";
 
@@ -63,6 +71,14 @@ export default function App() {
           <Route path="ai" element={<AIChatPage />} />
           <Route path="code-studio" element={<CodeStudioPage />} />
           <Route path="disk-flows" element={<DiskFlowsPage />} />
+          <Route path="kanban" element={<KanbanPage />} />
+          <Route path="docs" element={<DocsPage />} />
+          <Route path="sheets" element={<SheetsPage />} />
+          <Route path="slides" element={<SlidesPage />} />
+          <Route path="whiteboard" element={<WhiteboardPage />} />
+          <Route path="voice-studio" element={<VoiceStudioPage />} />
+          <Route path="photo-editor" element={<PhotoEditorPage />} />
+          <Route path="video-editor" element={<VideoEditorPage />} />
           <Route path="settings" element={<SettingsPage />} />
         </Route>
       </Routes>

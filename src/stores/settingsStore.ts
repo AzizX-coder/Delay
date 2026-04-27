@@ -11,9 +11,10 @@ interface SettingsState extends AppSettings {
     value: AppSettings[K]
   ) => Promise<void>;
   completeOnboarding: () => Promise<void>;
+  toggleModule: (moduleId: string) => void;
 }
 
-export const useSettingsStore = create<SettingsState>((set) => ({
+export const useSettingsStore = create<SettingsState>((set, get) => ({
   ...DEFAULT_SETTINGS,
   loading: true,
 
@@ -26,6 +27,8 @@ export const useSettingsStore = create<SettingsState>((set) => ({
           settings.onboarding_completed = row.value === "true";
         } else if (row.key === "sidebar_collapsed") {
           settings.sidebar_collapsed = row.value === "true";
+        } else if (row.key === "enabled_modules") {
+          try { settings.enabled_modules = JSON.parse(row.value); } catch {}
         } else {
           (settings as Record<string, string>)[row.key] = row.value;
         }
@@ -39,7 +42,8 @@ export const useSettingsStore = create<SettingsState>((set) => ({
   setSetting: async (key, value) => {
     set({ [key]: value } as Partial<SettingsState>);
     try {
-      await db.settings.put({ key, value: String(value) });
+      const v = typeof value === "object" ? JSON.stringify(value) : String(value);
+      await db.settings.put({ key, value: v });
     } catch {
       // silent
     }
@@ -52,5 +56,14 @@ export const useSettingsStore = create<SettingsState>((set) => ({
     } catch {
       // silent
     }
+  },
+
+  toggleModule: (moduleId: string) => {
+    const current = get().enabled_modules;
+    const next = current.includes(moduleId)
+      ? current.filter(m => m !== moduleId)
+      : [...current, moduleId];
+    set({ enabled_modules: next });
+    db.settings.put({ key: "enabled_modules", value: JSON.stringify(next) }).catch(() => {});
   },
 }));

@@ -20,26 +20,32 @@ Notes · Tasks · Calendar · Timer · Code Studio · Disk Flows · AI Agent
 
 ## ✨ What is Delay?
 
-Delay is a **local-first desktop Agentic OS** that unifies your **notes**, **tasks**, **calendar**, **smart timer**, **code workspace**, **video downloads**, and a built-in **autonomous AI agent** behind one polished, fluid interface. Everything lives on your device — no accounts, no cloud, no tracking.
+Delay is a **local-first desktop Agentic OS** with **16 modular workspaces** — notes, tasks, calendar, timer, kanban, docs, sheets, slides, whiteboard, code studio, voice studio, photo & video editors, disk flows — all unified behind an **autonomous AI Agent**. Everything lives on your device — no accounts, no cloud, no tracking.
 
-## 🧩 Features (v1.6.5)
+## 🧩 Features (v2.0.0)
 
 | Module | Highlights |
 |--------|-----------|
-| **🤖 Autonomous AI Agent** | 18-tool agent with ambient context · 12-turn reasoning loop · long-term memory · web search · task/note/calendar orchestration · **Sleek Logic Trace UI** |
-| **📝 Notes** | TipTap rich editor with tables, task lists & 6 templates · Whispr Flow voice dictation with live waveform overlay · **Native Slash Commands (`/`)** |
-| **✅ Tasks** | Full task editing modal (priority · due date · description) · Inbox / Today / Upcoming / Completed views · custom lists |
-| **📅 Calendar** | Month / Week / Day views · events + tasks in one unified view |
-| **⏱️ Smart Timer** | Pomodoro timer with circular progress ring · Focus / Short Break / Long Break presets · custom durations · session streak tracking · completion chimes |
-| **💻 Code Studio** | **Monaco Editor integration** · Multi-tab workspace · 30+ languages · **Inline Agent prompt** · Open folders · Open in VS Code |
-| **💾 Disk Flows** | Download YouTube & Instagram videos · **Select Quality & Formats** · **In-App Video Playback** · Show in Folder · Copy to Downloads |
-| **🎙️ Voice Input** | Whispr Flow-style frosted overlay · live waveform bars · real-time transcript · auto-send from voice |
-| **🌐 I18N** | 11 languages — English, Spanish, French, German, Russian, Arabic (RTL), Uzbek, Japanese, Chinese, Korean, Portuguese |
-| **🎨 Themes** | **Custom Image Backgrounds** · Lighter dark mode · Light · System · responsive Glassmorphic UI |
+| **🤖 AI Agent** | Unified autonomous agent with file control, terminal execution, and 20+ tools |
+| **📝 Notes** | TipTap rich editor · Slash commands · Emoji picker · Voice dictation |
+| **✅ Tasks** | Priority · Due dates · Inbox/Today/Upcoming views · Custom lists |
+| **📅 Calendar** | Month / Week / Day views · Events + tasks unified |
+| **⏱️ Timer + Goals** | Pomodoro with purpose-driven goals · Focus/break scheduling · Multi-day tracking |
+| **📋 Kanban** | Drag-and-drop columns & cards · Custom columns · Color labels |
+| **📄 Docs** | Long-form document editor · Headings, lists, code blocks, task items |
+| **📊 Sheets** | Grid spreadsheet · Formula bar (SUM) · Multi-sheet tabs |
+| **🎭 Slides** | Presentation editor · Custom backgrounds · Fullscreen slideshow |
+| **🎨 Whiteboard** | Infinite canvas · Pen, shapes, colors · Undo · PNG export |
+| **💻 Code Studio** | Monaco IDE · File tree · Terminal · AI coding agent |
+| **💾 Disk Flows** | Video download · Quality selection · In-app playback |
+| **🎙️ Voice Studio** | Smart recording · Live waveform · Playback & download |
+| **🖼️ Photo Editor** | Brightness/contrast/saturation · Rotation/flip · PNG export |
+| **🎬 Video Editor** | Timeline · Playback speed · Volume · Trim markers |
+| **⚙️ Customizable** | Toggle modules on/off · Onboarding module picker · Custom backgrounds |
 
 ## 📥 Download
 
-Grab the latest **Delay-Setup-1.6.5.exe** from the [Releases](https://github.com/AzizX-coder/Delay/releases/latest) page, or visit the [landing page](https://azizx-coder.github.io/Delay/).
+Grab the latest **Delay-Setup-2.0.0.exe** from the [Releases](https://github.com/AzizX-coder/Delay/releases/latest) page, or visit the [landing page](https://azizx-coder.github.io/Delay/).
 
 **Requirements:** Windows 10 or 11 (x64). Optional: [Ollama](https://ollama.com/) for AI features. Optional: [yt-dlp](https://github.com/yt-dlp/yt-dlp) for Disk Flows video downloads.
 
