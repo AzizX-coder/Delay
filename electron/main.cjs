@@ -125,13 +125,14 @@ ipcMain.handle("disk-flows-download", async (_event, url, downloadId, formatId) 
     // Default to 'best' if no formatId is provided, otherwise target the specific format+bestaudio
     const formatArgs = formatId && formatId !== "best" ? ["-f", `${formatId}+bestaudio/best`] : ["-f", "best"];
     
-    const proc = spawn("yt-dlp", [
+    const bin = process.platform === "win32" ? "yt-dlp.exe" : "yt-dlp";
+    const proc = spawn(bin, [
       "--progress",
       "--newline",
       ...formatArgs,
       "-o", outputTemplate,
       url,
-    ]);
+    ], { shell: false });
 
     let lastTitle = "";
     proc.stdout.on("data", (data) => {
@@ -233,6 +234,81 @@ ipcMain.handle("code-studio-open-vscode", async (_event, filename, code, languag
   });
   return { ok: true, path: filePath };
 });
+
+// ── Code Studio IDE Extensions (Phase 3) ──
+ipcMain.handle("workspace-open", async () => {
+  const result = await dialog.showOpenDialog(mainWindow, {
+    properties: ["openDirectory"]
+  });
+  return result.canceled ? null : result.filePaths[0];
+});
+
+ipcMain.handle("fs-list", async (_event, dirPath) => {
+  const fs = require("fs").promises;
+  try {
+    const entries = await fs.readdir(dirPath, { withFileTypes: true });
+    return entries.map(e => ({ name: e.name, path: path.join(dirPath, e.name), isDir: e.isDirectory() }));
+  } catch (err) {
+    return { error: String(err) };
+  }
+});
+
+ipcMain.handle("fs-read", async (_event, filePath) => {
+  const fs = require("fs").promises;
+  try {
+    return { content: await fs.readFile(filePath, "utf-8") };
+  } catch (err) {
+    return { error: String(err) };
+  }
+});
+
+ipcMain.handle("fs-write", async (_event, filePath, content) => {
+  const fs = require("fs").promises;
+  try {
+    await fs.mkdir(path.dirname(filePath), { recursive: true });
+    await fs.writeFile(filePath, content, "utf-8");
+    return { ok: true };
+  } catch (err) {
+    return { error: String(err) };
+  }
+});
+
+ipcMain.handle("fs-run", async (_event, cmd, cmdArgs, cwd) => {
+  return new Promise((resolve) => {
+    const runId = Math.random().toString(36).substring(7);
+    const proc = spawn(process.platform === "win32" ? "cmd.exe" : "/bin/sh", [
+      process.platform === "win32" ? "/c" : "-c", 
+      [cmd, ...cmdArgs].join(" ")
+    ], { cwd: cwd || process.cwd(), shell: false });
+
+    proc.stdout.on("data", (data) => {
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send(`fs-run-data-${runId}`, data.toString());
+      }
+    });
+
+    proc.stderr.on("data", (data) => {
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send(`fs-run-data-${runId}`, data.toString());
+      }
+    });
+
+    proc.on("close", (code) => {
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send(`fs-run-exit-${runId}`, code);
+      }
+    });
+
+    proc.on("error", (err) => {
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send(`fs-run-data-${runId}`, `ERROR: ${err.message}\n`);
+      }
+    });
+
+    resolve({ runId });
+  });
+});
+
 
 function sendDiskFlowEvent(event, payload) {
   if (mainWindow && !mainWindow.isDestroyed()) {

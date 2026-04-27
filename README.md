@@ -22,7 +22,7 @@ Notes · Tasks · Calendar · Timer · Code Studio · Disk Flows · AI Agent
 
 Delay is a **local-first desktop Agentic OS** that unifies your **notes**, **tasks**, **calendar**, **smart timer**, **code workspace**, **video downloads**, and a built-in **autonomous AI agent** behind one polished, fluid interface. Everything lives on your device — no accounts, no cloud, no tracking.
 
-## 🧩 Features (v1.6.0)
+## 🧩 Features (v1.6.5)
 
 | Module | Highlights |
 |--------|-----------|
@@ -39,7 +39,7 @@ Delay is a **local-first desktop Agentic OS** that unifies your **notes**, **tas
 
 ## 📥 Download
 
-Grab the latest **Delay-Setup-1.6.0.exe** from the [Releases](https://github.com/AzizX-coder/Delay/releases/latest) page, or visit the [landing page](https://azizx-coder.github.io/Delay/).
+Grab the latest **Delay-Setup-1.6.5.exe** from the [Releases](https://github.com/AzizX-coder/Delay/releases/latest) page, or visit the [landing page](https://azizx-coder.github.io/Delay/).
 
 **Requirements:** Windows 10 or 11 (x64). Optional: [Ollama](https://ollama.com/) for AI features. Optional: [yt-dlp](https://github.com/yt-dlp/yt-dlp) for Disk Flows video downloads.
 
@@ -49,10 +49,10 @@ Delay is built by an independent developer and is **not yet code-signed with a p
 
 **To install safely:**
 
-1. Download `Delay-Setup-1.6.0.exe` and the matching `SHA256SUMS.txt` from [Releases](https://github.com/AzizX-coder/Delay/releases/latest).
+1. Download `Delay-Setup-1.6.5.exe` and the matching `SHA256SUMS.txt` from [Releases](https://github.com/AzizX-coder/Delay/releases/latest).
 2. *(Optional but recommended)* verify the download integrity:
    ```powershell
-   Get-FileHash .\Delay-Setup-1.6.0.exe -Algorithm SHA256
+   Get-FileHash .\Delay-Setup-1.6.5.exe -Algorithm SHA256
    ```
    The hash must match the one in `SHA256SUMS.txt`.
 3. Double-click the installer. If SmartScreen appears, click **More info → Run anyway**.

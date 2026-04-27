@@ -32,5 +32,20 @@ contextBridge.exposeInMainWorld("electronAPI", {
   codeStudio: {
     openInVSCode: (filename, code, language) =>
       ipcRenderer.invoke("code-studio-open-vscode", filename, code, language),
+    openWorkspace: () => ipcRenderer.invoke("workspace-open"),
+    fsList: (dirPath) => ipcRenderer.invoke("fs-list", dirPath),
+    fsRead: (filePath) => ipcRenderer.invoke("fs-read", filePath),
+    fsWrite: (filePath, content) => ipcRenderer.invoke("fs-write", filePath, content),
+    fsRun: (cmd, args, cwd) => ipcRenderer.invoke("fs-run", cmd, args, cwd),
+    onFsRunData: (runId, cb) => {
+      const listener = (_e, data) => cb(data);
+      ipcRenderer.on(`fs-run-data-${runId}`, listener);
+      return () => ipcRenderer.removeListener(`fs-run-data-${runId}`, listener);
+    },
+    onFsRunExit: (runId, cb) => {
+      const listener = (_e, code) => cb(code);
+      ipcRenderer.on(`fs-run-exit-${runId}`, listener);
+      return () => ipcRenderer.removeListener(`fs-run-exit-${runId}`, listener);
+    }
   },
 });
