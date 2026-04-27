@@ -14,6 +14,9 @@ import {
   Camera,
   Globe,
   FolderOpen,
+  ExternalLink,
+  FileVideo,
+  RotateCcw,
 } from "lucide-react";
 
 const PLATFORM_ICONS = {
@@ -40,6 +43,7 @@ export function DiskFlowsPage() {
 
   const [url, setUrl] = useState("");
   const [error, setError] = useState("");
+  const [saveToDownloads, setSaveToDownloads] = useState(false);
 
   useEffect(() => {
     loadDownloads();
@@ -74,6 +78,13 @@ export function DiskFlowsPage() {
     if (e.key === "Enter") handleAdd();
   };
 
+  const handleOpenFolder = () => {
+    const electronAPI = (window as any).electronAPI;
+    if (electronAPI?.diskFlows?.openFolder) {
+      electronAPI.diskFlows.openFolder();
+    }
+  };
+
   const activeDownloads = downloads.filter(
     (d) => d.status === "downloading" || d.status === "pending"
   );
@@ -86,13 +97,26 @@ export function DiskFlowsPage() {
     <div className="flex flex-col h-full">
       {/* Header */}
       <div className="px-8 pt-8 pb-4">
-        <motion.h1
-          initial={{ opacity: 0, y: -6 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-[24px] font-bold text-text-primary tracking-tight mb-1"
-        >
-          Disk Flows
-        </motion.h1>
+        <div className="flex items-center justify-between mb-1">
+          <motion.h1
+            initial={{ opacity: 0, y: -6 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="text-[24px] font-bold text-text-primary tracking-tight"
+          >
+            Disk Flows
+          </motion.h1>
+          <motion.button
+            whileTap={{ scale: 0.95 }}
+            onClick={handleOpenFolder}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl
+              bg-bg-secondary/60 border border-border/40 text-[12px] font-semibold
+              text-text-secondary hover:text-text-primary hover:bg-bg-hover
+              transition-all cursor-pointer"
+          >
+            <FolderOpen size={14} />
+            Open Downloads Folder
+          </motion.button>
+        </div>
         <p className="text-[13px] text-text-tertiary mb-6">
           Paste a YouTube or Instagram link to download and save videos locally.
         </p>
@@ -183,6 +207,7 @@ export function DiskFlowsPage() {
                       key={download.id}
                       download={download}
                       onDelete={() => deleteDownload(download.id)}
+                      onRetry={() => startDownload(download.id)}
                     />
                   ))}
                 </div>
@@ -193,7 +218,7 @@ export function DiskFlowsPage() {
             {completedDownloads.length > 0 && (
               <div className="mb-4">
                 <h3 className="text-[11px] font-semibold text-text-tertiary uppercase tracking-wider mb-2 px-1">
-                  Completed
+                  Completed ({completedDownloads.length})
                 </h3>
                 <div className="space-y-2">
                   {completedDownloads.map((download) => (
@@ -219,6 +244,7 @@ export function DiskFlowsPage() {
                       key={download.id}
                       download={download}
                       onDelete={() => deleteDownload(download.id)}
+                      onRetry={() => startDownload(download.id)}
                     />
                   ))}
                 </div>
@@ -234,76 +260,145 @@ export function DiskFlowsPage() {
 function DownloadCard({
   download,
   onDelete,
+  onRetry,
 }: {
   download: any;
   onDelete: () => void;
+  onRetry?: () => void;
 }) {
   const platformColor = PLATFORM_COLORS[download.platform as keyof typeof PLATFORM_COLORS] || "#007AFF";
   const platformIcon = PLATFORM_ICONS[download.platform as keyof typeof PLATFORM_ICONS] || <Globe size={16} />;
+
+  const handleShowInFolder = () => {
+    const electronAPI = (window as any).electronAPI;
+    if (electronAPI?.diskFlows?.showInFolder && download.file_path) {
+      electronAPI.diskFlows.showInFolder(download.file_path);
+    } else if (electronAPI?.diskFlows?.openFolder) {
+      electronAPI.diskFlows.openFolder();
+    }
+  };
+
+  const handleMoveToDownloads = () => {
+    const electronAPI = (window as any).electronAPI;
+    if (electronAPI?.diskFlows?.moveToDownloads && download.file_path) {
+      electronAPI.diskFlows.moveToDownloads(download.file_path);
+    }
+  };
 
   return (
     <motion.div
       layout
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      className="flex items-center gap-4 px-4 py-3.5 rounded-2xl
+      className="px-4 py-3.5 rounded-2xl
         bg-bg-secondary/40 border border-border/30 backdrop-blur-sm
         hover:border-border/50 transition-all group"
     >
-      {/* Platform icon */}
-      <div
-        className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
-        style={{ backgroundColor: `${platformColor}15`, color: platformColor }}
-      >
-        {platformIcon}
-      </div>
-
-      {/* Info */}
-      <div className="flex-1 min-w-0">
-        <p className="text-[13px] font-medium text-text-primary truncate">
-          {download.title}
-        </p>
-        <p className="text-[11px] text-text-tertiary truncate">{download.url}</p>
-
-        {/* Progress bar */}
-        {download.status === "downloading" && (
-          <div className="mt-2 w-full h-1.5 bg-bg-tertiary rounded-full overflow-hidden">
-            <motion.div
-              className="h-full rounded-full"
-              style={{ backgroundColor: platformColor }}
-              initial={{ width: 0 }}
-              animate={{ width: `${download.progress}%` }}
-              transition={{ type: "tween", duration: 0.3 }}
-            />
-          </div>
-        )}
-      </div>
-
-      {/* Status */}
-      <div className="flex items-center gap-2 shrink-0">
-        {download.status === "downloading" && (
-          <span className="text-[11px] font-bold text-accent tabular-nums">
-            {download.progress}%
-          </span>
-        )}
-        {download.status === "pending" && (
-          <Loader2 size={16} className="text-text-tertiary animate-spin" />
-        )}
-        {download.status === "completed" && (
-          <CheckCircle2 size={16} className="text-success" />
-        )}
-        {download.status === "error" && (
-          <AlertCircle size={16} className="text-danger" />
-        )}
-
-        <button
-          onClick={onDelete}
-          className="opacity-0 group-hover:opacity-100 w-7 h-7 flex items-center justify-center
-            rounded-lg text-text-tertiary hover:text-danger hover:bg-danger/10 transition-all cursor-pointer"
+      <div className="flex items-center gap-4">
+        {/* Platform icon */}
+        <div
+          className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+          style={{ backgroundColor: `${platformColor}15`, color: platformColor }}
         >
-          <Trash2 size={13} />
-        </button>
+          {platformIcon}
+        </div>
+
+        {/* Info */}
+        <div className="flex-1 min-w-0">
+          <p className="text-[13px] font-medium text-text-primary truncate">
+            {download.title}
+          </p>
+          <p className="text-[11px] text-text-tertiary truncate">{download.url}</p>
+        </div>
+
+        {/* Status & actions */}
+        <div className="flex items-center gap-2 shrink-0">
+          {download.status === "downloading" && (
+            <span className="text-[11px] font-bold text-accent tabular-nums">
+              {download.progress}%
+            </span>
+          )}
+          {download.status === "pending" && (
+            <Loader2 size={16} className="text-text-tertiary animate-spin" />
+          )}
+          {download.status === "completed" && (
+            <CheckCircle2 size={16} className="text-success" />
+          )}
+          {download.status === "error" && (
+            <>
+              <AlertCircle size={16} className="text-danger" />
+              {onRetry && (
+                <button
+                  onClick={onRetry}
+                  className="w-7 h-7 flex items-center justify-center
+                    rounded-lg text-text-tertiary hover:text-accent hover:bg-accent/10 transition-all cursor-pointer"
+                  title="Retry"
+                >
+                  <RotateCcw size={13} />
+                </button>
+              )}
+            </>
+          )}
+
+          <button
+            onClick={onDelete}
+            className="opacity-0 group-hover:opacity-100 w-7 h-7 flex items-center justify-center
+              rounded-lg text-text-tertiary hover:text-danger hover:bg-danger/10 transition-all cursor-pointer"
+          >
+            <Trash2 size={13} />
+          </button>
+        </div>
       </div>
+
+      {/* Progress bar */}
+      {download.status === "downloading" && (
+        <div className="mt-3 w-full h-1.5 bg-bg-tertiary rounded-full overflow-hidden">
+          <motion.div
+            className="h-full rounded-full"
+            style={{ backgroundColor: platformColor }}
+            initial={{ width: 0 }}
+            animate={{ width: `${download.progress}%` }}
+            transition={{ type: "tween", duration: 0.3 }}
+          />
+        </div>
+      )}
+
+      {/* Completed: action buttons */}
+      {download.status === "completed" && (
+        <div className="flex items-center gap-2 mt-3 pt-3 border-t border-border/20">
+          <button
+            onClick={handleShowInFolder}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg
+              bg-bg-hover/60 text-[11px] font-semibold text-text-secondary
+              hover:text-text-primary hover:bg-bg-active transition-all cursor-pointer"
+          >
+            <FolderOpen size={12} />
+            Show in Folder
+          </button>
+          <button
+            onClick={handleMoveToDownloads}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg
+              bg-bg-hover/60 text-[11px] font-semibold text-text-secondary
+              hover:text-text-primary hover:bg-bg-active transition-all cursor-pointer"
+          >
+            <Download size={12} />
+            Copy to Downloads
+          </button>
+          {download.file_path && (
+            <span className="ml-auto text-[10px] text-text-tertiary truncate max-w-[200px] flex items-center gap-1">
+              <FileVideo size={10} />
+              {download.file_path}
+            </span>
+          )}
+        </div>
+      )}
+
+      {/* Error message */}
+      {download.status === "error" && download.error && (
+        <p className="mt-2 text-[11px] text-danger/70 truncate">
+          {download.error}
+        </p>
+      )}
     </motion.div>
   );
 }

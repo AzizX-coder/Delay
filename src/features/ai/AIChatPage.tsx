@@ -172,6 +172,11 @@ export function AIChatPage() {
         active={isRecording}
         transcript={liveTranscript}
         onStop={stopVoice}
+        onSend={(text) => {
+          stopVoice();
+          setInput("");
+          sendMessage(text, mode === "agent");
+        }}
       />
       {/* Conversations sidebar */}
       <div className="w-64 h-full flex flex-col border-r border-border/40 bg-bg-secondary/40 backdrop-blur-md">

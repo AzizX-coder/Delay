@@ -148,7 +148,55 @@ ipcMain.handle("disk-flows-download", async (_event, url, downloadId) => {
 
 ipcMain.handle("disk-flows-open-folder", async () => {
   const videosDir = path.join(app.getPath("videos"), "Delay");
+  const fs = require("fs");
+  if (!fs.existsSync(videosDir)) fs.mkdirSync(videosDir, { recursive: true });
   shell.openPath(videosDir);
+});
+
+ipcMain.handle("disk-flows-show-in-folder", async (_event, filePath) => {
+  if (filePath) {
+    shell.showItemInFolder(filePath);
+  }
+});
+
+ipcMain.handle("disk-flows-move-to-downloads", async (_event, filePath) => {
+  const fs = require("fs");
+  if (!filePath || !fs.existsSync(filePath)) return { ok: false };
+  try {
+    const downloadsDir = app.getPath("downloads");
+    const dest = path.join(downloadsDir, path.basename(filePath));
+    fs.copyFileSync(filePath, dest);
+    shell.showItemInFolder(dest);
+    return { ok: true, dest };
+  } catch (err) {
+    return { ok: false, error: String(err) };
+  }
+});
+
+// ── Code Studio: open file in VS Code ──
+ipcMain.handle("code-studio-open-vscode", async (_event, filename, code, language) => {
+  const fs = require("fs");
+  const os = require("os");
+  const tmpDir = path.join(os.tmpdir(), "delay-code-studio");
+  if (!fs.existsSync(tmpDir)) fs.mkdirSync(tmpDir, { recursive: true });
+  const extMap = {
+    javascript: ".js", typescript: ".ts", python: ".py", html: ".html",
+    css: ".css", json: ".json", sql: ".sql", markdown: ".md",
+    bash: ".sh", rust: ".rs", go: ".go", java: ".java", plaintext: ".txt",
+  };
+  const ext = extMap[language] || ".txt";
+  const safeName = (filename || "untitled").replace(/[^a-zA-Z0-9._-]/g, "_");
+  const filePath = path.join(tmpDir, safeName.endsWith(ext) ? safeName : safeName + ext);
+  fs.writeFileSync(filePath, code, "utf-8");
+  // Try to open in VS Code
+  const { exec } = require("child_process");
+  exec(`code "${filePath}"`, (err) => {
+    if (err) {
+      // Fallback: just open the file with the default app
+      shell.openPath(filePath);
+    }
+  });
+  return { ok: true, path: filePath };
 });
 
 function sendDiskFlowEvent(event, payload) {

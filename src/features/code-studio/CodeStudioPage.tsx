@@ -11,6 +11,8 @@ import {
   Code2,
   Sparkles,
   FileCode,
+  FolderOpen,
+  ExternalLink,
   X,
 } from "lucide-react";
 
@@ -30,6 +32,7 @@ export function CodeStudioPage() {
   const [copied, setCopied] = useState(false);
   const [showLangPicker, setShowLangPicker] = useState(false);
   const [aiLoading, setAILoading] = useState(false);
+  const [folderFiles, setFolderFiles] = useState<{ name: string; content: string }[]>([]);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
@@ -58,6 +61,60 @@ export function CodeStudioPage() {
     }
   };
 
+  const handleOpenFolder = async () => {
+    // Use File System Access API (modern browsers)
+    try {
+      const dirHandle = await (window as any).showDirectoryPicker();
+      const files: { name: string; content: string }[] = [];
+      for await (const entry of dirHandle.values()) {
+        if (entry.kind === "file") {
+          const ext = entry.name.split(".").pop()?.toLowerCase() || "";
+          const codeExts = ["js", "ts", "tsx", "jsx", "py", "html", "css", "json", "sql", "md", "sh", "rs", "go", "java", "c", "cpp", "h", "yml", "yaml", "toml", "txt"];
+          if (codeExts.includes(ext)) {
+            try {
+              const file = await entry.getFile();
+              if (file.size < 100_000) {
+                const content = await file.text();
+                files.push({ name: entry.name, content });
+              } else {
+                files.push({ name: entry.name, content: `// File too large (${(file.size / 1024).toFixed(0)}KB)` });
+              }
+            } catch {}
+          }
+        }
+      }
+      // Create snippets from opened files
+      for (const file of files.slice(0, 20)) {
+        const ext = file.name.split(".").pop()?.toLowerCase() || "";
+        const langMap: Record<string, string> = {
+          js: "javascript", ts: "typescript", tsx: "typescript", jsx: "javascript",
+          py: "python", html: "html", css: "css", json: "json", sql: "sql",
+          md: "markdown", sh: "bash", rs: "rust", go: "go", java: "java",
+        };
+        const lang = langMap[ext] || "plaintext";
+        const id = await createSnippet(lang);
+        await updateSnippet(id, { title: file.name, code: file.content });
+      }
+    } catch {
+      // User cancelled or API not available
+    }
+  };
+
+  const handleOpenInVSCode = () => {
+    if (!active) return;
+    // Create a temporary file via Electron and open it in VS Code
+    const electronAPI = (window as any).electronAPI;
+    if (electronAPI?.codeStudio?.openInVSCode) {
+      electronAPI.codeStudio.openInVSCode(active.title, active.code, active.language);
+    } else {
+      // Fallback: use vscode:// protocol
+      const encoded = encodeURIComponent(active.code);
+      // Copy code to clipboard so user can paste in VS Code
+      navigator.clipboard.writeText(active.code);
+      window.open(`vscode://file/untitled`, "_blank");
+    }
+  };
+
   const lineCount = active ? (active.code.match(/\n/g) || []).length + 1 : 0;
 
   return (
@@ -69,16 +126,29 @@ export function CodeStudioPage() {
             <h2 className="text-[15px] font-bold text-text-primary tracking-tight">
               Code Studio
             </h2>
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => createSnippet()}
-              className="w-7 h-7 flex items-center justify-center rounded-lg
-                bg-accent text-bg-primary shadow-md shadow-accent/20 cursor-pointer
-                hover:opacity-90 transition-all"
-            >
-              <Plus size={16} />
-            </motion.button>
+            <div className="flex items-center gap-1.5">
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={handleOpenFolder}
+                title="Open Folder"
+                className="w-7 h-7 flex items-center justify-center rounded-lg
+                  bg-bg-hover text-text-secondary cursor-pointer
+                  hover:text-text-primary hover:bg-bg-active transition-all"
+              >
+                <FolderOpen size={14} />
+              </motion.button>
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => createSnippet()}
+                className="w-7 h-7 flex items-center justify-center rounded-lg
+                  bg-accent text-bg-primary shadow-md shadow-accent/20 cursor-pointer
+                  hover:opacity-90 transition-all"
+              >
+                <Plus size={16} />
+              </motion.button>
+            </div>
           </div>
         </div>
 
@@ -204,6 +274,18 @@ export function CodeStudioPage() {
                 {copied ? "Copied" : "Copy"}
               </button>
 
+              {/* Open in VS Code */}
+              <button
+                onClick={handleOpenInVSCode}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg
+                  bg-bg-secondary/50 border border-border/30 text-[11px] font-medium
+                  text-text-secondary hover:text-text-primary transition-all cursor-pointer"
+                title="Open in VS Code"
+              >
+                <ExternalLink size={12} />
+                VS Code
+              </button>
+
               <motion.button
                 whileTap={{ scale: 0.95 }}
                 onClick={handleAIAssist}
@@ -261,19 +343,30 @@ export function CodeStudioPage() {
               Code Studio
             </h2>
             <p className="text-[13px] text-text-tertiary mb-6 max-w-xs text-center">
-              Create and organize code snippets. Get AI-powered insights on your
-              code.
+              Create and organize code snippets. Open folders or send code to VS Code.
             </p>
-            <motion.button
-              whileTap={{ scale: 0.95 }}
-              onClick={() => createSnippet()}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-xl
-                bg-accent text-bg-primary text-[13px] font-semibold
-                shadow-lg shadow-accent/20 cursor-pointer hover:opacity-90 transition-all"
-            >
-              <Plus size={16} />
-              New Snippet
-            </motion.button>
+            <div className="flex items-center gap-3">
+              <motion.button
+                whileTap={{ scale: 0.95 }}
+                onClick={() => createSnippet()}
+                className="flex items-center gap-2 px-5 py-2.5 rounded-xl
+                  bg-accent text-bg-primary text-[13px] font-semibold
+                  shadow-lg shadow-accent/20 cursor-pointer hover:opacity-90 transition-all"
+              >
+                <Plus size={16} />
+                New Snippet
+              </motion.button>
+              <motion.button
+                whileTap={{ scale: 0.95 }}
+                onClick={handleOpenFolder}
+                className="flex items-center gap-2 px-5 py-2.5 rounded-xl
+                  bg-bg-secondary/60 border border-border/40 text-text-secondary text-[13px] font-semibold
+                  cursor-pointer hover:text-text-primary hover:bg-bg-hover transition-all"
+              >
+                <FolderOpen size={16} />
+                Open Folder
+              </motion.button>
+            </div>
           </div>
         )}
       </div>

@@ -20,10 +20,16 @@ contextBridge.exposeInMainWorld("electronAPI", {
   diskFlows: {
     download: (url, id) => ipcRenderer.invoke("disk-flows-download", url, id),
     openFolder: () => ipcRenderer.invoke("disk-flows-open-folder"),
+    showInFolder: (filePath) => ipcRenderer.invoke("disk-flows-show-in-folder", filePath),
+    moveToDownloads: (filePath) => ipcRenderer.invoke("disk-flows-move-to-downloads", filePath),
     onEvent: (cb) => {
       const listener = (_e, data) => cb(data);
       ipcRenderer.on("disk-flow-event", listener);
       return () => ipcRenderer.removeListener("disk-flow-event", listener);
     },
+  },
+  codeStudio: {
+    openInVSCode: (filename, code, language) =>
+      ipcRenderer.invoke("code-studio-open-vscode", filename, code, language),
   },
 });
