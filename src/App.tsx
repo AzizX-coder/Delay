@@ -24,7 +24,6 @@ import { SlidesPage } from "@/features/slides/SlidesPage";
 import { WhiteboardPage } from "@/features/whiteboard/WhiteboardPage";
 import { VoiceStudioPage } from "@/features/voice-studio/VoiceStudioPage";
 import { PhotoEditorPage } from "@/features/photo-editor/PhotoEditorPage";
-import { PhotoEditorPage } from "@/features/photo-editor/PhotoEditorPage";
 import { VideoEditorPage } from "@/features/video-editor/VideoEditorPage";
 import { StudioPage } from "@/features/studio/StudioPage";
 import { Logo } from "@/components/ui/Logo";
