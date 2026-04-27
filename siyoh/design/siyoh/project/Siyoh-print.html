@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Siyoh — Stories worth slowing down for</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400;1,6..72,500&family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: #F2EDE5; font-family: 'Geist', sans-serif; }
+  body { overflow-x: hidden; }
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-thumb { background: rgba(26,22,19,0.15); border-radius: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+
+  .stage-bg {
+    background:
+      radial-gradient(ellipse at 20% 0%, rgba(255,138,76,0.12), transparent 50%),
+      radial-gradient(ellipse at 80% 100%, rgba(255,200,150,0.15), transparent 50%),
+      #F2EDE5;
+    min-height: 100vh;
+  }
+  .stage-bg.dark {
+    background:
+      radial-gradient(ellipse at 20% 0%, rgba(255,87,34,0.12), transparent 50%),
+      radial-gradient(ellipse at 80% 100%, rgba(255,138,76,0.06), transparent 50%),
+      #0F0D0C;
+  }
+
+  .canvas-label {
+    font-family: 'Geist Mono', ui-monospace, monospace;
+    font-size: 11px;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+    color: rgba(26,22,19,0.5);
+    font-weight: 500;
+  }
+  .canvas-label.dark { color: rgba(245,237,224,0.5); }
+  .canvas-label-title {
+    font-family: 'Newsreader', Georgia, serif;
+    font-size: 20px;
+    letter-spacing: -0.3px;
+    color: #1A1613;
+    font-weight: 500;
+    margin-top: 2px;
+  }
+  .canvas-label-title.dark { color: #F5EDE0; }
+
+  /* Hide scrollbars inside phone */
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { scrollbar-width: none; }
+
+  #root { min-height: 100vh; }
+
+  /* Print styles */
+  @media print {
+    @page { size: A3 landscape; margin: 1cm; }
+    html, body { background: #F2EDE5 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+    .stage-bg { min-height: auto !important; }
+    /* Ensure device frames don't get cut across pages */
+    [data-screen-label] { break-inside: avoid; page-break-inside: avoid; }
+    /* Hide floating tweaks panel in print */
+    [data-tweaks-panel] { display: none !important; }
+    /* Remove scroll behavior */
+    .no-scrollbar, * { overflow: visible !important; }
+  }
+</style>
+</head>
+<body>
+
+<div id="root"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script type="text/babel" src="frames/ios-frame.jsx"></script>
+<script type="text/babel" src="src/tokens.jsx"></script>
+<script type="text/babel" src="src/primitives.jsx"></script>
+<script type="text/babel" src="src/data.jsx"></script>
+<script type="text/babel" src="src/mobile-chrome.jsx"></script>
+<script type="text/babel" src="src/mobile-home.jsx"></script>
+<script type="text/babel" src="src/mobile-explore.jsx"></script>
+<script type="text/babel" src="src/mobile-books.jsx"></script>
+<script type="text/babel" src="src/mobile-detail.jsx"></script>
+<script type="text/babel" src="src/mobile-create.jsx"></script>
+<script type="text/babel" src="src/mobile-misc.jsx"></script>
+<script type="text/babel" src="src/web-app.jsx"></script>
+<script type="text/babel" src="src/web-screens.jsx"></script>
+
+<script type="text/babel">
+const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+  "dark": true
+}/*EDITMODE-END*/;
+
+function MobilePhone({ title, children, dark }) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 12 }}>
+      <div data-screen-label={title} style={{
+        width: 390, height: 844, borderRadius: 52,
+        position: 'relative', overflow: 'hidden',
+        background: dark ? '#0F0D0C' : '#FDFBF7',
+        boxShadow: '0 50px 100px rgba(26,22,19,0.18), 0 20px 40px rgba(26,22,19,0.1), 0 0 0 10px #1A1613, 0 0 0 11px rgba(255,255,255,0.15)',
+      }}>
+        {/* dynamic island */}
+        <div style={{
+          position: 'absolute', top: 12, left: '50%', transform: 'translateX(-50%)',
+          width: 126, height: 37, borderRadius: 24, background: '#000', zIndex: 100,
+        }} />
+        {/* status bar elements */}
+        <div style={{ position: 'absolute', top: 18, left: 28, zIndex: 90,
+                     fontFamily: '-apple-system,SF Pro,system-ui', fontWeight: 600, fontSize: 16,
+                     color: dark ? '#fff' : '#000' }}>9:41</div>
+        <div style={{ position: 'absolute', top: 20, right: 26, zIndex: 90, display: 'flex', gap: 5, alignItems: 'center' }}>
+          <svg width="17" height="12" viewBox="0 0 19 12"><rect x="0" y="7.5" width="3.2" height="4.5" rx="0.7" fill={dark ? '#fff' : '#000'}/><rect x="4.8" y="5" width="3.2" height="7" rx="0.7" fill={dark ? '#fff' : '#000'}/><rect x="9.6" y="2.5" width="3.2" height="9.5" rx="0.7" fill={dark ? '#fff' : '#000'}/><rect x="14.4" y="0" width="3.2" height="12" rx="0.7" fill={dark ? '#fff' : '#000'}/></svg>
+          <svg width="24" height="12" viewBox="0 0 27 13"><rect x="0.5" y="0.5" width="23" height="12" rx="3.5" stroke={dark ? '#fff' : '#000'} strokeOpacity="0.35" fill="none"/><rect x="2" y="2" width="20" height="9" rx="2" fill={dark ? '#fff' : '#000'}/><path d="M25 4.5V8.5C25.8 8.2 26.5 7.2 26.5 6.5C26.5 5.8 25.8 4.8 25 4.5Z" fill={dark ? '#fff' : '#000'} fillOpacity="0.4"/></svg>
+        </div>
+        <div style={{ height: '100%', overflow: 'auto' }} className="no-scrollbar">
+          {children}
+        </div>
+        {/* home indicator */}
+        <div style={{
+          position: 'absolute', bottom: 8, left: '50%', transform: 'translateX(-50%)',
+          width: 139, height: 5, borderRadius: 100, zIndex: 100,
+          background: dark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.3)',
+        }} />
+      </div>
+      <div style={{ paddingLeft: 4 }}>
+        <div className={`canvas-label ${dark ? 'dark' : ''}`}>{title.split(' / ')[0]}</div>
+        <div className={`canvas-label-title ${dark ? 'dark' : ''}`}>{title.split(' / ')[1] || title}</div>
+      </div>
+    </div>
+  );
+}
+
+function WebFrame({ title, dark, children }) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <div data-screen-label={title} style={{
+        width: 1280, height: 820, borderRadius: 14, overflow: 'hidden',
+        boxShadow: '0 40px 80px rgba(26,22,19,0.2), 0 0 0 1px rgba(26,22,19,0.08)',
+        background: dark ? '#0F0D0C' : '#FDFBF7', position: 'relative',
+      }}>
+        {/* Browser chrome */}
+        <div style={{
+          height: 38, background: dark ? '#1A1613' : '#EFE6D6',
+          display: 'flex', alignItems: 'center', padding: '0 14px', gap: 8,
+          borderBottom: `0.5px solid ${dark ? 'rgba(255,237,213,0.08)' : 'rgba(26,22,19,0.08)'}`,
+        }}>
+          <div style={{ display: 'flex', gap: 6 }}>
+            <div style={{ width: 11, height: 11, borderRadius: '50%', background: '#FF5F57' }}/>
+            <div style={{ width: 11, height: 11, borderRadius: '50%', background: '#FEBC2E' }}/>
+            <div style={{ width: 11, height: 11, borderRadius: '50%', background: '#28C840' }}/>
+          </div>
+          <div style={{
+            margin: '0 auto', padding: '4px 14px', borderRadius: 6,
+            background: dark ? 'rgba(255,237,213,0.06)' : 'rgba(255,255,255,0.6)',
+            fontFamily: 'Geist Mono, monospace', fontSize: 11,
+            color: dark ? '#A89C8E' : '#6B6158',
+          }}>siyoh.app</div>
+        </div>
+        <div style={{ height: 'calc(100% - 38px)', overflow: 'auto' }} className="no-scrollbar">
+          {children}
+        </div>
+      </div>
+      <div style={{ paddingLeft: 4 }}>
+        <div className={`canvas-label ${dark ? 'dark' : ''}`}>{title.split(' / ')[0]}</div>
+        <div className={`canvas-label-title ${dark ? 'dark' : ''}`}>{title.split(' / ')[1] || title}</div>
+      </div>
+    </div>
+  );
+}
+
+function TweaksPanel({ dark, setDark }) {
+  const [on, setOn] = React.useState(false);
+  React.useEffect(() => {
+    const handler = (e) => {
+      if (e.data?.type === '__activate_edit_mode') setOn(true);
+      if (e.data?.type === '__deactivate_edit_mode') setOn(false);
+    };
+    window.addEventListener('message', handler);
+    window.parent.postMessage({ type: '__edit_mode_available' }, '*');
+    return () => window.removeEventListener('message', handler);
+  }, []);
+  if (!on) return null;
+  return (
+    <div style={{
+      position: 'fixed', bottom: 22, right: 22, zIndex: 1000,
+      borderRadius: 18, padding: 14, minWidth: 220,
+      background: 'rgba(255,255,255,0.9)', backdropFilter: 'blur(20px) saturate(180%)',
+      boxShadow: '0 20px 40px rgba(26,22,19,0.18), inset 0 1px 0 rgba(255,255,255,0.9)',
+      border: '0.5px solid rgba(26,22,19,0.06)',
+    }}>
+      <div style={{ fontFamily: 'Newsreader, serif', fontSize: 14, fontWeight: 600, color: '#1A1613', marginBottom: 10 }}>Tweaks</div>
+      <div style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        padding: '8px 0', borderTop: '0.5px solid rgba(26,22,19,0.08)',
+      }}>
+        <span style={{ fontFamily: 'Geist, sans-serif', fontSize: 13, color: '#1A1613' }}>Dark mode</span>
+        <div onClick={() => {
+          const next = !dark;
+          setDark(next);
+          window.parent.postMessage({ type: '__edit_mode_set_keys', edits: { dark: next } }, '*');
+        }} style={{
+          width: 40, height: 24, borderRadius: 12, padding: 2, cursor: 'pointer',
+          background: dark ? '#FF6A3D' : 'rgba(26,22,19,0.15)',
+          display: 'flex', justifyContent: dark ? 'flex-end' : 'flex-start',
+          transition: 'all 0.2s',
+        }}>
+          <div style={{ width: 20, height: 20, borderRadius: '50%', background: '#fff',
+                       boxShadow: '0 1px 3px rgba(0,0,0,0.2)' }} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function App() {
+  const [dark, setDark] = React.useState(TWEAK_DEFAULTS.dark);
+
+  // State for each mobile screen
+  const [mobTab, setMobTab] = React.useState('home');
+  const [mobScreen, setMobScreen] = React.useState(null); // 'detail', 'player', 'settings', etc
+  const [activeStory, setActiveStory] = React.useState(null);
+
+  const openStory = (s) => { setActiveStory(s); setMobScreen('detail'); };
+  const openPlayer = (s) => { setActiveStory(s); setMobScreen('player'); };
+
+  // ==== Intro/hero banner ====
+  return (
+    <div className={`stage-bg ${dark ? 'dark' : ''}`}>
+      <div style={{ padding: '48px 56px 28px' }}>
+        <SiyohLogo size={32} dark={dark} />
+        <div style={{
+          marginTop: 22, fontFamily: 'Newsreader, serif', fontSize: 44,
+          color: dark ? '#F5EDE0' : '#1A1613', fontWeight: 500,
+          letterSpacing: -1, lineHeight: 1.05, maxWidth: 640, textWrap: 'balance',
+        }}>Stories worth slowing down for.</div>
+        <div style={{
+          marginTop: 10, fontFamily: 'Newsreader, serif', fontSize: 17,
+          color: dark ? '#A89C8E' : '#6B6158', maxWidth: 600, textWrap: 'pretty',
+        }}>A writing platform where people share stories in words or in voice — a high-fidelity direction for the mobile app and the web experience.</div>
+        <div style={{
+          marginTop: 18, fontFamily: 'Geist Mono, monospace', fontSize: 11,
+          color: dark ? '#A89C8E' : '#6B6158', letterSpacing: 0.6,
+          textTransform: 'uppercase', fontWeight: 500,
+        }}>Direction · Milky white × Signature orange · Newsreader + Geist · Liquid glass · One polished system</div>
+      </div>
+
+      {/* Mobile canvas */}
+      <div style={{ padding: '24px 56px 40px' }}>
+        <SectionTitle dark={dark} kicker="Mobile · iOS" title="The pocket experience" />
+        <div style={{ display: 'flex', gap: 64, flexWrap: 'wrap', paddingTop: 20 }}>
+          <MobilePhone dark={dark} title="01 / Onboarding">
+            <MobileOnboarding dark={dark} onDone={() => {}} />
+          </MobilePhone>
+
+          <MobilePhone dark={dark} title="02 / Home feed">
+            <MobileHome dark={dark} onOpenStory={() => {}} onOpenPlayer={() => {}} />
+            <MobileTabBar dark={dark} active="home" onChange={() => {}} />
+          </MobilePhone>
+
+          <MobilePhone dark={dark} title="03 / Explore">
+            <MobileExplore dark={dark} onOpenStory={() => {}} />
+            <MobileTabBar dark={dark} active="explore" onChange={() => {}} />
+          </MobilePhone>
+
+          <MobilePhone dark={dark} title="04 / Books (filters)">
+            <MobileBooks dark={dark} onOpenStory={() => {}} />
+            <MobileTabBar dark={dark} active="books" onChange={() => {}} />
+          </MobilePhone>
+
+          <MobilePhone dark={dark} title="05 / Story detail">
+            <MobileStoryDetail dark={dark} story={SIYOH_DATA.stories[0]} onBack={() => {}} onOpenPlayer={() => {}} />
+          </MobilePhone>
+
+          <MobilePhone dark={dark} title="06 / Audio player">
+            <MobileAudioPlayer dark={dark} story={SIYOH_DATA.stories[1]} onBack={() => {}} />
+          </MobilePhone>
+
+          <MobilePhone dark={dark} title="07 / Create flow">
+            <MobileCreate dark={dark} onBack={() => {}} />
+          </MobilePhone>
+
+          <MobilePhone dark={dark} title="08 / Profile / pages">
+            <MobileProfile dark={dark} onOpenStory={() => {}} onOpenSettings={() => {}} />
+            <MobileTabBar dark={dark} active="profile" onChange={() => {}} />
+          </MobilePhone>
+
+          <MobilePhone dark={dark} title="09 / Settings">
+            <MobileSettings dark={dark} onBack={() => {}} onToggleDark={() => setDark(!dark)} />
+          </MobilePhone>
+        </div>
+      </div>
+
+      {/* Web canvas */}
+      <div style={{ padding: '40px 56px 100px' }}>
+        <SectionTitle dark={dark} kicker="Web · Desktop" title="The larger canvas" />
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 56, paddingTop: 20 }}>
+          <WebFrame dark={dark} title="10 / Home"><WebStandalone dark={dark} section="home" /></WebFrame>
+          <WebFrame dark={dark} title="11 / Explore"><WebStandalone dark={dark} section="explore" /></WebFrame>
+          <WebFrame dark={dark} title="12 / Books"><WebStandalone dark={dark} section="books" /></WebFrame>
+          <WebFrame dark={dark} title="13 / Story detail"><WebStandalone dark={dark} section="detail" /></WebFrame>
+          <WebFrame dark={dark} title="14 / Create"><WebStandalone dark={dark} section="create" /></WebFrame>
+          <WebFrame dark={dark} title="15 / Profile"><WebStandalone dark={dark} section="profile" /></WebFrame>
+        </div>
+      </div>
+
+      <TweaksPanel dark={dark} setDark={setDark} />
+    </div>
+  );
+}
+
+function SectionTitle({ dark, kicker, title }) {
+  return (
+    <div>
+      <div style={{
+        fontFamily: 'Geist Mono, monospace', fontSize: 11,
+        color: dark ? '#A89C8E' : '#6B6158', letterSpacing: 0.8,
+        textTransform: 'uppercase', fontWeight: 600, marginBottom: 4,
+      }}>{kicker}</div>
+      <div style={{
+        fontFamily: 'Newsreader, serif', fontSize: 30, fontWeight: 500,
+        color: dark ? '#F5EDE0' : '#1A1613', letterSpacing: -0.6,
+      }}>{title}</div>
+    </div>
+  );
+}
+
+// Web standalone wrapper — plugs the WebApp into a specific starting section
+function WebStandalone({ dark, section }) {
+  const [story, setStory] = React.useState(section === 'detail' ? SIYOH_DATA.stories[0] : null);
+  const [sec, setSec] = React.useState(section === 'detail' ? 'home' : section);
+
+  return (
+    <div style={{ minHeight: '100%', background: dark ? '#141110' : '#FDFBF7', position: 'relative', overflow: 'hidden' }}>
+      <div style={{ position: 'absolute', top: -200, right: -100, width: 500, height: 500,
+                   borderRadius: '50%', background: dark ? 'rgba(255,87,34,0.15)' : 'rgba(255,138,76,0.18)',
+                   filter: 'blur(100px)', pointerEvents: 'none' }} />
+      <div style={{ position: 'absolute', bottom: -200, left: 200, width: 400, height: 400,
+                   borderRadius: '50%', background: dark ? 'rgba(255,200,150,0.06)' : 'rgba(255,200,150,0.2)',
+                   filter: 'blur(90px)', pointerEvents: 'none' }} />
+      <div style={{ display: 'grid', gridTemplateColumns: '220px 1fr 320px', minHeight: '100%',
+                   maxWidth: 1280, margin: '0 auto', position: 'relative', zIndex: 1 }}>
+        <WebSidebar dark={dark} section={sec} onChange={(s) => { setSec(s); setStory(null); }} onToggleDark={() => {}} />
+        <div style={{ borderLeft: `0.5px solid ${dark ? 'rgba(255,237,213,0.08)' : 'rgba(26,22,19,0.08)'}`,
+                     borderRight: `0.5px solid ${dark ? 'rgba(255,237,213,0.08)' : 'rgba(26,22,19,0.08)'}` }}>
+          {story ? <WebStoryDetail dark={dark} story={story} onBack={() => setStory(null)} /> :
+           sec === 'home' ? <WebHome dark={dark} onOpenStory={setStory} /> :
+           sec === 'explore' ? <WebExplore dark={dark} onOpenStory={setStory} /> :
+           sec === 'books' ? <WebBooks dark={dark} onOpenStory={setStory} /> :
+           sec === 'create' ? <WebCreate dark={dark} /> :
+           sec === 'profile' ? <WebProfile dark={dark} onOpenStory={setStory} /> : null}
+        </div>
+        <WebRightRail dark={dark} onOpenStory={setStory} />
+      </div>
+      <WebMiniPlayer dark={dark} />
+    </div>
+  );
+}
+
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(<App />);
+
+// Auto-print once everything is ready
+(async () => {
+  try { await document.fonts.ready; } catch (e) {}
+  // Wait for React render + layout
+  await new Promise(r => setTimeout(r, 1500));
+  window.print();
+})();
+</script>
+
+</body>
+</html>
