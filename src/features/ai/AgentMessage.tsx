@@ -1,9 +1,10 @@
-import { motion } from "motion/react";
+import { motion, AnimatePresence } from "motion/react";
 import { useState } from "react";
 import {
   ChevronDown,
-  Sparkles,
-  Wrench,
+  ChevronRight,
+  Terminal,
+  Cpu,
   CheckCircle2,
   Loader2,
 } from "lucide-react";
@@ -16,17 +17,17 @@ type Segment =
   | { kind: "status"; text: string };
 
 const TOOL_LABELS: Record<string, string> = {
-  createNote: "Creating note",
-  updateNote: "Updating note",
-  deleteNote: "Deleting note",
-  createTask: "Creating task",
-  updateTask: "Updating task",
-  deleteTask: "Deleting task",
-  getTasks: "Reading tasks",
-  searchWeb: "Searching the web",
-  createCalendarEvent: "Creating calendar event",
-  saveMemory: "Saving to memory",
-  recallMemories: "Recalling memories",
+  createNote: "Created note",
+  updateNote: "Updated note",
+  deleteNote: "Deleted note",
+  createTask: "Scheduled task",
+  updateTask: "Modified task",
+  deleteTask: "Removed task",
+  getTasks: "Read tasks",
+  searchWeb: "Searched web",
+  createCalendarEvent: "Added calendar event",
+  saveMemory: "Saved to memory",
+  recallMemories: "Recalled memories",
 };
 
 function parseMessage(raw: string): Segment[] {
@@ -86,9 +87,7 @@ function parseMessage(raw: string): Segment[] {
             args: parsed.tool_call.arguments ?? {},
           });
         }
-      } catch {
-        // swallow malformed JSON silently; no raw text leak
-      }
+      } catch {}
       cursor += jsonMatch.index! + jsonMatch[0].length;
       continue;
     }
@@ -112,48 +111,51 @@ export function AgentMessage({
 }) {
   const segments = parseMessage(content);
   const hasText = segments.some((s) => s.kind === "text" && s.text.trim());
+  const thoughts = segments.filter((s) => s.kind === "thought") as { kind: "thought", text: string }[];
+  const tools = segments.filter((s) => s.kind === "tool") as { kind: "tool", name: string, args: any }[];
+  const activeStatus = [...segments].reverse().find((s) => s.kind === "status") as { kind: "status", text: string } | undefined;
+
+  // Render minimal logic trace if there are thoughts, tools, or status
+  const showTrace = thoughts.length > 0 || tools.length > 0 || (streaming && activeStatus);
 
   return (
-    <div className="space-y-2 w-full">
-      {segments.map((seg, i) => {
-        if (seg.kind === "thought") {
-          const nextTool = segments
-            .slice(i + 1)
-            .find((s) => s.kind === "tool") as
-            | { kind: "tool"; name: string }
-            | undefined;
-          return (
-            <ThoughtBubble
-              key={i}
-              text={seg.text}
-              upcomingTool={nextTool?.name}
-            />
-          );
-        }
-        if (seg.kind === "tool") {
-          return <ToolCard key={i} name={seg.name} args={seg.args} done />;
-        }
-        if (seg.kind === "status") {
-          return <WorkingPill key={i} text={seg.text} />;
-        }
-        return (
-          <motion.div
-            key={i}
-            initial={{ opacity: 0, y: 4 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.2 }}
-            className="text-text-primary"
-          >
-            <MarkdownRenderer content={seg.text} />
-          </motion.div>
-        );
-      })}
+    <div className="space-y-4 w-full">
+      {/* Minimal Logic Trace (Expandable) */}
+      {showTrace && (
+        <LogicTrace
+          thoughts={thoughts}
+          tools={tools}
+          activeStatus={activeStatus}
+          streaming={streaming}
+        />
+      )}
+
+      {/* Actual markdown content fragments */}
+      <div className="space-y-3">
+        {segments.map((seg, i) => {
+          if (seg.kind === "text") {
+            return (
+              <motion.div
+                key={`text-${i}`}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.2 }}
+                className="text-[14.5px] text-text-primary leading-relaxed"
+              >
+                <MarkdownRenderer content={seg.text} />
+              </motion.div>
+            );
+          }
+          return null;
+        })}
+      </div>
+
       {streaming && !hasText && (
-        <div className="flex gap-1 items-center py-1">
+        <div className="flex gap-1 items-center py-1.5 pl-1">
           {[0, 1, 2].map((i) => (
             <motion.div
               key={i}
-              className="w-1.5 h-1.5 rounded-full bg-accent/70"
+              className="w-1.5 h-1.5 rounded-full bg-text-tertiary"
               animate={{ opacity: [0.3, 1, 0.3], y: [0, -2, 0] }}
               transition={{
                 repeat: Infinity,
@@ -168,138 +170,96 @@ export function AgentMessage({
   );
 }
 
-function ThoughtBubble({
-  text,
-  upcomingTool,
+function LogicTrace({
+  thoughts,
+  tools,
+  activeStatus,
+  streaming
 }: {
-  text: string;
-  upcomingTool?: string;
+  thoughts: { text: string }[];
+  tools: { name: string; args: any }[];
+  activeStatus?: { text: string };
+  streaming?: boolean;
 }) {
   const [open, setOpen] = useState(false);
-  const preview = text.trim().split("\n")[0].slice(0, 80);
-  const toolLabel = upcomingTool ? TOOL_LABELS[upcomingTool] ?? upcomingTool : null;
+  
+  // Condense all thoughts together
+  const rawThoughts = thoughts.map(t => t.text.trim()).join("\n\n").trim();
+  
+  // Decide header
+  let headerText = "Reasoning & Process";
+  if (streaming && activeStatus) {
+    headerText = activeStatus.text;
+  } else if (streaming && !activeStatus && rawThoughts.length > 0) {
+    headerText = "Analyzing context...";
+  } else if (tools.length > 0) {
+    headerText = `Completed ${tools.length} tasks`;
+  }
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 4 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="rounded-2xl border border-border-light bg-bg-glass/60 backdrop-blur-md
-        shadow-[0_1px_2px_rgba(0,0,0,0.03),0_4px_20px_rgba(0,122,255,0.04)]
-        overflow-hidden"
-    >
+    <div className="rounded-xl border border-border/60 bg-bg-secondary/20 overflow-hidden text-[12px]">
       <button
-        onClick={() => setOpen((v) => !v)}
-        className="w-full flex items-center gap-2 px-3 py-2 text-left cursor-pointer
-          hover:bg-bg-hover transition-colors"
+        onClick={() => setOpen(!open)}
+        className="w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-bg-hover/50 transition-colors cursor-pointer"
       >
-        <div className="relative w-6 h-6 shrink-0">
-          <motion.span
-            animate={{ scale: [1, 1.25, 1], opacity: [0.5, 0, 0.5] }}
-            transition={{ duration: 1.8, repeat: Infinity }}
-            className="absolute inset-0 rounded-lg bg-accent/20"
-          />
-          <div className="relative w-6 h-6 rounded-lg flex items-center justify-center
-            bg-gradient-to-br from-accent/25 to-accent/5 text-accent">
-            <Sparkles size={12} />
-          </div>
+        <div className="w-5 h-5 flex items-center justify-center text-text-tertiary shrink-0">
+          {streaming ? (
+             <Cpu size={14} className="text-accent animate-pulse" />
+          ) : (
+             <Terminal size={12} />
+          )}
         </div>
-        <span className="text-[12px] font-semibold text-text-secondary">
-          Glub
+        <span className="flex-1 font-medium text-text-secondary truncate">
+          {headerText}
         </span>
-        {toolLabel ? (
-          <span
-            className="text-[11px] font-medium text-accent px-2 py-0.5 rounded-full
-              bg-accent/10 border border-accent/15 whitespace-nowrap"
-          >
-            {toolLabel}
-          </span>
-        ) : (
-          <span className="text-[11px] font-medium text-text-tertiary">
-            thinking
-          </span>
-        )}
-        <span className="text-[12px] text-text-tertiary truncate flex-1">
-          {preview}
-        </span>
-        <ChevronDown
+        <ChevronRight
           size={14}
-          className={`text-text-tertiary transition-transform ${
-            open ? "rotate-180" : ""
-          }`}
+          className={`text-text-tertiary transition-transform duration-200 ${open ? "rotate-90" : ""}`}
         />
       </button>
-      {open && (
-        <motion.div
-          initial={{ opacity: 0, height: 0 }}
-          animate={{ opacity: 1, height: "auto" }}
-          className="px-4 pb-3 pt-1 border-t border-border-light text-[12.5px]
-            text-text-secondary whitespace-pre-wrap leading-relaxed"
-        >
-          {text.trim()}
-        </motion.div>
-      )}
-    </motion.div>
-  );
-}
 
-function ToolCard({
-  name,
-  args,
-  done,
-}: {
-  name: string;
-  args: Record<string, unknown>;
-  done?: boolean;
-}) {
-  const label = TOOL_LABELS[name] ?? name;
-  const primary =
-    (args.title as string) ||
-    (args.query as string) ||
-    (args.fact as string) ||
-    "";
+      <AnimatePresence initial={false}>
+        {open && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="border-t border-border/40 bg-bg-secondary/10"
+          >
+            <div className="p-4 space-y-4">
+              {/* Tool Execution List */}
+              {tools.length > 0 && (
+                <div className="space-y-2">
+                  <h4 className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">Executed Actions</h4>
+                  <div className="grid gap-2">
+                    {tools.map((tool, idx) => (
+                      <div key={idx} className="flex gap-2.5 items-start">
+                        <CheckCircle2 size={14} className="text-success mt-0.5 shrink-0" />
+                        <div>
+                          <p className="font-medium text-text-primary">{TOOL_LABELS[tool.name] || tool.name}</p>
+                          <p className="text-[11px] text-text-tertiary font-mono truncate max-w-sm mt-0.5">
+                            {JSON.stringify(tool.args)}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 6, scale: 0.98 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      transition={{ type: "spring", stiffness: 320, damping: 26 }}
-      className="flex items-center gap-3 px-3.5 py-2.5 rounded-2xl
-        bg-gradient-to-br from-accent/10 to-accent/5
-        border border-accent/15
-        shadow-[0_1px_2px_rgba(0,0,0,0.03),0_4px_20px_rgba(0,122,255,0.08)]"
-    >
-      <div
-        className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0
-          bg-accent text-white shadow-[0_2px_8px_rgba(0,122,255,0.35)]"
-      >
-        {done ? <CheckCircle2 size={15} /> : <Wrench size={14} />}
-      </div>
-      <div className="min-w-0 flex-1">
-        <p className="text-[12.5px] font-medium text-text-primary truncate">
-          {label}
-        </p>
-        {primary && (
-          <p className="text-[11.5px] text-text-tertiary truncate mt-0.5">
-            {primary}
-          </p>
+              {/* Thoughts / Reasoning block */}
+              {rawThoughts && (
+                <div className="space-y-2">
+                  <h4 className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">Logic Trace</h4>
+                  <p className="text-[12px] leading-relaxed text-text-secondary whitespace-pre-wrap font-mono opacity-80 border-l-2 border-border/60 pl-3">
+                    {rawThoughts}
+                  </p>
+                </div>
+              )}
+            </div>
+          </motion.div>
         )}
-      </div>
-    </motion.div>
-  );
-}
-
-function WorkingPill({ text }: { text: string }) {
-  const label = TOOL_LABELS[text.replace(/\.+$/, "")] ?? text;
-  return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full
-        bg-accent/10 border border-accent/15
-        text-[11.5px] font-medium text-accent"
-    >
-      <Loader2 size={12} className="animate-spin" />
-      {label}
-    </motion.div>
+      </AnimatePresence>
+    </div>
   );
 }

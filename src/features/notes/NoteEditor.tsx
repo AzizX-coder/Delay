@@ -196,6 +196,30 @@ export function NoteEditor({ noteId }: NoteEditorProps) {
     };
   }, []);
 
+  const [slashMenu, setSlashMenu] = useState<{ x: number; y: number } | null>(null);
+
+  useEffect(() => {
+    if (!editor) return;
+    const updateHandler = () => {
+      const { state, view } = editor;
+      const { selection } = state;
+      const cursorText = state.doc.textBetween(selection.from - 1, selection.from);
+      if (cursorText === "/") {
+        const coords = view.coordsAtPos(selection.from);
+        const box = view.dom.getBoundingClientRect();
+        setSlashMenu({ x: coords.left - box.left, y: coords.top - box.top + 24 });
+      } else {
+        setSlashMenu(null);
+      }
+    };
+    editor.on('update', updateHandler);
+    editor.on('selectionUpdate', updateHandler);
+    return () => {
+      editor.off('update', updateHandler);
+      editor.off('selectionUpdate', updateHandler);
+    };
+  }, [editor]);
+
   if (!editor || !note) return null;
 
   return (
@@ -379,6 +403,52 @@ export function NoteEditor({ noteId }: NoteEditorProps) {
 
       <div className="flex-1 relative overflow-y-auto bg-bg-primary">
         <EditorContent editor={editor} className="min-h-full" />
+        
+        {slashMenu && (
+          <div 
+            className="absolute z-50 flex flex-col gap-1 p-2 bg-bg-elevated border border-border shadow-2xl rounded-2xl min-w-[180px]"
+            style={{ top: slashMenu.y, left: slashMenu.x }}
+          >
+            <p className="px-2 pb-1 text-[10px] font-bold text-text-tertiary uppercase tracking-wider">Slash Commands</p>
+            <button
+              onClick={() => { editor.commands.deleteRange({ from: editor.state.selection.from - 1, to: editor.state.selection.from }); editor.chain().focus().toggleHeading({ level: 1 }).run(); }}
+              className="flex items-center gap-2 px-3 py-2 rounded-xl text-[12.5px] font-medium text-text-secondary hover:text-text-primary hover:bg-bg-hover transition-colors text-left"
+            >
+              <Heading1 size={15} className="text-text-tertiary" /> Heading 1
+            </button>
+            <button
+              onClick={() => { editor.commands.deleteRange({ from: editor.state.selection.from - 1, to: editor.state.selection.from }); editor.chain().focus().toggleTaskList().run(); }}
+              className="flex items-center gap-2 px-3 py-2 rounded-xl text-[12.5px] font-medium text-text-secondary hover:text-text-primary hover:bg-bg-hover transition-colors text-left"
+            >
+              <ListChecks size={15} className="text-text-tertiary" /> Task List
+            </button>
+            <button
+              onClick={() => { editor.commands.deleteRange({ from: editor.state.selection.from - 1, to: editor.state.selection.from }); editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run(); }}
+              className="flex items-center gap-2 px-3 py-2 rounded-xl text-[12.5px] font-medium text-text-secondary hover:text-text-primary hover:bg-bg-hover transition-colors text-left"
+            >
+              <TableIcon size={15} className="text-text-tertiary" /> Insert Table
+            </button>
+            <button
+              onClick={() => {
+                editor.commands.deleteRange({ from: editor.state.selection.from - 1, to: editor.state.selection.from });
+                const prompt = window.prompt("Ask AI regarding this empty space:");
+                if (prompt) {
+                  editor.chain().focus().insertContent(`\n*AI writing: ${prompt}...*\n`).run();
+                  sendMessage(`Please write content directly as beautifully formatted markdown based on this instruction: ${prompt}`, true);
+                }
+              }}
+              className="flex items-center gap-2 px-3 py-2 rounded-xl text-[12.5px] font-bold text-accent bg-accent/10 hover:bg-accent/20 transition-colors text-left"
+            >
+              <Sparkles size={15} /> Ask AI
+            </button>
+            <button
+              onClick={() => { editor.commands.deleteRange({ from: editor.state.selection.from - 1, to: editor.state.selection.from }); setShowEmojiPicker(true); }}
+              className="flex items-center gap-2 px-3 py-2 rounded-xl text-[12.5px] font-medium text-text-secondary hover:text-text-primary hover:bg-bg-hover transition-colors text-left"
+            >
+              <Smile size={15} className="text-text-tertiary" /> Emoji
+            </button>
+          </div>
+        )}
 
         <AnimatePresence>
           {isProcessing && (

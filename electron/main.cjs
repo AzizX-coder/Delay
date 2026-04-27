@@ -87,16 +87,48 @@ ipcMain.on("app-relaunch", () => {
 });
 
 // ── Disk Flows: yt-dlp download ──
-ipcMain.handle("disk-flows-download", async (_event, url, downloadId) => {
+ipcMain.handle("disk-flows-get-formats", async (_event, url) => {
+  return new Promise((resolve) => {
+    const { exec } = require("child_process");
+    exec(`yt-dlp -j "${url}"`, { maxBuffer: 1024 * 1024 * 10 }, (error, stdout) => {
+      if (error) {
+        resolve({ ok: false, error: String(error) });
+        return;
+      }
+      try {
+        const info = JSON.parse(stdout);
+        const formats = (info.formats || []).filter((f) => f.vcodec !== 'none' || f.acodec !== 'none').map((f) => ({
+          format_id: f.format_id,
+          ext: f.ext,
+          resolution: f.resolution || (f.width ? `${f.width}x${f.height}` : "audio only"),
+          vcodec: f.vcodec,
+          acodec: f.acodec,
+          filesize: f.filesize || f.filesize_approx,
+          format_note: f.format_note,
+        }));
+        resolve({ ok: true, formats, title: info.title, thumbnail: info.thumbnail });
+      } catch (e) {
+        resolve({ ok: false, error: "Failed to parse info" });
+      }
+    });
+  });
+});
+
+ipcMain.handle("disk-flows-download", async (_event, url, downloadId, formatId) => {
   const videosDir = path.join(app.getPath("videos"), "Delay");
   const fs = require("fs");
   if (!fs.existsSync(videosDir)) fs.mkdirSync(videosDir, { recursive: true });
 
   return new Promise((resolve) => {
     const outputTemplate = path.join(videosDir, "%(title)s.%(ext)s");
+    
+    // Default to 'best' if no formatId is provided, otherwise target the specific format+bestaudio
+    const formatArgs = formatId && formatId !== "best" ? ["-f", `${formatId}+bestaudio/best`] : ["-f", "best"];
+    
     const proc = spawn("yt-dlp", [
       "--progress",
       "--newline",
+      ...formatArgs,
       "-o", outputTemplate,
       url,
     ]);
@@ -113,6 +145,9 @@ ipcMain.handle("disk-flows-download", async (_event, url, downloadId) => {
       // Parse title
       const titleMatch = line.match(/\[download\] Destination: (.+)/);
       if (titleMatch) lastTitle = path.basename(titleMatch[1]);
+      
+      const mergeMatch = line.match(/Merging formats into "(.+)"/);
+      if (mergeMatch) lastTitle = path.basename(mergeMatch[1]);
     });
 
     proc.stderr.on("data", (data) => {
@@ -127,7 +162,7 @@ ipcMain.handle("disk-flows-download", async (_event, url, downloadId) => {
         sendDiskFlowEvent("completed", {
           id: downloadId,
           title: lastTitle || "Downloaded",
-          file_path: videosDir,
+          file_path: lastTitle ? path.join(videosDir, lastTitle) : videosDir,
         });
         resolve({ ok: true });
       } else {

@@ -22,24 +22,24 @@ Notes · Tasks · Calendar · Timer · Code Studio · Disk Flows · AI Agent
 
 Delay is a **local-first desktop Agentic OS** that unifies your **notes**, **tasks**, **calendar**, **smart timer**, **code workspace**, **video downloads**, and a built-in **autonomous AI agent** behind one polished, fluid interface. Everything lives on your device — no accounts, no cloud, no tracking.
 
-## 🧩 Features (v1.5.0)
+## 🧩 Features (v1.6.0)
 
 | Module | Highlights |
 |--------|-----------|
-| **🤖 Autonomous AI Agent** | 18-tool agent with ambient context · 12-turn reasoning loop · long-term memory · web search · task/note/calendar orchestration |
-| **📝 Notes** | TipTap rich editor with tables, task lists & 6 templates · Whispr Flow voice dictation with live waveform overlay |
+| **🤖 Autonomous AI Agent** | 18-tool agent with ambient context · 12-turn reasoning loop · long-term memory · web search · task/note/calendar orchestration · **Sleek Logic Trace UI** |
+| **📝 Notes** | TipTap rich editor with tables, task lists & 6 templates · Whispr Flow voice dictation with live waveform overlay · **Native Slash Commands (`/`)** |
 | **✅ Tasks** | Full task editing modal (priority · due date · description) · Inbox / Today / Upcoming / Completed views · custom lists |
 | **📅 Calendar** | Month / Week / Day views · events + tasks in one unified view |
 | **⏱️ Smart Timer** | Pomodoro timer with circular progress ring · Focus / Short Break / Long Break presets · custom durations · session streak tracking · completion chimes |
-| **💻 Code Studio** | Multi-tab code snippet workspace · 13 languages · line numbers · AI-powered code analysis · **Open folders** · **Open in VS Code** |
-| **💾 Disk Flows** | Download YouTube & Instagram videos by URL · auto-detect platform · progress tracking · **Show in Folder** · **Copy to Downloads** |
+| **💻 Code Studio** | **Monaco Editor integration** · Multi-tab workspace · 30+ languages · **Inline Agent prompt** · Open folders · Open in VS Code |
+| **💾 Disk Flows** | Download YouTube & Instagram videos · **Select Quality & Formats** · **In-App Video Playback** · Show in Folder · Copy to Downloads |
 | **🎙️ Voice Input** | Whispr Flow-style frosted overlay · live waveform bars · real-time transcript · auto-send from voice |
 | **🌐 I18N** | 11 languages — English, Spanish, French, German, Russian, Arabic (RTL), Uzbek, Japanese, Chinese, Korean, Portuguese |
-| **🎨 Themes** | Lighter dark mode · Light · System · glassmorphic UI throughout |
+| **🎨 Themes** | **Custom Image Backgrounds** · Lighter dark mode · Light · System · responsive Glassmorphic UI |
 
 ## 📥 Download
 
-Grab the latest **Delay-Setup-1.5.0.exe** from the [Releases](https://github.com/AzizX-coder/Delay/releases/latest) page, or visit the [landing page](https://azizx-coder.github.io/Delay/).
+Grab the latest **Delay-Setup-1.6.0.exe** from the [Releases](https://github.com/AzizX-coder/Delay/releases/latest) page, or visit the [landing page](https://azizx-coder.github.io/Delay/).
 
 **Requirements:** Windows 10 or 11 (x64). Optional: [Ollama](https://ollama.com/) for AI features. Optional: [yt-dlp](https://github.com/yt-dlp/yt-dlp) for Disk Flows video downloads.
 
@@ -49,10 +49,10 @@ Delay is built by an independent developer and is **not yet code-signed with a p
 
 **To install safely:**
 
-1. Download `Delay-Setup-1.5.0.exe` and the matching `SHA256SUMS.txt` from [Releases](https://github.com/AzizX-coder/Delay/releases/latest).
+1. Download `Delay-Setup-1.6.0.exe` and the matching `SHA256SUMS.txt` from [Releases](https://github.com/AzizX-coder/Delay/releases/latest).
 2. *(Optional but recommended)* verify the download integrity:
    ```powershell
-   Get-FileHash .\Delay-Setup-1.5.0.exe -Algorithm SHA256
+   Get-FileHash .\Delay-Setup-1.6.0.exe -Algorithm SHA256
    ```
    The hash must match the one in `SHA256SUMS.txt`.
 3. Double-click the installer. If SmartScreen appears, click **More info → Run anyway**.

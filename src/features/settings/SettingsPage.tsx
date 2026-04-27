@@ -30,7 +30,7 @@ import { Logo } from "@/components/ui/Logo";
 import { useT } from "@/lib/i18n";
 
 export function SettingsPage() {
-  const { theme, setTheme } = useThemeStore();
+  const { theme, setTheme, customBgData, setCustomBg } = useThemeStore();
   const { language, ai_model, setSetting } = useSettingsStore();
   const { setModel } = useAIStore();
   const {
@@ -123,6 +123,40 @@ export function SettingsPage() {
                 {opt.label}
               </motion.button>
             ))}
+          </div>
+          
+          <div className="mt-4 p-4 rounded-xl bg-bg-secondary/50 border border-border border-dashed flex items-center justify-between">
+            <div>
+              <p className="text-[13px] font-medium text-text-primary">Custom Background</p>
+              <p className="text-[11px] text-text-tertiary mt-0.5">Upload a local image (Base64) to use as the app wallpaper</p>
+            </div>
+            <div className="flex items-center gap-2">
+              {customBgData && (
+                <button 
+                  onClick={() => setCustomBg(null)} 
+                  className="px-3 py-1.5 rounded-lg text-[11px] font-semibold text-danger bg-danger/10 hover:bg-danger/20 transition-colors"
+                >
+                  Remove
+                </button>
+              )}
+              <label className="px-4 py-1.5 rounded-lg bg-bg-hover border border-border/80 text-[12px] font-medium hover:bg-bg-active cursor-pointer transition-colors block">
+                {customBgData ? "Change Image" : "Upload Image"}
+                <input 
+                  type="file" 
+                  accept="image/*" 
+                  className="hidden" 
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                      if (event.target?.result) setCustomBg(event.target.result as string);
+                    };
+                    reader.readAsDataURL(file);
+                  }} 
+                />
+              </label>
+            </div>
           </div>
         </Section>
 

@@ -1,7 +1,9 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
+import { Editor } from "@monaco-editor/react";
 import { useCodeStudioStore, LANGUAGES } from "@/stores/codeStudioStore";
 import { useAIStore } from "@/stores/aiStore";
+import { useThemeStore } from "@/stores/themeStore";
 import {
   Plus,
   Trash2,
@@ -13,6 +15,8 @@ import {
   FileCode,
   FolderOpen,
   ExternalLink,
+  Send,
+  Loader2,
   X,
 } from "lucide-react";
 
@@ -20,7 +24,7 @@ export function CodeStudioPage() {
   const {
     snippets,
     activeSnippetId,
-    loading,
+    loading: snippetsLoading,
     loadSnippets,
     createSnippet,
     updateSnippet,
@@ -28,16 +32,24 @@ export function CodeStudioPage() {
     setActiveSnippet,
   } = useCodeStudioStore();
 
-  const { sendMessage } = useAIStore();
+  const { sendMessage, isStreaming } = useAIStore();
+  const { resolved: themeResolved } = useThemeStore();
+  
   const [copied, setCopied] = useState(false);
   const [showLangPicker, setShowLangPicker] = useState(false);
-  const [aiLoading, setAILoading] = useState(false);
-  const [folderFiles, setFolderFiles] = useState<{ name: string; content: string }[]>([]);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [showAIInput, setShowAIInput] = useState(false);
+  const [aiInput, setAiInput] = useState("");
+  const aiInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     loadSnippets();
   }, []);
+
+  useEffect(() => {
+    if (showAIInput && aiInputRef.current) {
+      aiInputRef.current.focus();
+    }
+  }, [showAIInput]);
 
   const active = snippets.find((s) => s.id === activeSnippetId);
 
@@ -48,28 +60,35 @@ export function CodeStudioPage() {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const handleAIAssist = async () => {
-    if (!active || !active.code.trim()) return;
-    setAILoading(true);
-    try {
-      await sendMessage(
-        `Explain and improve this ${active.language} code. Provide suggestions:\n\n\`\`\`${active.language}\n${active.code}\n\`\`\``,
-        true
-      );
-    } finally {
-      setAILoading(false);
+  const handleAISubmit = async () => {
+    if (!active || !aiInput.trim() || isStreaming) return;
+    
+    // Fire to the Agent using agent mode (mode=true)
+    const prompt = `INSTRUCTION: Modifying user's active code snippet titled "${active.title}" (${active.language}).\nREQUEST: ${aiInput}\n\nCURRENT CODE:\n\`\`\`${active.language}\n${active.code}\n\`\`\`\n\nPlease output ONLY the modified code snippet wrapped in a codeblock without extra explanation, or use your tools if needed.`;
+    
+    sendMessage(prompt, true);
+    setAiInput("");
+    setShowAIInput(false);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleAISubmit();
+    }
+    if (e.key === "Escape") {
+      setShowAIInput(false);
     }
   };
 
   const handleOpenFolder = async () => {
-    // Use File System Access API (modern browsers)
     try {
       const dirHandle = await (window as any).showDirectoryPicker();
       const files: { name: string; content: string }[] = [];
       for await (const entry of dirHandle.values()) {
         if (entry.kind === "file") {
           const ext = entry.name.split(".").pop()?.toLowerCase() || "";
-          const codeExts = ["js", "ts", "tsx", "jsx", "py", "html", "css", "json", "sql", "md", "sh", "rs", "go", "java", "c", "cpp", "h", "yml", "yaml", "toml", "txt"];
+          const codeExts = ["js", "ts", "tsx", "jsx", "py", "html", "css", "json", "sql", "md", "sh", "rs", "go", "java", "c", "cpp", "h", "yml", "yaml", "toml", "txt", "cjs", "mjs"];
           if (codeExts.includes(ext)) {
             try {
               const file = await entry.getFile();
@@ -83,39 +102,30 @@ export function CodeStudioPage() {
           }
         }
       }
-      // Create snippets from opened files
       for (const file of files.slice(0, 20)) {
         const ext = file.name.split(".").pop()?.toLowerCase() || "";
         const langMap: Record<string, string> = {
           js: "javascript", ts: "typescript", tsx: "typescript", jsx: "javascript",
           py: "python", html: "html", css: "css", json: "json", sql: "sql",
-          md: "markdown", sh: "bash", rs: "rust", go: "go", java: "java",
+          md: "markdown", sh: "shell", rs: "rust", go: "go", java: "java",
         };
         const lang = langMap[ext] || "plaintext";
         const id = await createSnippet(lang);
         await updateSnippet(id, { title: file.name, code: file.content });
       }
-    } catch {
-      // User cancelled or API not available
-    }
+    } catch {}
   };
 
   const handleOpenInVSCode = () => {
     if (!active) return;
-    // Create a temporary file via Electron and open it in VS Code
     const electronAPI = (window as any).electronAPI;
     if (electronAPI?.codeStudio?.openInVSCode) {
       electronAPI.codeStudio.openInVSCode(active.title, active.code, active.language);
     } else {
-      // Fallback: use vscode:// protocol
-      const encoded = encodeURIComponent(active.code);
-      // Copy code to clipboard so user can paste in VS Code
       navigator.clipboard.writeText(active.code);
       window.open(`vscode://file/untitled`, "_blank");
     }
   };
-
-  const lineCount = active ? (active.code.match(/\n/g) || []).length + 1 : 0;
 
   return (
     <div className="flex h-full">
@@ -193,7 +203,7 @@ export function CodeStudioPage() {
             ))}
           </AnimatePresence>
 
-          {snippets.length === 0 && !loading && (
+          {snippets.length === 0 && !snippetsLoading && (
             <div className="text-center py-8">
               <Code2 size={24} className="mx-auto mb-2 text-text-tertiary" />
               <p className="text-[12px] text-text-tertiary">No snippets yet</p>
@@ -203,11 +213,11 @@ export function CodeStudioPage() {
       </div>
 
       {/* Editor area */}
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col relative overflow-hidden bg-bg-primary">
         {active ? (
           <>
             {/* Editor toolbar */}
-            <div className="flex items-center gap-3 px-5 py-2.5 border-b border-border/40 bg-bg-secondary/20">
+            <div className="flex z-10 items-center gap-3 px-5 py-2.5 border-b border-border/40 bg-bg-secondary/40 backdrop-blur-md">
               <input
                 value={active.title}
                 onChange={(e) =>
@@ -274,7 +284,6 @@ export function CodeStudioPage() {
                 {copied ? "Copied" : "Copy"}
               </button>
 
-              {/* Open in VS Code */}
               <button
                 onClick={handleOpenInVSCode}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg
@@ -288,45 +297,91 @@ export function CodeStudioPage() {
 
               <motion.button
                 whileTap={{ scale: 0.95 }}
-                onClick={handleAIAssist}
-                disabled={aiLoading}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg
-                  bg-accent/10 border border-accent/30 text-[11px] font-semibold
-                  text-accent hover:bg-accent/15 transition-all cursor-pointer disabled:opacity-50"
+                onClick={() => setShowAIInput(!showAIInput)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg
+                  border text-[11px] font-semibold transition-all cursor-pointer
+                  ${showAIInput || isStreaming ? 'bg-accent text-bg-primary border-accent/30' : 'bg-accent/10 text-accent border-accent/20 hover:bg-accent/20'}`}
               >
-                <Sparkles size={12} className={aiLoading ? "animate-spin" : ""} />
-                AI Assist
+                {isStreaming ? (
+                  <Loader2 size={12} className="animate-spin" />
+                ) : (
+                  <Sparkles size={12} />
+                )}
+                Agent
               </motion.button>
             </div>
 
-            {/* Code editor */}
-            <div className="flex-1 flex overflow-hidden bg-bg-primary">
-              {/* Line numbers */}
-              <div className="w-12 shrink-0 py-4 pr-2 text-right bg-bg-secondary/20 border-r border-border/20 overflow-hidden select-none">
-                {Array.from({ length: Math.max(lineCount, 20) }, (_, i) => (
-                  <div
-                    key={i}
-                    className="text-[13px] leading-[1.6] text-text-tertiary/50 font-mono"
-                  >
-                    {i + 1}
-                  </div>
-                ))}
-              </div>
-
-              {/* Textarea */}
-              <textarea
-                ref={textareaRef}
+            {/* Monaco Editor area */}
+            <div className="flex-1 relative">
+              <Editor
+                height="100%"
+                language={active.language}
+                theme={themeResolved === "dark" ? "vs-dark" : "light"}
                 value={active.code}
-                onChange={(e) =>
-                  updateSnippet(active.id, { code: e.target.value })
-                }
-                className="code-editor-area flex-1 p-4 min-h-full"
-                placeholder="Start writing code..."
-                spellCheck={false}
-                autoComplete="off"
-                autoCorrect="off"
-                autoCapitalize="off"
+                onChange={(val) => updateSnippet(active.id, { code: val || "" })}
+                options={{
+                  minimap: { enabled: false },
+                  fontSize: 14,
+                  wordWrap: "on",
+                  fontFamily: "var(--font-mono, 'JetBrains Mono', 'Fira Code', monospace)",
+                  padding: { top: 16 },
+                  scrollBeyondLastLine: false,
+                  lineNumbersMinChars: 4,
+                  scrollbar: {
+                    verticalScrollbarSize: 8,
+                    horizontalScrollbarSize: 8,
+                  },
+                }}
               />
+
+              {/* Centered Floating AI Prompt */}
+              <AnimatePresence>
+                {showAIInput && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -20, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -10, scale: 0.96 }}
+                    transition={{ type: "spring", stiffness: 400, damping: 25 }}
+                    className="absolute top-4 left-1/2 -translate-x-1/2 w-full max-w-lg z-20"
+                  >
+                    <div className="overflow-hidden rounded-2xl bg-bg-elevated border border-border shadow-2xl backdrop-blur-xl">
+                      <div className="flex items-center gap-2 p-1.5">
+                        <div className="pl-3 py-2 flex items-center justify-center text-accent shrink-0">
+                          <Sparkles size={16} />
+                        </div>
+                        <input
+                          ref={aiInputRef}
+                          value={aiInput}
+                          onChange={(e) => setAiInput(e.target.value)}
+                          onKeyDown={handleKeyDown}
+                          disabled={isStreaming}
+                          placeholder="Ask the agent to edit or explain this code..."
+                          className="flex-1 bg-transparent py-2.5 text-[13px] text-text-primary 
+                            placeholder:text-text-tertiary outline-none min-w-0 disabled:opacity-50"
+                        />
+                        <div className="flex items-center gap-1 pr-1.5 shrink-0">
+                          <button
+                            onClick={handleAISubmit}
+                            disabled={!aiInput.trim() || isStreaming}
+                            className="w-8 h-8 rounded-xl flex items-center justify-center
+                              bg-accent text-bg-primary hover:opacity-90 transition-all
+                              disabled:bg-bg-hover disabled:text-text-tertiary cursor-pointer"
+                          >
+                            {isStreaming ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
+                          </button>
+                          <button
+                            onClick={() => setShowAIInput(false)}
+                            className="w-8 h-8 rounded-xl flex items-center justify-center
+                              text-text-tertiary hover:bg-bg-hover hover:text-text-primary transition-all cursor-pointer"
+                          >
+                            <X size={16} />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           </>
         ) : (

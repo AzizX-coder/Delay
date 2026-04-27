@@ -10,7 +10,7 @@ interface DiskFlowsState {
   addDownload: (url: string) => Promise<string>;
   updateDownload: (id: string, updates: Partial<DiskFlowDownload>) => void;
   deleteDownload: (id: string) => Promise<void>;
-  startDownload: (id: string) => void;
+  startDownload: (id: string, formatId?: string) => void;
 }
 
 function detectPlatform(url: string): "youtube" | "instagram" | "other" {
@@ -86,7 +86,7 @@ export const useDiskFlowsStore = create<DiskFlowsState>((set, get) => ({
     } catch {}
   },
 
-  startDownload: (id) => {
+  startDownload: (id, formatId?: string) => {
     const download = get().downloads.find((d) => d.id === id);
     if (!download) return;
 
@@ -94,7 +94,7 @@ export const useDiskFlowsStore = create<DiskFlowsState>((set, get) => ({
     const electronAPI = (window as any).electronAPI;
     if (electronAPI?.diskFlows?.download) {
       get().updateDownload(id, { status: "downloading", progress: 0 });
-      electronAPI.diskFlows.download(download.url, id);
+      electronAPI.diskFlows.download(download.url, id, formatId || "best");
     } else {
       // Simulate progress in web mode for demo
       get().updateDownload(id, { status: "downloading", progress: 0 });

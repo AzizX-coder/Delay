@@ -18,7 +18,8 @@ contextBridge.exposeInMainWorld("electronAPI", {
     },
   },
   diskFlows: {
-    download: (url, id) => ipcRenderer.invoke("disk-flows-download", url, id),
+    getFormats: (url) => ipcRenderer.invoke("disk-flows-get-formats", url),
+    download: (url, id, formatId) => ipcRenderer.invoke("disk-flows-download", url, id, formatId),
     openFolder: () => ipcRenderer.invoke("disk-flows-open-folder"),
     showInFolder: (filePath) => ipcRenderer.invoke("disk-flows-show-in-folder", filePath),
     moveToDownloads: (filePath) => ipcRenderer.invoke("disk-flows-move-to-downloads", filePath),
