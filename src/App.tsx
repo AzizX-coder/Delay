@@ -12,6 +12,9 @@ import { NotesPage } from "@/features/notes/NotesPage";
 import { TasksPage } from "@/features/tasks/TasksPage";
 import { CalendarPage } from "@/features/calendar/CalendarPage";
 import { AIChatPage } from "@/features/ai/AIChatPage";
+import { TimerPage } from "@/features/timer/TimerPage";
+import { CodeStudioPage } from "@/features/code-studio/CodeStudioPage";
+import { DiskFlowsPage } from "@/features/disk-flows/DiskFlowsPage";
 import { SettingsPage } from "@/features/settings/SettingsPage";
 import { OnboardingFlow } from "@/features/onboarding/OnboardingFlow";
 import { Logo } from "@/components/ui/Logo";
@@ -56,7 +59,10 @@ export default function App() {
           <Route path="notes" element={<NotesPage />} />
           <Route path="tasks" element={<TasksPage />} />
           <Route path="calendar" element={<CalendarPage />} />
+          <Route path="timer" element={<TimerPage />} />
           <Route path="ai" element={<AIChatPage />} />
+          <Route path="code-studio" element={<CodeStudioPage />} />
+          <Route path="disk-flows" element={<DiskFlowsPage />} />
           <Route path="settings" element={<SettingsPage />} />
         </Route>
       </Routes>

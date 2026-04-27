@@ -65,37 +65,37 @@
 
 @layer base {
   .dark {
-    --color-bg-primary: #0D0D0F;
-    --color-bg-secondary: #1C1C1E;
-    --color-bg-tertiary: #2C2C2E;
-    --color-bg-elevated: #1C1C1E;
-    --color-bg-accent: #3A3520;
-    --color-bg-glass: rgba(28, 28, 30, 0.55);
-    --color-bg-glass-heavy: rgba(28, 28, 30, 0.75);
-    --color-bg-hover: rgba(255, 255, 255, 0.06);
-    --color-bg-active: rgba(255, 255, 255, 0.10);
-    --color-bg-sidebar: rgba(22, 22, 24, 0.80);
+    --color-bg-primary: #161618;
+    --color-bg-secondary: #1E1F23;
+    --color-bg-tertiary: #2A2B30;
+    --color-bg-elevated: #202125;
+    --color-bg-accent: #332E1A;
+    --color-bg-glass: rgba(30, 31, 35, 0.60);
+    --color-bg-glass-heavy: rgba(30, 31, 35, 0.82);
+    --color-bg-hover: rgba(255, 255, 255, 0.07);
+    --color-bg-active: rgba(255, 255, 255, 0.11);
+    --color-bg-sidebar: rgba(24, 25, 28, 0.85);
 
-    --color-text-primary: #F5F5F7;
-    --color-text-secondary: #98989D;
-    --color-text-tertiary: #636366;
+    --color-text-primary: #F0F0F2;
+    --color-text-secondary: #A0A0A8;
+    --color-text-tertiary: #6C6C74;
     --color-text-inverse: #1D1D1F;
 
     --color-border: rgba(255, 255, 255, 0.10);
-    --color-border-light: rgba(255, 255, 255, 0.06);
-    --color-divider: rgba(255, 255, 255, 0.08);
+    --color-border-light: rgba(255, 255, 255, 0.07);
+    --color-divider: rgba(255, 255, 255, 0.09);
 
-    --color-note-yellow: #3A3520;
+    --color-note-yellow: #332E1A;
     --color-note-green: #1A3A1A;
     --color-note-blue: #1A2A3A;
     --color-note-pink: #3A1A2A;
     --color-note-purple: #2A1A3A;
     --color-note-orange: #3A2A1A;
-    --color-note-gray: #2C2C2E;
+    --color-note-gray: #2A2B30;
 
-    --color-shadow: rgba(0, 0, 0, 0.25);
-    --color-shadow-md: rgba(0, 0, 0, 0.35);
-    --color-shadow-lg: rgba(0, 0, 0, 0.50);
+    --color-shadow: rgba(0, 0, 0, 0.30);
+    --color-shadow-md: rgba(0, 0, 0, 0.40);
+    --color-shadow-lg: rgba(0, 0, 0, 0.55);
   }
 
   *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
@@ -146,6 +146,29 @@
   background: var(--color-bg-glass-heavy);
   backdrop-filter: blur(40px) saturate(200%);
   -webkit-backdrop-filter: blur(40px) saturate(200%);
+}
+
+/* ══════════════════════════════════════
+   Smooth global transitions
+   ══════════════════════════════════════ */
+body {
+  transition: background-color 0.35s var(--ease-smooth),
+              color 0.35s var(--ease-smooth);
+}
+
+/* All interactive elements get smooth transitions */
+button, a, [role="button"] {
+  transition: all 0.2s var(--ease-smooth);
+}
+
+/* Page transition wrapper */
+.page-enter {
+  animation: pageSlideIn 0.3s var(--ease-smooth) both;
+}
+
+@keyframes pageSlideIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 /* ══════════════════════════════════════
@@ -286,12 +309,6 @@
   margin: 16px 0;
 }
 
-/* ── Smooth theme transitions ── */
-body {
-  transition: background-color 0.35s var(--ease-smooth),
-              color 0.35s var(--ease-smooth);
-}
-
 /* ══════════════════════════════════════
    AI Markdown Renderer
    ══════════════════════════════════════ */
@@ -373,3 +390,37 @@ body {
 }
 .markdown-body .md-table tr:last-child td { border-bottom: none; }
 .markdown-body .md-table tbody tr:hover { background: var(--color-bg-hover); }
+
+/* ══════════════════════════════════════
+   Code Studio Editor
+   ══════════════════════════════════════ */
+.code-editor-area {
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', 'JetBrains Mono', monospace;
+  font-size: 13px;
+  line-height: 1.6;
+  tab-size: 2;
+  color: var(--color-text-primary);
+  background: transparent;
+  resize: none;
+  outline: none;
+  border: none;
+  white-space: pre;
+  overflow-wrap: normal;
+  overflow-x: auto;
+}
+
+.code-editor-area::placeholder {
+  color: var(--color-text-tertiary);
+}
+
+/* ══════════════════════════════════════
+   Timer circular ring
+   ══════════════════════════════════════ */
+.timer-ring {
+  transform: rotate(-90deg);
+  transform-origin: center;
+}
+
+.timer-ring circle {
+  transition: stroke-dashoffset 1s linear;
+}

@@ -1,6 +1,7 @@
 const { app, BrowserWindow, ipcMain, shell } = require("electron");
 const path = require("path");
 const { autoUpdater } = require("electron-updater");
+const { spawn } = require("child_process");
 
 let mainWindow;
 
@@ -14,7 +15,7 @@ function createWindow() {
     minWidth: 960,
     minHeight: 620,
     frame: false,
-    backgroundColor: "#0D0D0F",
+    backgroundColor: "#161618",
     icon: path.join(__dirname, process.env.VITE_DEV_SERVER_URL ? "../public/logo.ico" : "../dist/logo.ico"),
     webPreferences: {
       preload: path.join(__dirname, "preload.cjs"),
@@ -84,6 +85,77 @@ ipcMain.on("app-relaunch", () => {
   app.relaunch();
   app.exit(0);
 });
+
+// ── Disk Flows: yt-dlp download ──
+ipcMain.handle("disk-flows-download", async (_event, url, downloadId) => {
+  const videosDir = path.join(app.getPath("videos"), "Delay");
+  const fs = require("fs");
+  if (!fs.existsSync(videosDir)) fs.mkdirSync(videosDir, { recursive: true });
+
+  return new Promise((resolve) => {
+    const outputTemplate = path.join(videosDir, "%(title)s.%(ext)s");
+    const proc = spawn("yt-dlp", [
+      "--progress",
+      "--newline",
+      "-o", outputTemplate,
+      url,
+    ]);
+
+    let lastTitle = "";
+    proc.stdout.on("data", (data) => {
+      const line = data.toString();
+      // Parse progress
+      const progressMatch = line.match(/(\d+\.?\d*)%/);
+      if (progressMatch) {
+        const percent = parseFloat(progressMatch[1]);
+        sendDiskFlowEvent("progress", { id: downloadId, progress: Math.round(percent) });
+      }
+      // Parse title
+      const titleMatch = line.match(/\[download\] Destination: (.+)/);
+      if (titleMatch) lastTitle = path.basename(titleMatch[1]);
+    });
+
+    proc.stderr.on("data", (data) => {
+      const errLine = data.toString();
+      if (errLine.includes("ERROR")) {
+        sendDiskFlowEvent("error", { id: downloadId, error: errLine.trim() });
+      }
+    });
+
+    proc.on("close", (code) => {
+      if (code === 0) {
+        sendDiskFlowEvent("completed", {
+          id: downloadId,
+          title: lastTitle || "Downloaded",
+          file_path: videosDir,
+        });
+        resolve({ ok: true });
+      } else {
+        sendDiskFlowEvent("error", { id: downloadId, error: `yt-dlp exited with code ${code}` });
+        resolve({ ok: false });
+      }
+    });
+
+    proc.on("error", (err) => {
+      sendDiskFlowEvent("error", {
+        id: downloadId,
+        error: `yt-dlp not found. Install it: pip install yt-dlp`,
+      });
+      resolve({ ok: false });
+    });
+  });
+});
+
+ipcMain.handle("disk-flows-open-folder", async () => {
+  const videosDir = path.join(app.getPath("videos"), "Delay");
+  shell.openPath(videosDir);
+});
+
+function sendDiskFlowEvent(event, payload) {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send("disk-flow-event", { event, payload });
+  }
+}
 
 function sendUpdaterEvent(event, payload) {
   if (mainWindow && !mainWindow.isDestroyed()) {

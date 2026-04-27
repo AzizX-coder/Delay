@@ -8,7 +8,7 @@ interface ToolCall {
   arguments: Record<string, any>;
 }
 
-const MAX_TURNS = 10;
+const MAX_TURNS = 12;
 
 export async function processAgentRequest(
   input: string,
@@ -17,82 +17,115 @@ export async function processAgentRequest(
 ) {
   const nowUnix = Math.floor(Date.now() / 1000);
   const localNow = new Date().toISOString();
+  const dayOfWeek = new Date().toLocaleDateString("en-US", { weekday: "long" });
 
   // Pre-compute ambient context so the agent reasons over *real* state.
   const tasksSnapshot = useTasksStore.getState().tasks;
   const listsSnapshot = useTasksStore.getState().taskLists;
   const openTasks = tasksSnapshot
     .filter((t) => !t.completed)
-    .slice(0, 12)
+    .slice(0, 20)
     .map((t) => ({
       id: t.id,
       title: t.title,
       list_id: t.list_id,
       priority: t.priority,
       due_date: t.due_date,
+      description: t.description?.slice(0, 60),
     }));
   const recentNotes = useNotesStore
     .getState()
-    .notes.slice(0, 6)
-    .map((n) => ({ id: n.id, title: n.title || "Untitled", preview: (n.content_text || "").slice(0, 80) }));
-  const memSnapshot = (await db.memories.toArray()).slice(-8).map((m) => m.content);
+    .notes.slice(0, 10)
+    .map((n) => ({ id: n.id, title: n.title || "Untitled", preview: (n.content_text || "").slice(0, 120) }));
+  const memSnapshot = (await db.memories.toArray()).slice(-12).map((m) => m.content);
+  const upcomingEvents = useCalendarStore
+    .getState()
+    .events.filter((e) => e.start_time >= nowUnix && e.start_time <= nowUnix + 86400 * 7)
+    .slice(0, 8)
+    .map((e) => ({ id: e.id, title: e.title, start: e.start_time, end: e.end_time }));
 
-  const systemPrompt = `Delay Agent — an autonomous, tool-using assistant embedded in a local-first productivity app.
-Current time: ${localNow} (unix ${nowUnix}).
+  const systemPrompt = `You are **Delay Agent** — an autonomous, tool-using assistant embedded in a local-first productivity app.
 
-OPERATING PRINCIPLES
-1. Be autonomous. Decide, act, verify. Don't ask the user to re-confirm obvious intent.
-2. Prefer action over narration. Silence between tool calls is fine.
-3. Chain multiple tools across turns when the goal needs it (up to ${MAX_TURNS} turns).
-4. After each tool result, reason briefly (inside <think>) then act again or finish.
-5. Final reply: short, friendly markdown. No JSON. No <think> in the final message.
-6. Never invent IDs. Use IDs returned by getTasks / listNotes / recallMemories.
-7. If a tool errors, read the error and try a different approach — don't loop.
-8. Save durable facts about the user with saveMemory (preferences, recurring context).
+Current time: ${localNow} (${dayOfWeek}, unix ${nowUnix}).
 
-TOOL CALL FORMAT (exactly one per turn, fenced JSON)
+## OPERATING PRINCIPLES
+1. **Be autonomous.** Decide → Act → Verify. Don't ask the user to re-confirm obvious intent.
+2. **Prefer action over narration.** Call tools directly instead of explaining what you would do.
+3. **Chain tools** across turns when the goal requires it (up to ${MAX_TURNS} turns).
+4. **Think briefly** inside <think>…</think> after each tool result, then act or finish.
+5. **Final reply**: concise, friendly markdown. No <think> tags. No raw JSON in the final output.
+6. **Never invent IDs.** Use IDs from getTasks / listNotes / recallMemories results.
+7. **On error**, read the error message and try a different approach — never repeat the same failing call.
+8. **Save durable facts** about the user with saveMemory (preferences, recurring context, names).
+
+## TOOL CALL FORMAT
+Exactly one tool call per turn, in fenced JSON:
 \`\`\`json
 { "tool_call": { "name": "<tool>", "arguments": { ... } } }
 \`\`\`
 
-TOOLS
-- createNote({ title, content })  → creates a note, returns id
-- updateNote({ id, updates })     → updates: title, content_text, pinned, color
-- deleteNote({ id })
-- listNotes({ query? })           → titles + previews, optional filter
-- readNote({ id })                → full text of one note
-- createTask({ title, listId?, due_date?, priority? })
-- updateTask({ id, updates })     → updates: title, description, priority, due_date, completed
-- deleteTask({ id })
-- getTasks({ filter? })           → filter: "open"|"today"|"completed"|"all"
-- createTaskList({ name, icon? })
-- createCalendarEvent({ title, start, end, description? })
-- listCalendarEvents({ from?, to? })
-- searchWeb({ query })
-- saveMemory({ fact })
-- recallMemories({ query? })
-- finish()                         → signal you're done (optional)
+## AVAILABLE TOOLS
+| Tool | Args | Description |
+|------|------|-------------|
+| createNote | title, content | Create a note, returns id |
+| updateNote | id, updates | updates: title, content_text, pinned, color |
+| deleteNote | id | Delete a note |
+| listNotes | query? | List notes, optional text filter |
+| readNote | id | Full text of one note |
+| createTask | title, listId?, due_date?, priority? | Create a task |
+| updateTask | id, updates | updates: title, description, priority, due_date, completed |
+| deleteTask | id | Delete a task |
+| getTasks | filter? | "open", "today", "completed", "all" |
+| createTaskList | name, icon? | Create a task list |
+| createCalendarEvent | title, start, end, description? | Create event |
+| listCalendarEvents | from?, to? | List events in range |
+| searchWeb | query | Search DuckDuckGo |
+| saveMemory | fact | Persist a durable fact |
+| recallMemories | query? | Search stored memories |
+| getCurrentTime | — | Returns current date/time/timezone |
+| summarizeNote | id | Returns a brief summary of the note |
+| finish | — | Signal completion |
 
-CURRENT STATE SNAPSHOT
-open_tasks: ${JSON.stringify(openTasks)}
-recent_notes: ${JSON.stringify(recentNotes)}
-task_lists: ${JSON.stringify(listsSnapshot.map((l) => ({ id: l.id, name: l.name })))}
-memories: ${JSON.stringify(memSnapshot)}`;
+## CURRENT STATE SNAPSHOT
+**Open tasks** (${openTasks.length}): ${JSON.stringify(openTasks)}
+**Recent notes** (${recentNotes.length}): ${JSON.stringify(recentNotes)}
+**Task lists**: ${JSON.stringify(listsSnapshot.map((l) => ({ id: l.id, name: l.name })))}
+**Upcoming events**: ${JSON.stringify(upcomingEvents)}
+**Memories** (${memSnapshot.length}): ${JSON.stringify(memSnapshot)}`;
 
   let history = `\n\nUser: ${input}\nAgent:`;
   let turns = 0;
+  let consecutiveErrors = 0;
 
   while (turns < MAX_TURNS) {
     turns++;
     let currentTurnResponse = "";
     let isThinking = false;
+    let thinkBuffer = "";
 
     await callOllama(`${systemPrompt}${history}`, (token) => {
       currentTurnResponse += token;
-      if (token.includes("<think>")) isThinking = true;
-      if (isThinking) onUpdate(null, token);
-      else onUpdate(token, null);
-      if (token.includes("</think>")) isThinking = false;
+
+      // Handle <think> tags — don't leak them into visible output
+      if (token.includes("<think>")) {
+        isThinking = true;
+        thinkBuffer = "";
+        return;
+      }
+      if (token.includes("</think>")) {
+        isThinking = false;
+        onUpdate(null, thinkBuffer);
+        thinkBuffer = "";
+        return;
+      }
+
+      if (isThinking) {
+        thinkBuffer += token;
+      } else {
+        // Strip any residual <think> or </think> fragments
+        const cleaned = token.replace(/<\/?think>/g, "");
+        if (cleaned) onUpdate(cleaned, null);
+      }
     });
 
     history += currentTurnResponse;
@@ -104,7 +137,9 @@ memories: ${JSON.stringify(memSnapshot)}`;
     try {
       parsed = JSON.parse(toolMatch[1]);
     } catch (e: any) {
-      history += `\nSystem Result: parse_error ${e.message}. Try again with valid JSON.\nAgent:`;
+      consecutiveErrors++;
+      if (consecutiveErrors >= 3) break;
+      history += `\nSystem Result: parse_error "${e.message}". Fix the JSON and try again.\nAgent:`;
       continue;
     }
 
@@ -112,9 +147,11 @@ memories: ${JSON.stringify(memSnapshot)}`;
     const tc: ToolCall = parsed.tool_call;
     if (tc.name === "finish") break;
 
-    onUpdate(`\n\n*Working: ${tc.name}…*\n\n`);
+    consecutiveErrors = 0;
+    onUpdate(`\n\n*⚡ ${tc.name}…*\n\n`);
+
     const result = await executeTool(tc);
-    history += `\nSystem Result (${tc.name}): ${result}\nAgent (reason, then either call the next tool or send the final markdown reply):`;
+    history += `\nSystem Result (${tc.name}): ${result}\nAgent (think briefly, then either call the next tool or write a short final response):`;
   }
 }
 
@@ -154,8 +191,8 @@ async function executeTool(toolCall: ToolCall): Promise<string> {
             )
           : notes
         )
-          .slice(0, 15)
-          .map((n) => ({ id: n.id, title: n.title || "Untitled", preview: (n.content_text || "").slice(0, 100) }));
+          .slice(0, 20)
+          .map((n) => ({ id: n.id, title: n.title || "Untitled", preview: (n.content_text || "").slice(0, 120) }));
         return JSON.stringify(list);
       }
       case "readNote": {
@@ -163,17 +200,22 @@ async function executeTool(toolCall: ToolCall): Promise<string> {
         if (!note) return `not_found`;
         return JSON.stringify({ id: note.id, title: note.title, content: note.content_text });
       }
+      case "summarizeNote": {
+        const note = useNotesStore.getState().notes.find((n) => n.id === args.id);
+        if (!note) return `not_found`;
+        const text = note.content_text || "";
+        const summary = text.slice(0, 300) + (text.length > 300 ? "..." : "");
+        return JSON.stringify({ id: note.id, title: note.title, summary });
+      }
       case "createTask": {
-        await useTasksStore.getState().createTask(args.title, args.listId);
-        const tasks = useTasksStore.getState().tasks;
-        const newId = tasks[0]?.id;
-        if (newId && (args.due_date || args.priority)) {
-          await useTasksStore.getState().updateTask(newId, {
+        const id = await useTasksStore.getState().createTask(args.title, args.listId);
+        if (id && (args.due_date || args.priority)) {
+          await useTasksStore.getState().updateTask(id, {
             ...(args.due_date ? { due_date: args.due_date } : {}),
             ...(args.priority ? { priority: args.priority } : {}),
           });
         }
-        return `ok id=${newId}`;
+        return `ok id=${id}`;
       }
       case "updateTask":
         await useTasksStore.getState().updateTask(args.id, args.updates);
@@ -194,7 +236,7 @@ async function executeTool(toolCall: ToolCall): Promise<string> {
           list = all.filter((t) => !t.completed && t.due_date && t.due_date <= todayUnix);
         return JSON.stringify(
           list
-            .slice(0, 20)
+            .slice(0, 25)
             .map((t) => ({ id: t.id, title: t.title, priority: t.priority, due: t.due_date, completed: !!t.completed, list_id: t.list_id }))
         );
       }
@@ -231,7 +273,7 @@ async function executeTool(toolCall: ToolCall): Promise<string> {
         const sData = await sRes.json();
         const abstract = sData.AbstractText || sData.Heading || "";
         const related = (sData.RelatedTopics || [])
-          .slice(0, 3)
+          .slice(0, 5)
           .map((r: any) => r.Text)
           .filter(Boolean)
           .join(" | ");
@@ -245,11 +287,18 @@ async function executeTool(toolCall: ToolCall): Promise<string> {
         const q = (args?.query || "").toLowerCase();
         const matches = q
           ? mems.filter((m) => m.content.toLowerCase().includes(q))
-          : mems.slice(-10);
+          : mems.slice(-15);
         return JSON.stringify(matches.map((m) => m.content));
       }
+      case "getCurrentTime":
+        return JSON.stringify({
+          iso: new Date().toISOString(),
+          unix: Math.floor(Date.now() / 1000),
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+          day: new Date().toLocaleDateString("en-US", { weekday: "long" }),
+        });
       default:
-        return `unknown_tool:${name}`;
+        return `unknown_tool:${name}. Available: createNote, updateNote, deleteNote, listNotes, readNote, summarizeNote, createTask, updateTask, deleteTask, getTasks, createTaskList, createCalendarEvent, listCalendarEvents, searchWeb, saveMemory, recallMemories, getCurrentTime, finish`;
     }
   } catch (err: any) {
     return `error: ${err.message}`;

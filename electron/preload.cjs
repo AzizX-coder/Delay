@@ -17,4 +17,13 @@ contextBridge.exposeInMainWorld("electronAPI", {
       return () => ipcRenderer.removeListener("updater-event", listener);
     },
   },
+  diskFlows: {
+    download: (url, id) => ipcRenderer.invoke("disk-flows-download", url, id),
+    openFolder: () => ipcRenderer.invoke("disk-flows-open-folder"),
+    onEvent: (cb) => {
+      const listener = (_e, data) => cb(data);
+      ipcRenderer.on("disk-flow-event", listener);
+      return () => ipcRenderer.removeListener("disk-flow-event", listener);
+    },
+  },
 });
