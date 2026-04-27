@@ -18,7 +18,12 @@ import {
   X,
   Sparkles,
   Send,
-  Loader2
+  Loader2,
+  Globe,
+  GitBranch,
+  RotateCw,
+  PlusCircle,
+  FolderPlus
 } from "lucide-react";
 import { processCodingRequest } from "@/lib/codingAgent";
 
@@ -336,6 +341,56 @@ export function CodeStudioPage() {
             })}
           </div>
         )}
+
+
+        {/* Toolbar */}
+        <div className="flex items-center justify-between px-4 py-2 border-b border-border/40 bg-bg-secondary/20">
+          <div className="flex items-center gap-1.5 overflow-hidden">
+             {activeFile && (
+               <div className="flex items-center gap-2 px-2 py-1 rounded bg-bg-hover/50 text-[11px] text-text-tertiary">
+                 <FileCode size={12} />
+                 <span className="truncate max-w-[200px]">{activeFile.path}</span>
+               </div>
+             )}
+          </div>
+          
+          <div className="flex items-center gap-2 shrink-0">
+            <button 
+              onClick={() => {
+                setShowTerminal(true);
+                appendTerminalOutput(`\n[Running Project...] npm run dev\n`);
+                const electronAPI = (window as any).electronAPI;
+                if (electronAPI?.codeStudio?.fsRun && workspacePath) {
+                  electronAPI.codeStudio.fsRun("npm", ["run", "dev"], workspacePath).then((res: any) => {
+                    if (res.runId) {
+                      electronAPI.codeStudio.onFsRunData(res.runId, (data: string) => appendTerminalOutput(data));
+                    }
+                  });
+                }
+              }}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-success/10 text-success text-[11px] font-bold hover:bg-success/20 transition-all cursor-pointer"
+            >
+              <Play size={12} fill="currentColor" /> Run
+            </button>
+            <button 
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-accent/10 text-accent text-[11px] font-bold hover:bg-accent/20 transition-all cursor-pointer"
+              onClick={() => {
+                 appendTerminalOutput(`\n[Live Server] Initializing preview...\n`);
+                 // Simulate live server initialization
+                 setTimeout(() => appendTerminalOutput(`> Preview ready at http://localhost:5173\n`), 1000);
+              }}
+            >
+              <Globe size={12} /> Live Server
+            </button>
+            <div className="w-px h-4 bg-border/40 mx-1" />
+            <button className="p-1.5 rounded-lg text-text-tertiary hover:text-text-primary hover:bg-bg-hover cursor-pointer" title="Git Commit">
+              <GitBranch size={14} />
+            </button>
+            <button className="p-1.5 rounded-lg text-text-tertiary hover:text-text-primary hover:bg-bg-hover cursor-pointer" title="Format Document">
+               <RotateCw size={14} />
+            </button>
+          </div>
+        </div>
 
         {/* Editor Instance */}
         <div className="flex-1 relative">
