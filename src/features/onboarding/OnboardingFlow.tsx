@@ -8,7 +8,7 @@ import {
   Sun, Moon, Monitor, ChevronRight, ChevronLeft, Bot, Wifi, WifiOff,
   Sparkles, Check, Globe, Zap, StickyNote, CheckSquare, Calendar, Timer,
   Code2, HardDrive, Columns3, FileText, Table2, Presentation, PenTool,
-  Mic, Image, Film,
+  Mic, Image, Film, Sparkles, LayoutDashboard, Globe
 } from "lucide-react";
 import type { OllamaModel } from "@/types/ai";
 import { Logo } from "@/components/ui/Logo";
@@ -16,6 +16,7 @@ import { Logo } from "@/components/ui/Logo";
 const ICON_MAP: Record<string, any> = {
   StickyNote, CheckSquare, Calendar, Timer, Sparkles, Code2, HardDrive,
   Columns3, FileText, Table2, Presentation, PenTool, Mic, Image, Film,
+  LayoutDashboard, Globe
 };
 
 const STEPS = 4;

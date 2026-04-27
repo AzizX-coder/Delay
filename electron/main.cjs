@@ -125,14 +125,12 @@ ipcMain.handle("disk-flows-download", async (_event, url, downloadId, formatId) 
     // Default to 'best' if no formatId is provided, otherwise target the specific format+bestaudio
     const formatArgs = formatId && formatId !== "best" ? ["-f", `${formatId}+bestaudio/best`] : ["-f", "best"];
     
-    const bin = process.platform === "win32" ? "yt-dlp.exe" : "yt-dlp";
-    const proc = spawn(bin, [
-      "--progress",
-      "--newline",
-      ...formatArgs,
-      "-o", outputTemplate,
-      url,
-    ], { shell: false });
+    const bin = process.platform === "win32" ? "cmd.exe" : "yt-dlp";
+    const args = process.platform === "win32" 
+      ? ["/c", "yt-dlp", "--progress", "--newline", ...formatArgs, "-o", `"${outputTemplate}"`, `"${url}"`]
+      : ["--progress", "--newline", ...formatArgs, "-o", outputTemplate, url];
+
+    const proc = spawn(bin, args, { shell: process.platform === "win32" });
 
     let lastTitle = "";
     proc.stdout.on("data", (data) => {
@@ -295,6 +293,31 @@ ipcMain.handle("fs-delete", async (_event, targetPath) => {
     return { ok: true };
   } catch (err) {
     return { error: String(err) };
+  }
+});
+
+ipcMain.handle("fs-mkdir", async (_event, dirPath) => {
+  const fs = require("fs").promises;
+  try {
+    await fs.mkdir(dirPath, { recursive: true });
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, error: String(err) };
+  }
+});
+
+ipcMain.handle("fs-delete", async (_event, targetPath) => {
+  const fs = require("fs").promises;
+  try {
+    const stats = await fs.stat(targetPath);
+    if (stats.isDirectory()) {
+      await fs.rm(targetPath, { recursive: true, force: true });
+    } else {
+      await fs.unlink(targetPath);
+    }
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, error: String(err) };
   }
 });
 
