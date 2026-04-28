@@ -19,6 +19,7 @@ export function KanbanPage() {
   const [activeBoardId, setActiveBoardId] = useState<string | null>(boards[0]?.id || null);
   const [dragCard, setDragCard] = useState<{card: Card; fromCol: string} | null>(null);
   const [editingBoard, setEditingBoard] = useState<string | null>(null);
+  const [dragOverCol, setDragOverCol] = useState<string | null>(null);
 
   const activeBoard = boards.find(b => b.id === activeBoardId);
 
@@ -75,6 +76,7 @@ export function KanbanPage() {
       return { ...b, columns: cols.map(c => c.id === targetColId ? { ...c, cards: [...c.cards, dragCard.card] } : c) };
     });
     setDragCard(null);
+    setDragOverCol(null);
   };
 
   // No boards — show welcome
@@ -129,8 +131,11 @@ export function KanbanPage() {
           <AnimatePresence mode="popLayout">
             {activeBoard.columns.map(col => (
               <motion.div key={col.id} layout initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }}
-                className="w-[280px] shrink-0 flex flex-col bg-bg-secondary/30 rounded-2xl border border-border/30 overflow-hidden"
-                onDragOver={e => e.preventDefault()} onDrop={() => handleDrop(col.id)}>
+                className={`w-[280px] shrink-0 flex flex-col rounded-2xl border overflow-hidden transition-all duration-200
+                  ${dragOverCol === col.id ? "bg-accent/5 border-accent/30 scale-[1.01]" : "bg-bg-secondary/30 border-border/30"}`}
+                onDragOver={e => { e.preventDefault(); setDragOverCol(col.id); }}
+                onDragLeave={() => setDragOverCol(null)}
+                onDrop={() => handleDrop(col.id)}>
                 <div className="flex items-center gap-2 p-3 border-b border-border/20">
                   <input value={col.title} onChange={e => updateColumnTitle(col.id, e.target.value)}
                     className="flex-1 bg-transparent font-bold text-[13px] text-text-primary outline-none" />
@@ -139,8 +144,9 @@ export function KanbanPage() {
                 </div>
                 <div className="flex-1 overflow-y-auto p-2 space-y-1.5 min-h-[80px]">
                   {col.cards.map(card => (
-                    <motion.div key={card.id} layout draggable onDragStart={() => setDragCard({ card, fromCol: col.id })}
-                      className="bg-bg-primary rounded-xl p-3 border border-border/20 cursor-grab active:cursor-grabbing hover:border-accent/30 hover:shadow-lg transition-all group">
+                    <motion.div key={card.id} layout draggable onDragStart={() => setDragCard({ card, fromCol: col.id })} onDragEnd={() => setDragOverCol(null)}
+                      className={`bg-bg-primary rounded-xl p-3 border border-border/20 cursor-grab active:cursor-grabbing hover:border-accent/30 hover:shadow-lg transition-all group
+                        ${dragCard?.card.id === card.id ? "opacity-30 scale-95" : ""}`}>
                       <div className="flex items-start gap-2 mb-1">
                         <div className="w-2 h-2 rounded-full mt-1.5 shrink-0" style={{ background: card.color }} />
                         <input value={card.title} onChange={e => updateCard(col.id, card.id, { title: e.target.value })}

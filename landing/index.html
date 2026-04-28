@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Delay — The Agentic OS</title>
+  <title>Delay v2.2.0 — The Agentic OS</title>
   <meta name="description"
     content="The ultimate local-first Agentic OS. 16 workspace modules including Kanban, Whiteboard, Docs, Sheets, Slides, Voice Studio, Photo & Video Editor — all powered by an autonomous AI Agent.">
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
@@ -831,16 +831,21 @@
   <section class="cta-section">
     <h2 class="gradient-text">Ready to focus differently?</h2>
     <p>Download Delay and experience the future of local-first productivity.</p>
-    <div class="cta-buttons" id="download">
-      <a href="https://github.com/AzizX-coder/Delay/releases" class="btn btn-accent download-btn">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-          <polyline points="7 10 12 15 17 10" />
-          <line x1="12" y1="15" x2="12" y2="3" />
-        </svg>
-        Download Delay OS
-      </a>
-      <a href="siyoh/README.md" class="btn btn-glass">
+    <div class="cta-buttons" id="download" style="flex-direction: column; align-items: center; gap: 1rem;">
+      <div style="display: flex; gap: 1rem; width: 100%; max-width: 400px;">
+        <select id="release-select" class="btn btn-glass" style="flex: 1; padding: 0.85rem; appearance: auto; background: rgba(255, 255, 255, 0.05); text-align: center; border: 1px solid rgba(255, 255, 255, 0.1); cursor: pointer; color: white; font-family: inherit; border-radius: 12px; outline: none;">
+          <option value="" disabled selected>Loading versions...</option>
+        </select>
+        <a id="dynamic-download-btn" href="https://github.com/AzizX-coder/Delay/releases" class="btn btn-accent download-btn" style="flex: 2; display: flex; justify-content: center;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+            <polyline points="7 10 12 15 17 10" />
+            <line x1="12" y1="15" x2="12" y2="3" />
+          </svg>
+          Download
+        </a>
+      </div>
+      <a href="https://github.com/AzizX-coder/Siyoh" class="btn btn-glass">
         Explore Siyoh Writers Platform
       </a>
     </div>
@@ -859,20 +864,46 @@
   <script>
     async function setup() {
       try {
-        const res = await fetch("https://api.github.com/repos/AzizX-coder/Delay/releases/latest");
-        const data = await res.json();
-        const exe = data.assets?.find(a => a.name.endsWith(".exe"));
-        if (exe) {
-          document.querySelectorAll(".download-btn").forEach(b => {
-            b.href = exe.browser_download_url;
+        const res = await fetch("https://api.github.com/repos/AzizX-coder/Delay/releases");
+        const releases = await res.json();
+        
+        const select = document.getElementById("release-select");
+        const btn = document.getElementById("dynamic-download-btn");
+        
+        if (releases && releases.length > 0) {
+          select.innerHTML = "";
+          releases.forEach((r, i) => {
+            const opt = document.createElement("option");
+            opt.value = i;
+            opt.textContent = r.tag_name + (i === 0 ? " (Latest)" : "");
+            opt.style.background = "#111113";
+            opt.style.color = "white";
+            select.appendChild(opt);
           });
-        }
-        const tag = document.getElementById("v-tag");
-        if (tag && data.tag_name) {
-          tag.innerHTML = `<span class="dot"></span>${data.tag_name} — Agentic OS is now stable`;
+          
+          const updateBtn = () => {
+             const selectedRelease = releases[select.value];
+             const exe = selectedRelease.assets?.find(a => a.name.endsWith(".exe"));
+             if (exe) {
+                btn.href = exe.browser_download_url;
+                btn.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg> Download ${selectedRelease.tag_name}`;
+             } else {
+                btn.href = selectedRelease.html_url;
+                btn.innerHTML = `View ${selectedRelease.tag_name} on GitHub`;
+             }
+          };
+          
+          select.addEventListener("change", updateBtn);
+          updateBtn();
+          
+          const latest = releases[0];
+          const tag = document.getElementById("v-tag");
+          if (tag && latest.tag_name) {
+            tag.innerHTML = `<span class="dot"></span>${latest.tag_name} — Agentic OS is now stable`;
+          }
         }
       } catch (e) {
-        console.error("Failed to fetch latest release", e);
+        console.error("Failed to fetch releases", e);
       }
     }
     setup();

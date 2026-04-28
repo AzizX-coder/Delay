@@ -115,7 +115,7 @@ export function VideoEditorPage() {
   ];
 
   return (
-    <div className="flex h-full bg-[#0a0a0b]">
+    <div className="flex h-full bg-bg-primary">
       {/* Preview area */}
       <div className="flex-1 flex flex-col">
         <div className="flex-1 flex items-center justify-center p-6 overflow-hidden relative">
@@ -137,8 +137,8 @@ export function VideoEditorPage() {
             </div>
           ) : (
             <button onClick={handleUpload}
-              className="flex flex-col items-center gap-4 p-16 rounded-3xl border-2 border-dashed border-white/10
-                text-white/30 hover:text-accent hover:border-accent/30 cursor-pointer transition-all">
+              className="flex flex-col items-center gap-4 p-16 rounded-3xl border-2 border-dashed border-border/30
+                text-text-tertiary hover:text-accent hover:border-accent/30 cursor-pointer transition-all">
               <Film size={56} />
               <span className="font-bold text-[16px]">Import a video to start editing</span>
               <span className="text-[12px] opacity-50">Supports MP4, WebM, MOV</span>
@@ -148,10 +148,10 @@ export function VideoEditorPage() {
 
         {/* Timeline */}
         {videoUrl && (
-          <div className="border-t border-white/8 bg-[#111113]">
+          <div className="border-t border-border/30 bg-bg-secondary">
             {/* Scrubber */}
             <div className="px-6 pt-3">
-              <div className="relative h-12 bg-white/5 rounded-xl overflow-hidden cursor-pointer"
+              <div className="relative h-12 bg-bg-hover rounded-xl overflow-hidden cursor-pointer"
                 onClick={e => { const rect = e.currentTarget.getBoundingClientRect(); seekPct(((e.clientX - rect.left) / rect.width) * 100); }}>
                 {/* Trim region */}
                 <div className="absolute top-0 bottom-0 bg-accent/15 rounded"
@@ -178,32 +178,32 @@ export function VideoEditorPage() {
             {/* Controls */}
             <div className="flex items-center justify-between px-6 py-3">
               <div className="flex items-center gap-3">
-                <span className="text-[12px] font-mono text-white/40">{formatTime(currentTime)} / {formatTime(duration)}</span>
+                <span className="text-[12px] font-mono text-text-tertiary">{formatTime(currentTime)} / {formatTime(duration)}</span>
                 <span className="text-[10px] text-green-400 font-bold">IN {formatTime(trimStart)}</span>
                 <span className="text-[10px] text-red-400 font-bold">OUT {formatTime(trimEnd)}</span>
               </div>
               <div className="flex items-center gap-2">
-                <button onClick={() => seek(trimStart)} className="w-8 h-8 flex items-center justify-center rounded-lg text-white/40 hover:text-white hover:bg-white/8 cursor-pointer" title="Go to trim start"><SkipBack size={14} /></button>
-                <button onClick={() => skip(-5)} className="w-8 h-8 flex items-center justify-center rounded-lg text-white/40 hover:text-white hover:bg-white/8 cursor-pointer"><SkipBack size={14} /></button>
+                <button onClick={() => seek(trimStart)} className="w-8 h-8 flex items-center justify-center rounded-lg text-text-tertiary hover:text-text-primary hover:bg-bg-hover cursor-pointer" title="Go to trim start"><SkipBack size={14} /></button>
+                <button onClick={() => skip(-5)} className="w-8 h-8 flex items-center justify-center rounded-lg text-text-tertiary hover:text-text-primary hover:bg-bg-hover cursor-pointer"><SkipBack size={14} /></button>
                 <button onClick={togglePlay} className="w-12 h-12 flex items-center justify-center rounded-full bg-accent text-white shadow-xl shadow-accent/30 cursor-pointer">
                   {isPlaying ? <Pause size={20} /> : <Play size={20} />}
                 </button>
-                <button onClick={() => skip(5)} className="w-8 h-8 flex items-center justify-center rounded-lg text-white/40 hover:text-white hover:bg-white/8 cursor-pointer"><SkipForward size={14} /></button>
-                <button onClick={() => seek(trimEnd)} className="w-8 h-8 flex items-center justify-center rounded-lg text-white/40 hover:text-white hover:bg-white/8 cursor-pointer" title="Go to trim end"><SkipForward size={14} /></button>
+                <button onClick={() => skip(5)} className="w-8 h-8 flex items-center justify-center rounded-lg text-text-tertiary hover:text-text-primary hover:bg-bg-hover cursor-pointer"><SkipForward size={14} /></button>
+                <button onClick={() => seek(trimEnd)} className="w-8 h-8 flex items-center justify-center rounded-lg text-text-tertiary hover:text-text-primary hover:bg-bg-hover cursor-pointer" title="Go to trim end"><SkipForward size={14} /></button>
               </div>
               <div className="flex items-center gap-4">
                 <div className="flex items-center gap-2">
-                  <Volume2 size={14} className="text-white/30" />
+                  <Volume2 size={14} className="text-text-tertiary" />
                   <input type="range" min={0} max={100} value={volume}
                     onChange={e => { setVolume(+e.target.value); if (videoRef.current) videoRef.current.volume = +e.target.value / 100; }}
                     className="w-16 accent-accent" />
                 </div>
                 <select value={playbackRate}
                   onChange={e => { setPlaybackRate(+e.target.value); if (videoRef.current) videoRef.current.playbackRate = +e.target.value; }}
-                  className="px-2 py-1 rounded-lg bg-white/5 text-white/50 text-[11px] font-bold border-none outline-none cursor-pointer">
+                  className="px-2 py-1 rounded-lg bg-bg-hover text-text-secondary text-[11px] font-bold border-none outline-none cursor-pointer">
                   {[0.25, 0.5, 0.75, 1, 1.25, 1.5, 2, 4].map(r => (<option key={r} value={r}>{r}x</option>))}
                 </select>
-                <button onClick={captureFrame} className="px-3 py-1.5 rounded-lg bg-white/5 text-white/40 hover:text-white text-[11px] font-bold cursor-pointer" title="Capture frame"><Download size={12} /></button>
+                <button onClick={captureFrame} className="px-3 py-1.5 rounded-lg bg-bg-hover text-text-tertiary hover:text-text-primary text-[11px] font-bold cursor-pointer" title="Capture frame"><Download size={12} /></button>
               </div>
             </div>
           </div>
@@ -212,12 +212,12 @@ export function VideoEditorPage() {
 
       {/* Right panel */}
       {videoUrl && (
-        <div className="w-64 border-l border-white/8 bg-[#111113] flex flex-col">
-          <div className="flex border-b border-white/8">
+        <div className="w-64 border-l border-border/30 bg-bg-secondary flex flex-col">
+          <div className="flex border-b border-border/30">
             {PANELS.map(p => (
               <button key={p.id} onClick={() => setPanel(p.id)}
                 className={`flex-1 flex flex-col items-center gap-1 py-3 text-[10px] font-bold cursor-pointer
-                  ${panel === p.id ? "text-accent bg-accent/10" : "text-white/30 hover:text-white/60"}`}>
+                  ${panel === p.id ? "text-accent bg-accent/10" : "text-text-tertiary hover:text-text-secondary"}`}>
                 <p.icon size={14} />{p.label}
               </button>
             ))}

@@ -22,7 +22,7 @@ Notes · Tasks · Calendar · Timer · Code Studio · Disk Flows · AI Agent
 
 Delay is a **local-first desktop Agentic OS** with **16 modular workspaces** — notes, tasks, calendar, timer, kanban, docs, sheets, slides, whiteboard, code studio, voice studio, photo & video editors, disk flows — all unified behind an **autonomous AI Agent**. Everything lives on your device — no accounts, no cloud, no tracking.
 
-## 🧩 Features (v2.1.0)
+## 🧩 Features (v2.2.0)
 
 | Module | Highlights |
 |--------|-----------|
@@ -45,7 +45,7 @@ Delay is a **local-first desktop Agentic OS** with **16 modular workspaces** —
 
 ## 📥 Download
 
-Grab the latest **Delay-Setup-2.1.0.exe** from the [Releases](https://github.com/AzizX-coder/Delay/releases/latest) page, or visit the [landing page](https://azizx-coder.github.io/Delay/).
+Grab the latest **Delay-Setup-2.2.0.exe** from the [Releases](https://github.com/AzizX-coder/Delay/releases/latest) page, or visit the [landing page](https://azizx-coder.github.io/Delay/).
 
 **Requirements:** Windows 10 or 11 (x64). Optional: [Ollama](https://ollama.com/) for AI features. Optional: [yt-dlp](https://github.com/yt-dlp/yt-dlp) for Disk Flows video downloads.
 

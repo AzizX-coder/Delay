@@ -11,11 +11,14 @@ function getSheets(): Sheet[] {
 }
 function saveSheets(sheets: Sheet[]) { localStorage.setItem("delay_sheets", JSON.stringify(sheets)); }
 
+const VISIBLE_ROWS = 30;
+
 export function SheetsPage() {
   const [sheets, setSheets] = useState<Sheet[]>(() => {
     const s = getSheets();
     return s.length > 0 ? s : [{ id: uid(), name: "Sheet1", rows: 100, cols: 26, cells: {} }];
   });
+  const [visibleRows, setVisibleRows] = useState(VISIBLE_ROWS);
   const [activeSheet, setActiveSheet] = useState(sheets[0]?.id);
   const [editing, setEditing] = useState<string | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
@@ -101,7 +104,7 @@ export function SheetsPage() {
       </div>
 
       {/* Grid */}
-      <div className="flex-1 overflow-auto bg-[#0A0A0B] pb-10">
+      <div className="flex-1 overflow-auto bg-bg-primary pb-10">
         <table className="border-collapse min-w-full">
           <thead>
             <tr>
@@ -115,7 +118,7 @@ export function SheetsPage() {
             </tr>
           </thead>
           <tbody>
-            {Array.from({ length: sheet.rows }).map((_, r) => (
+            {Array.from({ length: Math.min(visibleRows, sheet.rows) }).map((_, r) => (
               <tr key={r}>
                 <td className="sticky left-0 z-20 w-[46px] bg-bg-secondary border-r border-b border-border/30
                   text-[10px] font-bold text-text-tertiary text-center select-none shadow-sm shadow-border/5">
@@ -161,6 +164,14 @@ export function SheetsPage() {
             ))}
           </tbody>
         </table>
+        {visibleRows < sheet.rows && (
+          <div className="flex justify-center py-4">
+            <button onClick={() => setVisibleRows(v => Math.min(v + 30, sheet.rows))}
+              className="px-6 py-2 rounded-xl bg-accent/10 text-accent text-[12px] font-bold hover:bg-accent/20 cursor-pointer transition-all">
+              Load More Rows ({visibleRows}/{sheet.rows})
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Sheet Tabs */}

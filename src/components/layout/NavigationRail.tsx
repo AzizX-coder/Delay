@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "motion/react";
 import {
   StickyNote, CheckSquare, Calendar, Sparkles, Timer, Code2,
   HardDrive, Settings, Columns3, FileText, Table2, Presentation,
-  PenTool, Mic, Image, Film, Plus, X, GripVertical,
+  PenTool, Mic, Image, Film, Plus, X, GripVertical, LayoutDashboard,
 } from "lucide-react";
 import { useState } from "react";
 import { useSettingsStore } from "@/stores/settingsStore";
@@ -12,7 +12,7 @@ import { ALL_MODULES } from "@/types/settings";
 const ICON_MAP: Record<string, any> = {
   StickyNote, CheckSquare, Calendar, Timer, Sparkles, Code2,
   HardDrive, Columns3, FileText, Table2, Presentation,
-  PenTool, Mic, Image, Film,
+  PenTool, Mic, Image, Film, LayoutDashboard,
 };
 
 export function NavigationRail() {

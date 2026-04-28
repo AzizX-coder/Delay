@@ -344,7 +344,8 @@ export function CodeStudioPage() {
 
 
         {/* Toolbar */}
-        <div className="flex items-center justify-between px-4 py-2 border-b border-border/40 bg-bg-secondary/20">
+        {workspacePath && (
+          <div className="flex items-center justify-between px-4 py-2 border-b border-border/40 bg-bg-secondary/20">
           <div className="flex items-center gap-1.5 overflow-hidden">
              {activeFile && (
                <div className="flex items-center gap-2 px-2 py-1 rounded bg-bg-hover/50 text-[11px] text-text-tertiary">
@@ -391,6 +392,7 @@ export function CodeStudioPage() {
             </button>
           </div>
         </div>
+        )}
 
         {/* Editor Instance */}
         <div className="flex-1 relative">

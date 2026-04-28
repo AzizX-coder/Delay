@@ -158,7 +158,7 @@ export function PhotoEditorPage() {
   const DRAW_COLORS = ["#FF0000","#00FF00","#0000FF","#FFFF00","#FF00FF","#00FFFF","#FFFFFF","#000000"];
 
   return (
-    <div className="flex h-full bg-[#0a0a0b]">
+    <div className="flex h-full bg-bg-primary">
       <div className="flex-1 flex items-center justify-center p-6 overflow-hidden relative">
         {image ? (
           <div className="relative" style={{ transform: `scale(${zoom/100})` }}>
@@ -171,8 +171,8 @@ export function PhotoEditorPage() {
           </div>
         ) : (
           <button onClick={handleUpload}
-            className="flex flex-col items-center gap-4 p-12 rounded-3xl border-2 border-dashed border-white/10
-              text-white/30 hover:text-accent hover:border-accent/30 cursor-pointer transition-all">
+            className="flex flex-col items-center gap-4 p-12 rounded-3xl border-2 border-dashed border-border/30
+              text-text-tertiary hover:text-accent hover:border-accent/30 cursor-pointer transition-all">
             <Upload size={48} />
             <span className="font-bold text-[14px]">Click to upload an image</span>
             <span className="text-[12px] opacity-50">Supports PNG, JPG, WebP, SVG</span>
@@ -180,22 +180,22 @@ export function PhotoEditorPage() {
         )}
         {/* Zoom controls */}
         {image && (
-          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-[#1a1a1e]/90 backdrop-blur-xl rounded-xl px-3 py-1.5 border border-white/8">
-            <button onClick={() => setZoom(z => Math.max(25, z - 25))} className="text-white/40 hover:text-white cursor-pointer"><ZoomOut size={14} /></button>
-            <span className="text-[11px] text-white/50 font-bold w-10 text-center">{zoom}%</span>
-            <button onClick={() => setZoom(z => Math.min(400, z + 25))} className="text-white/40 hover:text-white cursor-pointer"><ZoomIn size={14} /></button>
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-bg-secondary/90 backdrop-blur-xl rounded-xl px-3 py-1.5 border border-border/30">
+            <button onClick={() => setZoom(z => Math.max(25, z - 25))} className="text-text-tertiary hover:text-text-primary cursor-pointer"><ZoomOut size={14} /></button>
+            <span className="text-[11px] text-text-tertiary font-bold w-10 text-center">{zoom}%</span>
+            <button onClick={() => setZoom(z => Math.min(400, z + 25))} className="text-text-tertiary hover:text-text-primary cursor-pointer"><ZoomIn size={14} /></button>
           </div>
         )}
       </div>
 
       {/* Controls */}
-      <div className="w-72 border-l border-white/8 bg-[#111113] flex flex-col overflow-y-auto">
+      <div className="w-72 border-l border-border/30 bg-bg-secondary flex flex-col overflow-y-auto">
         {/* Tool tabs */}
-        <div className="flex border-b border-white/8">
+        <div className="flex border-b border-border/30">
           {TOOLS.map(t => (
             <button key={t.id} onClick={() => setTool(t.id)}
               className={`flex-1 flex flex-col items-center gap-1 py-3 text-[10px] font-bold cursor-pointer transition-all
-                ${tool === t.id ? "text-accent bg-accent/10" : "text-white/30 hover:text-white/60"}`}>
+                ${tool === t.id ? "text-accent bg-accent/10" : "text-text-tertiary hover:text-text-secondary"}`}>
               <t.icon size={14} />{t.label}
             </button>
           ))}
@@ -205,9 +205,9 @@ export function PhotoEditorPage() {
           {/* Actions bar */}
           <div className="flex items-center justify-between">
             <div className="flex gap-1">
-              <button onClick={handleUpload} className="w-7 h-7 flex items-center justify-center rounded-lg text-white/30 hover:text-white hover:bg-white/8 cursor-pointer"><Upload size={13} /></button>
-              <button onClick={reset} className="w-7 h-7 flex items-center justify-center rounded-lg text-white/30 hover:text-white hover:bg-white/8 cursor-pointer"><RotateCcw size={13} /></button>
-              <button onClick={exportImage} className="w-7 h-7 flex items-center justify-center rounded-lg text-white/30 hover:text-accent hover:bg-accent/10 cursor-pointer"><Download size={13} /></button>
+              <button onClick={handleUpload} className="w-7 h-7 flex items-center justify-center rounded-lg text-text-tertiary hover:text-text-primary hover:bg-bg-hover cursor-pointer"><Upload size={13} /></button>
+              <button onClick={reset} className="w-7 h-7 flex items-center justify-center rounded-lg text-text-tertiary hover:text-text-primary hover:bg-bg-hover cursor-pointer"><RotateCcw size={13} /></button>
+              <button onClick={exportImage} className="w-7 h-7 flex items-center justify-center rounded-lg text-text-tertiary hover:text-accent hover:bg-accent/10 cursor-pointer"><Download size={13} /></button>
             </div>
           </div>
 
@@ -217,21 +217,21 @@ export function PhotoEditorPage() {
               {ADJUSTMENTS.map(adj => (
                 <div key={adj.key} className="space-y-1.5">
                   <div className="flex items-center justify-between">
-                    <span className="text-[11px] font-bold text-white/50 flex items-center gap-2"><adj.icon size={12} />{adj.label}</span>
-                    <span className="text-[10px] text-white/30 font-mono">{adjust[adj.key]}</span>
+                    <span className="text-[11px] font-bold text-text-tertiary flex items-center gap-2"><adj.icon size={12} />{adj.label}</span>
+                    <span className="text-[10px] text-text-tertiary font-mono">{adjust[adj.key]}</span>
                   </div>
                   <input type="range" min={adj.min} max={adj.max} step={adj.step}
                     value={adjust[adj.key]} onChange={e => setAdjust(prev => ({ ...prev, [adj.key]: +e.target.value }))}
                     className="w-full accent-accent" />
                 </div>
               ))}
-              <div className="space-y-2 pt-2 border-t border-white/8">
-                <span className="text-[11px] font-extrabold text-white/40 uppercase tracking-widest">Transform</span>
+              <div className="space-y-2 pt-2 border-t border-border/30">
+                <span className="text-[11px] font-extrabold text-text-tertiary uppercase tracking-widest">Transform</span>
                 <div className="grid grid-cols-2 gap-2">
-                  <button onClick={() => setRotation(r => r - 90)} className="h-8 flex items-center justify-center gap-1.5 rounded-lg bg-white/5 text-white/50 hover:text-white text-[10px] font-bold cursor-pointer"><RotateCcw size={12} />-90°</button>
-                  <button onClick={() => setRotation(r => r + 90)} className="h-8 flex items-center justify-center gap-1.5 rounded-lg bg-white/5 text-white/50 hover:text-white text-[10px] font-bold cursor-pointer"><RotateCw size={12} />+90°</button>
-                  <button onClick={() => setFlipH(f => !f)} className={`h-8 flex items-center justify-center gap-1.5 rounded-lg text-[10px] font-bold cursor-pointer ${flipH ? "bg-accent/20 text-accent" : "bg-white/5 text-white/50 hover:text-white"}`}><FlipHorizontal size={12} />Flip H</button>
-                  <button onClick={() => setFlipV(f => !f)} className={`h-8 flex items-center justify-center gap-1.5 rounded-lg text-[10px] font-bold cursor-pointer ${flipV ? "bg-accent/20 text-accent" : "bg-white/5 text-white/50 hover:text-white"}`}><FlipVertical size={12} />Flip V</button>
+                  <button onClick={() => setRotation(r => r - 90)} className="h-8 flex items-center justify-center gap-1.5 rounded-lg bg-bg-hover text-text-tertiary hover:text-text-primary text-[10px] font-bold cursor-pointer"><RotateCcw size={12} />-90°</button>
+                  <button onClick={() => setRotation(r => r + 90)} className="h-8 flex items-center justify-center gap-1.5 rounded-lg bg-bg-hover text-text-tertiary hover:text-text-primary text-[10px] font-bold cursor-pointer"><RotateCw size={12} />+90°</button>
+                  <button onClick={() => setFlipH(f => !f)} className={`h-8 flex items-center justify-center gap-1.5 rounded-lg text-[10px] font-bold cursor-pointer ${flipH ? "bg-accent/20 text-accent" : "bg-bg-hover text-text-tertiary hover:text-text-primary"}`}><FlipHorizontal size={12} />Flip H</button>
+                  <button onClick={() => setFlipV(f => !f)} className={`h-8 flex items-center justify-center gap-1.5 rounded-lg text-[10px] font-bold cursor-pointer ${flipV ? "bg-accent/20 text-accent" : "bg-bg-hover text-text-tertiary hover:text-text-primary"}`}><FlipVertical size={12} />Flip V</button>
                 </div>
               </div>
             </>
@@ -243,7 +243,7 @@ export function PhotoEditorPage() {
               {FILTERS.map(f => (
                 <button key={f.name} onClick={() => setActiveFilter(f.filter)}
                   className={`p-3 rounded-xl border text-[11px] font-bold cursor-pointer transition-all
-                    ${activeFilter === f.filter ? "border-accent bg-accent/10 text-accent" : "border-white/8 text-white/40 hover:border-white/20"}`}>
+                    ${activeFilter === f.filter ? "border-accent bg-accent/10 text-accent" : "border-border/30 text-text-tertiary hover:border-border"}`}>
                   {f.name}
                 </button>
               ))}
@@ -301,7 +301,7 @@ export function PhotoEditorPage() {
         </div>
 
         {!image && (
-          <div className="p-4 border-t border-white/8">
+          <div className="p-4 border-t border-border/30">
             <button onClick={handleUpload} className="w-full py-3 rounded-xl bg-accent text-white font-bold text-[13px] cursor-pointer">Upload Image</button>
           </div>
         )}

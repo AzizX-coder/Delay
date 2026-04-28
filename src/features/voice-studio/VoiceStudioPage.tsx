@@ -1,8 +1,8 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
   Mic, Square, Play, Pause, Trash2, Download, Clock, Volume2,
-  Settings2, Wand2, FastForward, Rewind, SlidersHorizontal,
+  Settings2, Wand2, FastForward, SlidersHorizontal, Loader2,
 } from "lucide-react";
 
 interface Recording {
@@ -19,6 +19,7 @@ export function VoiceStudioPage() {
   const [playingId, setPlayingId] = useState<string | null>(null);
   const [waveform, setWaveform] = useState<number[]>(Array(50).fill(5));
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [enhanceState, setEnhanceState] = useState<"idle" | "processing" | "done">("idle");
   const mediaRecorder = useRef<MediaRecorder | null>(null);
   const chunks = useRef<Blob[]>([]);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -83,16 +84,13 @@ export function VoiceStudioPage() {
 
   const playRecording = (rec: Recording) => {
     if (audioRef.current) { audioRef.current.pause(); sourceNodeRef.current = null; }
-
     const audioCtx = new AudioContext();
     const audio = new Audio(rec.url);
     audio.playbackRate = rec.speed;
-
     const source = audioCtx.createMediaElementSource(audio);
     const gainNode = audioCtx.createGain();
     gainNode.gain.value = rec.gain;
     source.connect(gainNode).connect(audioCtx.destination);
-
     audio.play();
     audio.onended = () => { setPlayingId(null); audioCtx.close(); };
     audioRef.current = audio;
@@ -115,6 +113,15 @@ export function VoiceStudioPage() {
 
   const updateRecording = (id: string, updates: Partial<Recording>) => {
     setRecordings(prev => prev.map(r => r.id === id ? { ...r, ...updates } : r));
+  };
+
+  const handleAIEnhance = (recId: string) => {
+    setEnhanceState("processing");
+    setTimeout(() => {
+      updateRecording(recId, { gain: 1.2, noiseGate: 35 });
+      setEnhanceState("done");
+      setTimeout(() => setEnhanceState("idle"), 2500);
+    }, 1500);
   };
 
   const formatTime = (s: number) => `${Math.floor(s / 60).toString().padStart(2, "0")}:${(s % 60).toString().padStart(2, "0")}`;
@@ -218,26 +225,21 @@ export function VoiceStudioPage() {
               <p className="text-[10px] text-text-tertiary mt-1 truncate">{editRec.name}</p>
             </div>
             <div className="p-4 space-y-5 flex-1 overflow-y-auto">
-              {/* Volume / Gain */}
               <div className="space-y-2">
                 <div className="flex justify-between">
                   <span className="text-[11px] font-bold text-text-tertiary flex items-center gap-2"><Volume2 size={12} />Volume Boost</span>
                   <span className="text-[10px] text-text-tertiary font-mono">{Math.round(editRec.gain * 100)}%</span>
                 </div>
                 <input type="range" min={0} max={3} step={0.05} value={editRec.gain}
-                  onChange={e => updateRecording(editRec.id, { gain: +e.target.value })}
-                  className="w-full accent-accent" />
+                  onChange={e => updateRecording(editRec.id, { gain: +e.target.value })} className="w-full accent-accent" />
               </div>
-
-              {/* Speed */}
               <div className="space-y-2">
                 <div className="flex justify-between">
                   <span className="text-[11px] font-bold text-text-tertiary flex items-center gap-2"><FastForward size={12} />Playback Speed</span>
                   <span className="text-[10px] text-text-tertiary font-mono">{editRec.speed}x</span>
                 </div>
                 <input type="range" min={0.25} max={3} step={0.25} value={editRec.speed}
-                  onChange={e => updateRecording(editRec.id, { speed: +e.target.value })}
-                  className="w-full accent-accent" />
+                  onChange={e => updateRecording(editRec.id, { speed: +e.target.value })} className="w-full accent-accent" />
                 <div className="flex gap-1">
                   {[0.5, 0.75, 1, 1.5, 2].map(s => (
                     <button key={s} onClick={() => updateRecording(editRec.id, { speed: s })}
@@ -246,32 +248,21 @@ export function VoiceStudioPage() {
                   ))}
                 </div>
               </div>
-
-              {/* Noise Gate */}
               <div className="space-y-2">
                 <div className="flex justify-between">
                   <span className="text-[11px] font-bold text-text-tertiary flex items-center gap-2"><Settings2 size={12} />Noise Gate</span>
                   <span className="text-[10px] text-text-tertiary font-mono">{editRec.noiseGate}%</span>
                 </div>
                 <input type="range" min={0} max={100} value={editRec.noiseGate}
-                  onChange={e => updateRecording(editRec.id, { noiseGate: +e.target.value })}
-                  className="w-full accent-accent" />
+                  onChange={e => updateRecording(editRec.id, { noiseGate: +e.target.value })} className="w-full accent-accent" />
                 <p className="text-[9px] text-text-tertiary/50">Reduces background noise by cutting low-amplitude signals</p>
               </div>
-
               <div className="pt-3 border-t border-border/20 space-y-2">
-                <button 
-                  onClick={() => {
-                    const btn = (document.activeElement as HTMLElement);
-                    btn.innerHTML = `<span class="animate-spin mr-2">◌</span> Enhancing...`;
-                    setTimeout(() => {
-                      updateRecording(editRec.id, { gain: 1.2, noiseGate: 35 });
-                      btn.innerHTML = `<Wand2 size={14} class="text-white" /> Mastered!`;
-                      setTimeout(() => btn.innerHTML = `<Wand2 size={14} class="text-white" /> AI Audio Enhance`, 2000);
-                    }, 1500);
-                  }}
-                  className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-gradient-to-r from-accent to-accent-2 text-white font-bold text-[12px] cursor-pointer shadow-lg shadow-accent/20">
-                  <Wand2 size={14} /> AI Audio Enhance
+                <button onClick={() => handleAIEnhance(editRec.id)} disabled={enhanceState !== "idle"}
+                  className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-gradient-to-r from-accent to-accent-2 text-white font-bold text-[12px] cursor-pointer shadow-lg shadow-accent/20 disabled:opacity-60">
+                  {enhanceState === "processing" ? (<><Loader2 size={14} className="animate-spin" /> Enhancing...</>)
+                    : enhanceState === "done" ? (<><Wand2 size={14} /> Mastered!</>)
+                    : (<><Wand2 size={14} /> AI Audio Enhance</>)}
                 </button>
                 <button onClick={() => playRecording(editRec)}
                   className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-bg-hover text-text-primary font-bold text-[12px] cursor-pointer">
