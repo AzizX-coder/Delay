@@ -296,31 +296,6 @@ ipcMain.handle("fs-delete", async (_event, targetPath) => {
   }
 });
 
-ipcMain.handle("fs-mkdir", async (_event, dirPath) => {
-  const fs = require("fs").promises;
-  try {
-    await fs.mkdir(dirPath, { recursive: true });
-    return { ok: true };
-  } catch (err) {
-    return { ok: false, error: String(err) };
-  }
-});
-
-ipcMain.handle("fs-delete", async (_event, targetPath) => {
-  const fs = require("fs").promises;
-  try {
-    const stats = await fs.stat(targetPath);
-    if (stats.isDirectory()) {
-      await fs.rm(targetPath, { recursive: true, force: true });
-    } else {
-      await fs.unlink(targetPath);
-    }
-    return { ok: true };
-  } catch (err) {
-    return { ok: false, error: String(err) };
-  }
-});
-
 ipcMain.handle("fs-run", async (_event, cmd, cmdArgs, cwd) => {
   return new Promise((resolve) => {
     const runId = Math.random().toString(36).substring(7);
