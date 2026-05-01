@@ -6,7 +6,7 @@
 
 **The local-first Agentic OS for productivity.**
 
-Notes · Tasks · Calendar · Timer · Code Studio · Disk Flows · AI Agent
+Notes · Tasks · Calendar · Timer · Code Studio · Whiteboard · AI Agent
 
 [![Download for Windows](https://img.shields.io/badge/Download-Windows_Installer-007AFF?style=for-the-badge&logo=windows&logoColor=white)](https://github.com/AzizX-coder/Delay/releases/latest)
 &nbsp;
@@ -20,32 +20,27 @@ Notes · Tasks · Calendar · Timer · Code Studio · Disk Flows · AI Agent
 
 ## ✨ What is Delay?
 
-Delay is a **local-first desktop Agentic OS** with **16 modular workspaces** — notes, tasks, calendar, timer, kanban, docs, sheets, slides, whiteboard, code studio, voice studio, photo & video editors, disk flows — all unified behind an **autonomous AI Agent**. Everything lives on your device — no accounts, no cloud, no tracking.
+Delay is a **local-first desktop Agentic OS** with **10 modular workspaces** — notes, tasks, calendar, timer, kanban, whiteboard, code studio, voice studio, disk flows — all unified behind an **autonomous AI Agent**. Everything lives on your device — no accounts, no cloud, no tracking.
 
-## 🧩 Features (v2.2.2)
+## 🧩 Features (v2.3.0)
 
 | Module | Highlights |
 |--------|-----------|
 | **🤖 AI Agent** | Unified autonomous agent with file control, terminal execution, and 20+ tools |
-| **📝 Notes** | TipTap rich editor · Slash commands · Emoji picker · Voice dictation |
+| **📝 Notes** | TipTap docs · 13 slash commands · Export (MD/HTML/TXT) · 10 templates · Voice dictation |
 | **✅ Tasks** | Priority · Due dates · Inbox/Today/Upcoming views · Custom lists |
 | **📅 Calendar** | Month / Week / Day views · Events + tasks unified |
 | **⏱️ Timer + Goals** | Pomodoro with purpose-driven goals · Focus/break scheduling · Multi-day tracking |
 | **📋 Kanban** | Drag-and-drop columns & cards · Custom columns · Color labels |
-| **📄 Docs** | Long-form document editor · Headings, lists, code blocks, task items |
-| **📊 Sheets** | Grid spreadsheet · Formula bar (SUM) · Multi-sheet tabs |
-| **🎭 Slides** | Presentation editor · Custom backgrounds · Fullscreen slideshow |
-| **🎨 Whiteboard** | Infinite canvas · Pen, shapes, colors · Undo · PNG export |
+| **🎨 Whiteboard** | Miro-like infinite canvas · Sticky notes · Shapes · Pen · Pan/zoom · Grid/dots |
 | **💻 Code Studio** | Monaco IDE · File tree · Terminal · AI coding agent |
 | **💾 Disk Flows** | Video download · Quality selection · In-app playback |
 | **🎙️ Voice Studio** | Smart recording · Live waveform · Playback & download |
-| **🖼️ Photo Editor** | Brightness/contrast/saturation · Rotation/flip · PNG export |
-| **🎬 Video Editor** | Timeline · Playback speed · Volume · Trim markers |
 | **⚙️ Customizable** | Toggle modules on/off · Onboarding module picker · Custom backgrounds |
 
 ## 📥 Download
 
-Grab the latest **Delay-Setup-2.2.2.exe** from the [Releases](https://github.com/AzizX-coder/Delay/releases/latest) page, or visit the [landing page](https://azizx-coder.github.io/Delay/).
+Grab the latest **Delay-Setup-2.3.0.exe** from the [Releases](https://github.com/AzizX-coder/Delay/releases/latest) page, or visit the [landing page](https://azizx-coder.github.io/Delay/).
 
 **Requirements:** Windows 10 or 11 (x64). Optional: [Ollama](https://ollama.com/) for AI features. Optional: [yt-dlp](https://github.com/yt-dlp/yt-dlp) for Disk Flows video downloads.
 
@@ -55,10 +50,10 @@ Delay is built by an independent developer and is **not yet code-signed with a p
 
 **To install safely:**
 
-1. Download `Delay-Setup-1.6.5.exe` and the matching `SHA256SUMS.txt` from [Releases](https://github.com/AzizX-coder/Delay/releases/latest).
+1. Download the latest `.exe` and the matching `SHA256SUMS.txt` from [Releases](https://github.com/AzizX-coder/Delay/releases/latest).
 2. *(Optional but recommended)* verify the download integrity:
    ```powershell
-   Get-FileHash .\Delay-Setup-1.6.5.exe -Algorithm SHA256
+   Get-FileHash .\Delay-Setup-2.3.0.exe -Algorithm SHA256
    ```
    The hash must match the one in `SHA256SUMS.txt`.
 3. Double-click the installer. If SmartScreen appears, click **More info → Run anyway**.
@@ -98,14 +93,17 @@ npm run electron:build        # Windows installer → release/
 │   ├── main.cjs           # Electron main process, IPC handlers
 │   └── preload.cjs        # Context bridge API
 ├── src/
-│   ├── components/        # Shared UI (VoiceBadge, NavigationRail, etc.)
+│   ├── components/        # Shared UI (DelayIcon, NavigationRail, etc.)
 │   ├── features/          # Feature modules
 │   │   ├── ai/            # AI chat + agent
-│   │   ├── notes/         # Notes editor
+│   │   ├── notes/         # Notes editor with slash commands & export
 │   │   ├── tasks/         # Task management
 │   │   ├── calendar/      # Calendar views
 │   │   ├── timer/         # Smart Pomodoro timer
-│   │   ├── code-studio/   # Code snippet workspace
+│   │   ├── kanban/        # Kanban boards
+│   │   ├── whiteboard/    # Miro-like infinite canvas
+│   │   ├── code-studio/   # VS Code-like IDE workspace
+│   │   ├── voice-studio/  # Voice recording
 │   │   └── disk-flows/    # Video downloader
 │   ├── stores/            # Zustand state stores
 │   ├── lib/               # Agent, database, i18n, Ollama
@@ -114,15 +112,14 @@ npm run electron:build        # Windows installer → release/
 └── package.json           # Config + electron-builder
 ```
 
-## 📦 What's New in v1.5.0
+## 📦 What's New in v2.3.0
 
-- ⏱️ **Smart Timer** — Pomodoro with circular progress, presets, and session tracking
-- 💻 **Code Studio** — Multi-tab code editor with folder opening and VS Code integration
-- 💾 **Disk Flows** — YouTube/Instagram video downloader with progress and file management
-- 🎙️ **Whispr Flow Voice** — Redesigned full-width voice overlay with waveform visualization
-- 🤖 **Smarter Agent** — 18 tools, better prompts, error recovery, think-tag stripping
-- 🎨 **Lighter Dark Mode** — Softer, more comfortable dark palette
-- ✨ **Smoother UI** — Spring animations, refined navigation, page transitions
+- 📝 **Notes as Docs** — 13 searchable slash commands, export to Markdown/HTML/Text
+- 🎨 **Miro-like Whiteboard** — Object canvas with sticky notes, shapes, pen, pan/zoom, grid/dots
+- 🎯 **Custom Delay Icons** — Branded SVG icons (indigo/skyblue) replace all emojis in templates & lists
+- 📋 **10 Templates** — Added Weekly Review, Study Notes, Bug Report, Decision Log
+- 🧹 **Streamlined** — Removed 6 redundant modules (Docs, Sheets, Slides, Photo, Video, Studio)
+- 🐛 **Bug Fixes** — Fixed duplicate Electron IPC handlers, cleaned Siyoh from repo
 
 ## 📄 License
 

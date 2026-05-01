@@ -1,7 +1,7 @@
 export interface NoteTemplate {
   id: string;
   name: string;
-  icon: string;
+  icon: string;          // maps to DelayIcon name
   description: string;
   build: () => { title: string; content: any };
 }
@@ -45,7 +45,7 @@ export const NOTE_TEMPLATES: NoteTemplate[] = [
   {
     id: "blank",
     name: "Blank",
-    icon: "📝",
+    icon: "blank",
     description: "Start fresh.",
     build: () => ({
       title: "",
@@ -55,7 +55,7 @@ export const NOTE_TEMPLATES: NoteTemplate[] = [
   {
     id: "daily",
     name: "Daily Journal",
-    icon: "🌅",
+    icon: "journal",
     description: "A guided reflection for today.",
     build: () => ({
       title: today(),
@@ -77,8 +77,8 @@ export const NOTE_TEMPLATES: NoteTemplate[] = [
   },
   {
     id: "meeting",
-    name: "Meeting",
-    icon: "👥",
+    name: "Meeting Notes",
+    icon: "meeting",
     description: "Agenda, notes, action items.",
     build: () => ({
       title: "Meeting — " + today(),
@@ -101,7 +101,7 @@ export const NOTE_TEMPLATES: NoteTemplate[] = [
   {
     id: "project",
     name: "Project Plan",
-    icon: "🚀",
+    icon: "project",
     description: "Goal, milestones, risks.",
     build: () => ({
       title: "Project — ",
@@ -126,7 +126,7 @@ export const NOTE_TEMPLATES: NoteTemplate[] = [
   {
     id: "brainstorm",
     name: "Brainstorm",
-    icon: "💡",
+    icon: "brainstorm",
     description: "Wild ideas, then shortlist.",
     build: () => ({
       title: "Brainstorm — ",
@@ -147,7 +147,7 @@ export const NOTE_TEMPLATES: NoteTemplate[] = [
   {
     id: "recipe",
     name: "Recipe",
-    icon: "🍳",
+    icon: "recipe",
     description: "Ingredients and steps.",
     build: () => ({
       title: "Recipe — ",
@@ -161,6 +161,106 @@ export const NOTE_TEMPLATES: NoteTemplate[] = [
           { type: "orderedList", content: [
             { type: "listItem", content: [p("")] },
           ]},
+        ],
+      },
+    }),
+  },
+  {
+    id: "weekly",
+    name: "Weekly Review",
+    icon: "weekly",
+    description: "Reflect on your week.",
+    build: () => ({
+      title: "Weekly Review — " + today(),
+      content: {
+        type: "doc",
+        content: [
+          h(1, "Weekly Review"),
+          h(2, "Wins"),
+          bulletList(["What went well this week?"]),
+          h(2, "Challenges"),
+          bulletList(["What was difficult?"]),
+          h(2, "Lessons"),
+          bulletList(["What did I learn?"]),
+          h(2, "Next week priorities"),
+          taskList(["", "", ""]),
+        ],
+      },
+    }),
+  },
+  {
+    id: "study",
+    name: "Study Notes",
+    icon: "study",
+    description: "Cornell-style study template.",
+    build: () => ({
+      title: "Study — ",
+      content: {
+        type: "doc",
+        content: [
+          h(1, "Subject / Topic"),
+          h(2, "Key Concepts"),
+          bulletList(["Concept 1", "Concept 2"]),
+          h(2, "Detailed Notes"),
+          p(),
+          h(2, "Questions"),
+          bulletList(["What did I not understand?"]),
+          h(2, "Summary"),
+          p("Write a brief summary of this material in your own words."),
+        ],
+      },
+    }),
+  },
+  {
+    id: "bug",
+    name: "Bug Report",
+    icon: "bug",
+    description: "Steps to reproduce, expected vs actual.",
+    build: () => ({
+      title: "Bug — ",
+      content: {
+        type: "doc",
+        content: [
+          h(1, "Bug Report"),
+          h(3, "Summary"),
+          p("Brief description of the issue."),
+          h(3, "Steps to reproduce"),
+          { type: "orderedList", content: [
+            { type: "listItem", content: [p("Step 1")] },
+            { type: "listItem", content: [p("Step 2")] },
+          ]},
+          h(3, "Expected behavior"),
+          p(),
+          h(3, "Actual behavior"),
+          p(),
+          h(3, "Environment"),
+          bulletList(["OS: ", "Version: ", "Browser: "]),
+        ],
+      },
+    }),
+  },
+  {
+    id: "decision",
+    name: "Decision Log",
+    icon: "decision",
+    description: "Options, pros/cons, decision.",
+    build: () => ({
+      title: "Decision — ",
+      content: {
+        type: "doc",
+        content: [
+          h(1, "Decision Log"),
+          h(2, "Context"),
+          p("What decision needs to be made and why?"),
+          h(2, "Options"),
+          h(3, "Option A"),
+          bulletList(["Pro: ", "Con: "]),
+          h(3, "Option B"),
+          bulletList(["Pro: ", "Con: "]),
+          h(2, "Decision"),
+          p("We chose: "),
+          h(2, "Rationale"),
+          p("Because: "),
         ],
       },
     }),

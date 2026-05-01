@@ -14,6 +14,7 @@ import { useRef, useState, useEffect } from "react";
 import { NOTE_COLORS } from "@/types/note";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { NOTE_TEMPLATES } from "@/lib/noteTemplates";
+import { DelayIcon } from "@/components/ui/DelayIcon";
 
 export function NotesList() {
   const {
@@ -111,9 +112,9 @@ export function NotesList() {
                       className="w-full flex items-start gap-3 px-2.5 py-2 rounded-xl
                         text-left cursor-pointer hover:bg-bg-hover transition-colors"
                     >
-                      <span className="text-[18px] leading-none mt-0.5">
-                        {tpl.icon}
-                      </span>
+                      <div className="shrink-0 mt-0.5">
+                        <DelayIcon name={tpl.icon} size={20} />
+                      </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-[13px] font-medium text-text-primary">
                           {tpl.name}

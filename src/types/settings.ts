@@ -8,26 +8,20 @@ export interface AppSettings {
 }
 
 export const ALL_MODULES = [
-  { id: "notes",       label: "Notes",         icon: "StickyNote",     group: "core",      desc: "Quick capture & rich text" },
-  { id: "tasks",       label: "Tasks",         icon: "CheckSquare",    group: "core",      desc: "Todo lists & projects" },
-  { id: "calendar",    label: "Calendar",      icon: "Calendar",       group: "core",      desc: "Events & schedule" },
-  { id: "timer",       label: "Timer",         icon: "Timer",          group: "core",      desc: "Pomodoro focus sessions" },
-  { id: "kanban",      label: "Kanban",        icon: "Columns3",       group: "workspace", desc: "Drag & drop boards" },
-  { id: "docs",        label: "Docs",          icon: "FileText",       group: "create",    desc: "Long-form documents" },
-  { id: "sheets",      label: "Sheets",        icon: "Table2",         group: "create",    desc: "Spreadsheets & data" },
-  { id: "slides",      label: "Slides",        icon: "Presentation",   group: "create",    desc: "Presentations & decks" },
-  { id: "whiteboard",  label: "Whiteboard",    icon: "PenTool",        group: "workspace", desc: "Infinite canvas" },
-  { id: "code-studio", label: "Code",          icon: "Code2",          group: "workspace", desc: "Local IDE workspace" },
-  { id: "disk-flows",  label: "Disk",          icon: "HardDrive",      group: "media",     desc: "Video downloader" },
-  { id: "voice-studio",label: "Voice",         icon: "Mic",            group: "media",     desc: "Smart voice recording" },
-  { id: "photo-editor",label: "Photo",         icon: "Image",          group: "media",     desc: "Image editing tools" },
-  { id: "video-editor",label: "Video",         icon: "Film",           group: "media",     desc: "Video editing studio" },
-  { id: "studio",      label: "Studio",        icon: "Sparkles",       group: "create",    desc: "Unified Creative Suite" },
-  { id: "ai",          label: "AI Agent",      icon: "Sparkles",       group: "system",    desc: "Autonomous assistant" },
+  { id: "notes",        label: "Notes",       icon: "StickyNote",  group: "core",      desc: "Rich documents & export" },
+  { id: "tasks",        label: "Tasks",       icon: "CheckSquare", group: "core",      desc: "Todo lists & projects" },
+  { id: "calendar",     label: "Calendar",    icon: "Calendar",    group: "core",      desc: "Events & schedule" },
+  { id: "timer",        label: "Timer",       icon: "Timer",       group: "core",      desc: "Pomodoro focus sessions" },
+  { id: "kanban",       label: "Kanban",      icon: "Columns3",    group: "workspace", desc: "Drag & drop boards" },
+  { id: "whiteboard",   label: "Whiteboard",  icon: "PenTool",     group: "workspace", desc: "Miro-like infinite canvas" },
+  { id: "code-studio",  label: "Code",        icon: "Code2",       group: "workspace", desc: "VS Code-like IDE" },
+  { id: "disk-flows",   label: "Disk",        icon: "HardDrive",   group: "media",     desc: "Video downloader" },
+  { id: "voice-studio", label: "Voice",       icon: "Mic",         group: "media",     desc: "Smart voice recording" },
+  { id: "ai",           label: "AI Agent",    icon: "Sparkles",    group: "system",    desc: "Autonomous assistant" },
 ] as const;
 
 export const DEFAULT_MODULES = [
-  "notes", "tasks", "calendar", "timer", "ai", "code-studio", "disk-flows", "studio"
+  "notes", "tasks", "calendar", "timer", "ai", "code-studio", "kanban", "whiteboard"
 ];
 
 export const DEFAULT_SETTINGS: AppSettings = {
