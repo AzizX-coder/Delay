@@ -98,6 +98,83 @@
     --color-shadow-lg: rgba(0, 0, 0, 0.55);
   }
 
+  .theme-forest {
+    --color-bg-primary: #0A1A0A;
+    --color-bg-secondary: #122212;
+    --color-bg-tertiary: #1A2A1A;
+    --color-bg-elevated: #162616;
+    --color-bg-glass: rgba(10, 26, 10, 0.60);
+    --color-bg-hover: rgba(255, 255, 255, 0.07);
+    --color-bg-sidebar: rgba(10, 26, 10, 0.85);
+    
+    --color-text-primary: #E8F5E9;
+    --color-text-secondary: #A5D6A7;
+    --color-text-tertiary: #81C784;
+    
+    --color-accent: #22C55E;
+    --color-accent-hover: #16A34A;
+    --color-border: rgba(34, 197, 94, 0.20);
+    --color-border-light: rgba(34, 197, 94, 0.10);
+  }
+
+  .theme-mocha {
+    --color-bg-primary: #1C1410;
+    --color-bg-secondary: #261B15;
+    --color-bg-tertiary: #30221A;
+    --color-bg-elevated: #281C16;
+    --color-bg-glass: rgba(28, 20, 16, 0.60);
+    --color-bg-hover: rgba(255, 255, 255, 0.07);
+    --color-bg-sidebar: rgba(28, 20, 16, 0.85);
+    
+    --color-text-primary: #FDF2E9;
+    --color-text-secondary: #D7BBA8;
+    --color-text-tertiary: #C29B84;
+    
+    --color-accent: #D97706;
+    --color-accent-hover: #B45309;
+    --color-border: rgba(217, 119, 6, 0.20);
+    --color-border-light: rgba(217, 119, 6, 0.10);
+  }
+
+  .theme-ocean {
+    --color-bg-primary: #0A1628;
+    --color-bg-secondary: #0E1F38;
+    --color-bg-tertiary: #132A4B;
+    --color-bg-elevated: #112440;
+    --color-bg-glass: rgba(10, 22, 40, 0.60);
+    --color-bg-hover: rgba(255, 255, 255, 0.07);
+    --color-bg-sidebar: rgba(10, 22, 40, 0.85);
+    
+    --color-text-primary: #E0F2FE;
+    --color-text-secondary: #7DD3FC;
+    --color-text-tertiary: #38BDF8;
+    
+    --color-accent: #06B6D4;
+    --color-accent-hover: #0891B2;
+    --color-border: rgba(6, 182, 212, 0.20);
+    --color-border-light: rgba(6, 182, 212, 0.10);
+  }
+
+  .theme-rose {
+    --color-bg-primary: #1A0A14;
+    --color-bg-secondary: #260E1D;
+    --color-bg-tertiary: #331327;
+    --color-bg-elevated: #2B1021;
+    --color-bg-glass: rgba(26, 10, 20, 0.60);
+    --color-bg-hover: rgba(255, 255, 255, 0.07);
+    --color-bg-sidebar: rgba(26, 10, 20, 0.85);
+    
+    --color-text-primary: #FCE4EC;
+    --color-text-secondary: #F48FB1;
+    --color-text-tertiary: #F06292;
+    
+    --color-accent: #EC4899;
+    --color-accent-hover: #DB2777;
+    --color-border: rgba(236, 72, 153, 0.20);
+    --color-border-light: rgba(236, 72, 153, 0.10);
+  }
+
+
   *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
   html, body, #root {

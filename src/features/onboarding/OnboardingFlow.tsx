@@ -7,7 +7,7 @@ import { LANGUAGES, ALL_MODULES, DEFAULT_MODULES } from "@/types/settings";
 import {
   Sun, Moon, Monitor, ChevronRight, ChevronLeft, Bot, Wifi, WifiOff,
   Sparkles, Check, Globe, Zap, StickyNote, CheckSquare, Calendar, Timer,
-  Code2, HardDrive, Columns3, PenTool, Mic,
+  Code2, HardDrive, Columns3, PenTool, Mic, Leaf, Coffee, Waves, Flower2,
 } from "lucide-react";
 import type { OllamaModel } from "@/types/ai";
 import { Logo } from "@/components/ui/Logo";
@@ -103,10 +103,14 @@ export function OnboardingFlow() {
                     <p className="text-[14px] text-text-tertiary font-medium">Select your interface style to begin</p>
                   </div>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 flex-1">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 flex-1">
                   {[
                     { value: "light" as const, icon: <Sun size={24} />, label: "Aura Light", desc: "Clean & Bright" },
                     { value: "dark" as const, icon: <Moon size={24} />, label: "Obsidian", desc: "Sleek & Deep" },
+                    { value: "forest" as const, icon: <Leaf size={24} />, label: "Forest", desc: "Natural & Calm" },
+                    { value: "mocha" as const, icon: <Coffee size={24} />, label: "Mocha", desc: "Warm & Cozy" },
+                    { value: "ocean" as const, icon: <Waves size={24} />, label: "Ocean", desc: "Cool & Fluid" },
+                    { value: "rose" as const, icon: <Flower2 size={24} />, label: "Rosé", desc: "Soft & Vibrant" },
                     { value: "system" as const, icon: <Monitor size={24} />, label: "Automatic", desc: "Follow OS" },
                   ].map((opt) => (
                     <motion.button key={opt.value} whileHover={{ y: -4, scale: 1.02 }} whileTap={{ scale: 0.98 }}

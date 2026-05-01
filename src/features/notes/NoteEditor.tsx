@@ -28,7 +28,7 @@ import {
   Heading1, Heading2, Heading3, List, ListOrdered, ListChecks,
   Quote, Code2, Highlighter, Smile, Mic, AlignLeft, AlignCenter,
   AlignRight, Minus, Table as TableIcon, Sparkles, Download,
-  FileText, FileCode, Type,
+  FileText, FileCode, Type, Send, Loader2,
 } from "lucide-react";
 import { VoiceBadge } from "@/components/ui/VoiceBadge";
 
@@ -67,6 +67,10 @@ export function NoteEditor({ noteId }: NoteEditorProps) {
   const [slashMenu, setSlashMenu] = useState<{ x: number; y: number } | null>(null);
   const [slashFilter, setSlashFilter] = useState("");
   const [showExportMenu, setShowExportMenu] = useState(false);
+  const [showAIPanel, setShowAIPanel] = useState(false);
+  const [aiPromptInput, setAiPromptInput] = useState("");
+  const [aiGenerating, setAiGenerating] = useState(false);
+  const aiInputRef = useRef<HTMLInputElement>(null);
 
   const filteredCommands = useMemo(() => {
     if (!slashFilter) return SLASH_COMMANDS;
@@ -206,14 +210,26 @@ export function NoteEditor({ noteId }: NoteEditorProps) {
       case "table": editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run(); break;
       case "emoji": setShowEmojiPicker(true); break;
       case "ai": {
-        const prompt = window.prompt("Ask AI:");
-        if (prompt) {
-          editor.chain().focus().insertContent(`\n*AI writing: ${prompt}...*\n`).run();
-          sendMessage(`Please write content directly as beautifully formatted markdown based on this instruction: ${prompt}`, true);
-        }
+        setShowAIPanel(true);
+        setTimeout(() => aiInputRef.current?.focus(), 100);
         break;
       }
       case "export": setShowExportMenu(true); break;
+    }
+  };
+
+  const handleAIGenerate = async () => {
+    if (!aiPromptInput.trim() || !editor) return;
+    const prompt = aiPromptInput;
+    setShowAIPanel(false);
+    setAiPromptInput("");
+    setAiGenerating(true);
+    
+    try {
+      editor.chain().focus().insertContent(`\n*Generating: ${prompt}...*\n`).run();
+      await sendMessage(`Please write content directly as beautifully formatted markdown based on this instruction: ${prompt}`, true);
+    } finally {
+      setAiGenerating(false);
     }
   };
 
@@ -246,7 +262,7 @@ export function NoteEditor({ noteId }: NoteEditorProps) {
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col h-full bg-bg-primary relative">
       {/* ── Toolbar ── */}
-      <div className="flex items-center justify-center p-3 border-b border-border/40 backdrop-blur-md sticky top-0 z-40 gap-1.5 overflow-x-auto whitespace-nowrap">
+      <div className="flex items-center justify-center p-3 border-b border-border/40 backdrop-blur-md sticky top-0 z-40 gap-1.5 flex-wrap">
         <Cluster>
           <TB active={editor.isActive("bold")} onClick={() => editor.chain().focus().toggleBold().run()} icon={<Bold size={15} />} tooltip="Bold" />
           <TB active={editor.isActive("italic")} onClick={() => editor.chain().focus().toggleItalic().run()} icon={<Italic size={15} />} tooltip="Italic" />
@@ -337,6 +353,46 @@ export function NoteEditor({ noteId }: NoteEditorProps) {
                   <cmd.icon size={15} className={cmd.accent ? "" : "text-text-tertiary"} /> {cmd.label}
                 </button>
               ))}
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Inline AI Panel */}
+        <AnimatePresence>
+          {showAIPanel && (
+            <motion.div
+              initial={{ opacity: 0, y: -10, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95, pointerEvents: "none" }}
+              className="absolute z-50 flex flex-col p-2 bg-bg-elevated border border-accent/30 shadow-2xl rounded-2xl w-[400px] left-1/2 -translate-x-1/2 mt-4"
+              style={{ top: slashMenu ? slashMenu.y : "20%" }}
+            >
+              <div className="flex items-center gap-2 relative z-10 px-2 py-1">
+                <div className="w-7 h-7 rounded-xl bg-accent/20 flex items-center justify-center text-accent shrink-0">
+                  <Sparkles size={14} />
+                </div>
+                <input
+                  ref={aiInputRef}
+                  value={aiPromptInput}
+                  onChange={(e) => setAiPromptInput(e.target.value)}
+                  onKeyDown={(e) => {
+                     if (e.key === 'Escape') setShowAIPanel(false);
+                     if (e.key === 'Enter') handleAIGenerate();
+                  }}
+                  placeholder="Instruct AI to write, rewrite, or summarize..."
+                  className="flex-1 bg-transparent border-none outline-none text-[14px] 
+                    text-text-primary placeholder:text-text-tertiary font-medium py-2"
+                  disabled={aiGenerating}
+                />
+                <button
+                  onClick={handleAIGenerate}
+                  disabled={!aiPromptInput.trim() || aiGenerating}
+                  className="w-8 h-8 flex items-center justify-center rounded-xl bg-accent text-white 
+                    disabled:opacity-50 disabled:bg-bg-secondary disabled:text-text-tertiary transition-all"
+                >
+                  {aiGenerating ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
+                </button>
+              </div>
             </motion.div>
           )}
         </AnimatePresence>

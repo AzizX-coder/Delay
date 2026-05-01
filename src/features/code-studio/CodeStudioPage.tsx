@@ -23,7 +23,11 @@ import {
   GitBranch,
   RotateCw,
   PlusCircle,
-  FolderPlus
+  FolderPlus,
+  Monitor,
+  Smartphone,
+  Tablet,
+  RefreshCw
 } from "lucide-react";
 import { processCodingRequest } from "@/lib/codingAgent";
 
@@ -131,6 +135,16 @@ export function CodeStudioPage() {
   const [aiInput, setAiInput] = useState("");
   const [isAiStreaming, setIsAiStreaming] = useState(false);
   const aiInputRef = useRef<HTMLInputElement>(null);
+  
+  const [newPromptType, setNewPromptType] = useState<"file" | "folder" | null>(null);
+  const [newPromptName, setNewPromptName] = useState("");
+  const newPromptInputRef = useRef<HTMLInputElement>(null);
+
+  // Preview State
+  const [showPreview, setShowPreview] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState("http://localhost:5173");
+  const [deviceSize, setDeviceSize] = useState<"desktop" | "tablet" | "mobile">("desktop");
+  const iframeRef = useRef<HTMLIFrameElement>(null);
 
   useEffect(() => {
     if (workspacePath) {
@@ -147,6 +161,10 @@ export function CodeStudioPage() {
   useEffect(() => {
     if (showAIInput && aiInputRef.current) aiInputRef.current.focus();
   }, [showAIInput]);
+
+  useEffect(() => {
+    if (newPromptType && newPromptInputRef.current) newPromptInputRef.current.focus();
+  }, [newPromptType]);
 
   const activeFile = openFiles.find(f => f.path === activeFilePath);
 
@@ -232,29 +250,34 @@ export function CodeStudioPage() {
      setShowAIInput(false);
   };
 
-  const handleCreateFile = async () => {
+  const handleCreateFile = () => {
     if (!workspacePath) return;
-    const name = window.prompt("Enter new file name:");
-    if (!name) return;
-    const electronAPI = (window as any).electronAPI;
-    const fullPath = `${workspacePath}\\${name}`;
-    if (electronAPI?.codeStudio?.fsWrite) {
-      await electronAPI.codeStudio.fsWrite(fullPath, "");
-      useCodeStudioStore.getState().loadFileTree();
-      useCodeStudioStore.getState().openFile(fullPath, name);
-    }
+    setNewPromptName("");
+    setNewPromptType("file");
   };
 
-  const handleCreateFolder = async () => {
+  const handleCreateFolder = () => {
     if (!workspacePath) return;
-    const name = window.prompt("Enter new folder name:");
-    if (!name) return;
+    setNewPromptName("");
+    setNewPromptType("folder");
+  };
+
+  const submitNewPrompt = async () => {
+    if (!workspacePath || !newPromptName.trim() || !newPromptType) return;
     const electronAPI = (window as any).electronAPI;
-    const fullPath = `${workspacePath}\\${name}`;
-    if (electronAPI?.codeStudio?.fsMkdir) {
+    const fullPath = `${workspacePath}\\${newPromptName.trim()}`;
+    
+    if (newPromptType === "file" && electronAPI?.codeStudio?.fsWrite) {
+      await electronAPI.codeStudio.fsWrite(fullPath, "");
+      useCodeStudioStore.getState().loadFileTree();
+      useCodeStudioStore.getState().openFile(fullPath, newPromptName.trim());
+    } else if (newPromptType === "folder" && electronAPI?.codeStudio?.fsMkdir) {
       await electronAPI.codeStudio.fsMkdir(fullPath);
       useCodeStudioStore.getState().loadFileTree();
     }
+    
+    setNewPromptType(null);
+    setNewPromptName("");
   };
 
   return (
@@ -291,6 +314,26 @@ export function CodeStudioPage() {
           </div>
         </div>
         
+        {newPromptType && (
+          <div className="px-3 py-2 border-b border-border/40 bg-bg-primary">
+            <div className="flex items-center gap-1.5 px-2 py-1 bg-bg-secondary rounded border border-border">
+              {newPromptType === "file" ? <FileCode size={12} className="text-text-tertiary" /> : <Folder size={12} className="text-text-tertiary" />}
+              <input 
+                ref={newPromptInputRef}
+                value={newPromptName}
+                onChange={e => setNewPromptName(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === "Enter") submitNewPrompt();
+                  if (e.key === "Escape") setNewPromptType(null);
+                }}
+                onBlur={() => { if (!newPromptName) setNewPromptType(null); }}
+                placeholder={newPromptType === "file" ? "filename.ext" : "folder_name"}
+                className="flex-1 bg-transparent border-none outline-none text-[12px] text-text-primary placeholder:text-text-tertiary"
+              />
+            </div>
+          </div>
+        )}
+
         <div className="flex-1 overflow-y-auto py-2">
           {fileTree.length > 0 ? (
             fileTree.map(node => <FileTreeNode key={node.path} node={node} />)
@@ -374,14 +417,24 @@ export function CodeStudioPage() {
               <Play size={12} fill="currentColor" /> Run
             </button>
             <button 
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-accent/10 text-accent text-[11px] font-bold hover:bg-accent/20 transition-all cursor-pointer"
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${showPreview ? 'bg-accent text-white' : 'bg-accent/10 text-accent hover:bg-accent/20'}`}
               onClick={() => {
-                 appendTerminalOutput(`\n[Live Server] Initializing preview...\n`);
-                 // Simulate live server initialization
-                 setTimeout(() => appendTerminalOutput(`> Preview ready at http://localhost:5173\n`), 1000);
+                 if (!showPreview) {
+                   appendTerminalOutput(`\n[Live Server] Initializing preview...\n`);
+                   // Set preview URL based on active file
+                   if (activeFile?.path.endsWith(".html")) {
+                     const electronAPI = (window as any).electronAPI;
+                     if (electronAPI) {
+                       setPreviewUrl(`file://${activeFile.path.replace(/\\/g, '/')}`);
+                     }
+                   } else {
+                     setPreviewUrl("http://localhost:5173");
+                   }
+                 }
+                 setShowPreview(!showPreview);
               }}
             >
-              <Globe size={12} /> Live Server
+              <Globe size={12} /> {showPreview ? "Close Preview" : "Live Server"}
             </button>
             <div className="w-px h-4 bg-border/40 mx-1" />
             <button className="p-1.5 rounded-lg text-text-tertiary hover:text-text-primary hover:bg-bg-hover cursor-pointer" title="Git Commit">
@@ -394,37 +447,100 @@ export function CodeStudioPage() {
         </div>
         )}
 
-        {/* Editor Instance */}
-        <div className="flex-1 relative">
-          {activeFile ? (
-            <div className="absolute inset-0 pt-2">
-              <Editor
-                height="100%"
-                language={activeFile.language}
-                theme={themeResolved === "light" ? "vs" : "vs-dark"}
-                value={activeFile.content}
-                onChange={(val) => updateFileContent(activeFile.path, val || "")}
-                options={{
-                  minimap: { enabled: false },
-                  fontSize: 13,
-                  fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
-                  fontLigatures: true,
-                  lineHeight: 1.6,
-                  smoothScrolling: true,
-                  cursorBlinking: "smooth",
-                  cursorSmoothCaretAnimation: "on",
-                  formatOnPaste: true,
-                  scrollBeyondLastLine: false,
-                }}
-              />
-            </div>
-          ) : (
-            <div className="flex h-full items-center justify-center flex-col text-text-tertiary font-medium">
-              <Folder size={48} className="mb-4 opacity-20" />
-              <p className="text-[14px]">Select a file from the explorer to begin editing.</p>
-              <p className="text-[12px] mt-2 opacity-50">Press <kbd className="bg-border py-0.5 px-1.5 rounded">Ctrl</kbd> + <kbd className="bg-border py-0.5 px-1.5 rounded">Q</kbd> to launch AI Agent</p>
-            </div>
-          )}
+        {/* Editor & Preview Instance */}
+        <div className="flex-1 relative flex overflow-hidden">
+          {/* Main Editor */}
+          <div className={`flex-1 relative ${showPreview ? "border-r border-border/40" : ""}`}>
+            {activeFile ? (
+              <div className="absolute inset-0 pt-2">
+                <Editor
+                  height="100%"
+                  language={activeFile.language}
+                  theme={themeResolved === "light" ? "vs" : "vs-dark"}
+                  value={activeFile.content}
+                  onChange={(val) => updateFileContent(activeFile.path, val || "")}
+                  options={{
+                    minimap: { enabled: false },
+                    fontSize: 13,
+                    fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
+                    fontLigatures: true,
+                    lineHeight: 1.6,
+                    smoothScrolling: true,
+                    cursorBlinking: "smooth",
+                    cursorSmoothCaretAnimation: "on",
+                    formatOnPaste: true,
+                    scrollBeyondLastLine: false,
+                  }}
+                />
+              </div>
+            ) : (
+              <div className="flex h-full items-center justify-center flex-col text-text-tertiary font-medium">
+                <Folder size={48} className="mb-4 opacity-20" />
+                <p className="text-[14px]">Select a file from the explorer to begin editing.</p>
+                <p className="text-[12px] mt-2 opacity-50">Press <kbd className="bg-border py-0.5 px-1.5 rounded">Ctrl</kbd> + <kbd className="bg-border py-0.5 px-1.5 rounded">Q</kbd> to launch AI Agent</p>
+              </div>
+            )}
+          </div>
+
+          {/* Live Preview Panel */}
+          <AnimatePresence>
+            {showPreview && (
+              <motion.div
+                initial={{ width: 0, opacity: 0 }}
+                animate={{ width: "50%", opacity: 1 }}
+                exit={{ width: 0, opacity: 0 }}
+                className="h-full flex flex-col bg-bg-secondary/20"
+              >
+                <div className="flex items-center justify-between p-2 border-b border-border/40 bg-bg-primary">
+                  <div className="flex items-center gap-2 bg-bg-secondary px-2 py-1 rounded border border-border">
+                    <Globe size={12} className="text-text-tertiary" />
+                    <input 
+                      value={previewUrl}
+                      onChange={e => setPreviewUrl(e.target.value)}
+                      className="bg-transparent border-none outline-none text-[11px] w-48 text-text-primary"
+                    />
+                    <button onClick={() => iframeRef.current && (iframeRef.current.src = previewUrl)} className="text-text-tertiary hover:text-text-primary">
+                      <RefreshCw size={12} />
+                    </button>
+                  </div>
+                  <div className="flex items-center gap-1 bg-bg-secondary p-0.5 rounded border border-border">
+                    <button 
+                      onClick={() => setDeviceSize("mobile")}
+                      className={`p-1.5 rounded ${deviceSize === "mobile" ? "bg-bg-primary text-accent shadow-sm" : "text-text-tertiary hover:text-text-primary"}`}
+                    >
+                      <Smartphone size={14} />
+                    </button>
+                    <button 
+                      onClick={() => setDeviceSize("tablet")}
+                      className={`p-1.5 rounded ${deviceSize === "tablet" ? "bg-bg-primary text-accent shadow-sm" : "text-text-tertiary hover:text-text-primary"}`}
+                    >
+                      <Tablet size={14} />
+                    </button>
+                    <button 
+                      onClick={() => setDeviceSize("desktop")}
+                      className={`p-1.5 rounded ${deviceSize === "desktop" ? "bg-bg-primary text-accent shadow-sm" : "text-text-tertiary hover:text-text-primary"}`}
+                    >
+                      <Monitor size={14} />
+                    </button>
+                  </div>
+                </div>
+                
+                <div className="flex-1 bg-bg-secondary/40 overflow-hidden flex items-center justify-center p-4">
+                  <div className={`
+                    bg-white overflow-hidden transition-all duration-300 shadow-2xl border border-border/20
+                    ${deviceSize === "mobile" ? "w-[375px] h-[667px] rounded-[2rem]" : deviceSize === "tablet" ? "w-[768px] h-[1024px] rounded-[2rem]" : "w-full h-full rounded-lg"}
+                  `}>
+                    <iframe 
+                      ref={iframeRef}
+                      src={previewUrl} 
+                      className="w-full h-full border-none bg-white"
+                      title="Live Preview"
+                    />
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {/* AI Floating Input inside Editor Area */}
           <AnimatePresence>

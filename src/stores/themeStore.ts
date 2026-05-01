@@ -1,25 +1,31 @@
 import { create } from "zustand";
 import { db } from "@/lib/database";
 
-type ThemeMode = "light" | "dark" | "system";
+type ThemeMode = "light" | "dark" | "system" | "forest" | "mocha" | "ocean" | "rose";
 
 interface ThemeState {
   theme: ThemeMode;
-  resolved: "light" | "dark";
+  resolved: ThemeMode;
   customBgData: string | null;
   setTheme: (theme: ThemeMode) => void;
   setCustomBg: (dataUrl: string | null) => Promise<void>;
   initTheme: () => Promise<void>;
 }
 
-function getSystemTheme(): "light" | "dark" {
+function getSystemTheme(): ThemeMode {
   return window.matchMedia("(prefers-color-scheme: dark)").matches
     ? "dark"
     : "light";
 }
 
-function applyTheme(resolved: "light" | "dark", bgData: string | null = null) {
-  document.documentElement.classList.toggle("dark", resolved === "dark");
+function applyTheme(resolved: ThemeMode, bgData: string | null = null) {
+  document.documentElement.classList.remove("dark", "theme-forest", "theme-mocha", "theme-ocean", "theme-rose");
+  
+  if (resolved === "dark") document.documentElement.classList.add("dark");
+  else if (resolved === "forest") document.documentElement.classList.add("theme-forest");
+  else if (resolved === "mocha") document.documentElement.classList.add("theme-mocha");
+  else if (resolved === "ocean") document.documentElement.classList.add("theme-ocean");
+  else if (resolved === "rose") document.documentElement.classList.add("theme-rose");
   
   if (bgData) {
     document.documentElement.classList.add("custom-bg");

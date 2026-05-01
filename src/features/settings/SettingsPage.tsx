@@ -22,6 +22,11 @@ import {
   AlertCircle,
   Trash2,
   AlertTriangle,
+  Zap,
+  Leaf,
+  Coffee,
+  Waves,
+  Flower2,
 } from "lucide-react";
 import { db } from "@/lib/database";
 import { LANGUAGES } from "@/types/settings";
@@ -31,7 +36,12 @@ import { useT } from "@/lib/i18n";
 
 export function SettingsPage() {
   const { theme, setTheme, customBgData, setCustomBg } = useThemeStore();
-  const { language, ai_model, setSetting } = useSettingsStore();
+  const { 
+    language, ai_provider, ai_model, 
+    api_key_openrouter, api_key_groq, api_key_openai, 
+    api_key_anthropic, api_key_deepseek, api_key_gemini, 
+    setSetting 
+  } = useSettingsStore();
   const { setModel } = useAIStore();
   const {
     status,
@@ -48,6 +58,7 @@ export function SettingsPage() {
   const [models, setModels] = useState<OllamaModel[]>([]);
   const [ollamaOnline, setOllamaOnline] = useState(false);
   const [showLangPicker, setShowLangPicker] = useState(false);
+  const [showProviderPicker, setShowProviderPicker] = useState(false);
   const [showModelPicker, setShowModelPicker] = useState(false);
   const [pendingLang, setPendingLang] = useState<string | null>(null);
   const [showWipeConfirm, setShowWipeConfirm] = useState(false);
@@ -98,11 +109,15 @@ export function SettingsPage() {
         </p>
 
         <Section title={t("settings.appearance")} icon={<Sun size={18} />}>
-          <div className="grid grid-cols-3 gap-2.5">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5">
             {(
               [
-                { value: "light" as const, icon: <Sun size={18} />, label: "Light" },
-                { value: "dark" as const, icon: <Moon size={18} />, label: "Dark" },
+                { value: "light" as const, icon: <Sun size={18} />, label: "Aura Light" },
+                { value: "dark" as const, icon: <Moon size={18} />, label: "Obsidian" },
+                { value: "forest" as const, icon: <Leaf size={18} />, label: "Forest" },
+                { value: "mocha" as const, icon: <Coffee size={18} />, label: "Mocha" },
+                { value: "ocean" as const, icon: <Waves size={18} />, label: "Ocean" },
+                { value: "rose" as const, icon: <Flower2 size={18} />, label: "Rosé" },
                 { value: "system" as const, icon: <Monitor size={18} />, label: "System" },
               ]
             ).map((opt) => (
@@ -228,68 +243,95 @@ export function SettingsPage() {
           )}
         </Section>
 
-        <Section title={t("settings.ai_model")} icon={<Bot size={18} />}>
-          <div
-            className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-[12px] mb-3 w-fit
-              ${
-                ollamaOnline
-                  ? "bg-success/10 text-success"
-                  : "bg-warning/10 text-warning"
-              }`}
-          >
-            {ollamaOnline ? <Wifi size={13} /> : <WifiOff size={13} />}
-            {ollamaOnline ? "Ollama connected" : "Ollama offline"}
-          </div>
-
-          <button
-            onClick={() => setShowModelPicker(!showModelPicker)}
-            className="w-full flex items-center justify-between px-4 py-3
-              bg-bg-secondary rounded-xl border border-border-light
-              text-[14px] text-text-primary hover:bg-bg-hover transition-colors cursor-pointer"
-          >
-            <span>{ai_model}</span>
-            <ChevronRight
-              size={16}
-              className={`text-text-tertiary transition-transform ${
-                showModelPicker ? "rotate-90" : ""
-              }`}
-            />
-          </button>
-          <AnimatePresence>
-            {showModelPicker && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: "auto" }}
-                exit={{ opacity: 0, height: 0 }}
-                className="mt-2 space-y-0.5 overflow-hidden"
+        <Section title="AI Provider & API Keys" icon={<Bot size={18} />}>
+          <div className="flex flex-col gap-4">
+            
+            {/* Provider Selection */}
+            <div>
+              <p className="text-[12px] font-bold text-text-tertiary uppercase mb-2">Active Provider</p>
+              <button
+                onClick={() => setShowProviderPicker(!showProviderPicker)}
+                className="w-full flex items-center justify-between px-4 py-3 bg-bg-secondary rounded-xl border border-border-light text-[14px] text-text-primary hover:bg-bg-hover transition-colors cursor-pointer"
               >
-                <ModelButton
-                  name="glm-5:cloud"
-                  selected={ai_model === "glm-5:cloud"}
-                  isDefault
-                  onClick={() => {
-                    setSetting("ai_model", "glm-5:cloud");
-                    setModel("glm-5:cloud");
-                    setShowModelPicker(false);
-                  }}
+                <span className="capitalize">{ai_provider}</span>
+                <ChevronRight size={16} className={`text-text-tertiary transition-transform ${showProviderPicker ? "rotate-90" : ""}`} />
+              </button>
+              
+              <AnimatePresence>
+                {showProviderPicker && (
+                  <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="mt-2 space-y-0.5 overflow-hidden">
+                    {["ollama", "openrouter", "groq", "openai", "anthropic", "deepseek", "gemini"].map(p => (
+                      <button key={p} onClick={() => { setSetting("ai_provider", p as any); setShowProviderPicker(false); }} className={`w-full flex items-center justify-between px-4 py-2.5 rounded-lg text-[13px] capitalize transition-colors cursor-pointer ${ai_provider === p ? "bg-accent/10 text-accent font-medium" : "text-text-secondary hover:bg-bg-hover"}`}>
+                        <span>{p}</span>
+                        {ai_provider === p && <Check size={14} />}
+                      </button>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
+            {/* Model Selection (only for Ollama right now, other providers let user type) */}
+            {ai_provider === "ollama" ? (
+              <div>
+                <p className="text-[12px] font-bold text-text-tertiary uppercase mb-2 flex justify-between">
+                   Local Model
+                   <span className={ollamaOnline ? "text-success" : "text-warning"}>{ollamaOnline ? "Online" : "Offline"}</span>
+                </p>
+                <button onClick={() => setShowModelPicker(!showModelPicker)} className="w-full flex items-center justify-between px-4 py-3 bg-bg-secondary rounded-xl border border-border-light text-[14px] text-text-primary hover:bg-bg-hover transition-colors cursor-pointer">
+                  <span>{ai_model}</span>
+                  <ChevronRight size={16} className={`text-text-tertiary transition-transform ${showModelPicker ? "rotate-90" : ""}`} />
+                </button>
+                <AnimatePresence>
+                  {showModelPicker && (
+                    <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="mt-2 space-y-0.5 overflow-hidden">
+                      <ModelButton name="glm-5:cloud" selected={ai_model === "glm-5:cloud"} isDefault onClick={() => { setSetting("ai_model", "glm-5:cloud"); setModel("glm-5:cloud"); setShowModelPicker(false); }} />
+                      {models.filter(m => m.name !== "glm-5:cloud").map(m => (
+                        <ModelButton key={m.name} name={m.name} selected={ai_model === m.name} onClick={() => { setSetting("ai_model", m.name); setModel(m.name); setShowModelPicker(false); }} />
+                      ))}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            ) : (
+              <div>
+                <p className="text-[12px] font-bold text-text-tertiary uppercase mb-2">Target Model Name</p>
+                <input 
+                  type="text" 
+                  value={ai_model} 
+                  onChange={e => setSetting("ai_model", e.target.value)} 
+                  placeholder="e.g. gpt-4o, claude-3-5-sonnet-20241022" 
+                  className="w-full px-4 py-3 bg-bg-secondary rounded-xl border border-border-light text-[14px] text-text-primary outline-none focus:border-accent"
                 />
-                {models
-                  .filter((m) => m.name !== "glm-5:cloud")
-                  .map((m) => (
-                    <ModelButton
-                      key={m.name}
-                      name={m.name}
-                      selected={ai_model === m.name}
-                      onClick={() => {
-                        setSetting("ai_model", m.name);
-                        setModel(m.name);
-                        setShowModelPicker(false);
-                      }}
-                    />
-                  ))}
-              </motion.div>
+              </div>
             )}
-          </AnimatePresence>
+
+            {/* API Keys */}
+            <div className="pt-4 border-t border-border/40">
+              <p className="text-[12px] font-bold text-text-tertiary uppercase mb-3">API Keys</p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {[
+                  { id: "api_key_openrouter", label: "OpenRouter Key", val: api_key_openrouter },
+                  { id: "api_key_groq", label: "Groq Key", val: api_key_groq },
+                  { id: "api_key_openai", label: "OpenAI Key", val: api_key_openai },
+                  { id: "api_key_anthropic", label: "Anthropic Key", val: api_key_anthropic },
+                  { id: "api_key_deepseek", label: "DeepSeek Key", val: api_key_deepseek },
+                  { id: "api_key_gemini", label: "Gemini Key", val: api_key_gemini },
+                ].map(k => (
+                  <div key={k.id} className="relative">
+                    <input 
+                      type="password" 
+                      value={k.val} 
+                      onChange={e => setSetting(k.id as any, e.target.value)} 
+                      placeholder={k.label} 
+                      className="w-full px-3 py-2 bg-bg-secondary rounded-lg border border-border-light text-[12px] text-text-primary outline-none focus:border-accent font-mono"
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+
+          </div>
         </Section>
 
         <Section title={t("settings.updates")} icon={<Download size={18} />}>

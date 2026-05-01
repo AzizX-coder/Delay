@@ -87,10 +87,62 @@ ipcMain.on("app-relaunch", () => {
 });
 
 // ── Disk Flows: yt-dlp download ──
+const fs = require("fs");
+const https = require("https");
+
+function getYtDlpPath() {
+  return path.join(app.getPath("userData"), process.platform === "win32" ? "yt-dlp.exe" : "yt-dlp");
+}
+
+ipcMain.handle("disk-flows-check-dependency", async () => {
+  return new Promise((resolve) => {
+    const binPath = getYtDlpPath();
+    if (fs.existsSync(binPath)) {
+      resolve({ ok: true, path: binPath });
+      return;
+    }
+
+    const url = process.platform === "win32" 
+      ? "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp.exe"
+      : process.platform === "darwin"
+        ? "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp_macos"
+        : "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp";
+
+    const file = fs.createWriteStream(binPath);
+    
+    // Simple redirect handler for github releases
+    function download(urlToFetch) {
+      https.get(urlToFetch, (response) => {
+        if (response.statusCode === 301 || response.statusCode === 302) {
+          return download(response.headers.location);
+        }
+        response.pipe(file);
+        file.on("finish", () => {
+          file.close();
+          if (process.platform !== "win32") {
+             fs.chmodSync(binPath, "755");
+          }
+          resolve({ ok: true, path: binPath });
+        });
+      }).on("error", (err) => {
+        fs.unlink(binPath, () => {});
+        resolve({ ok: false, error: err.message });
+      });
+    }
+    download(url);
+  });
+});
+
 ipcMain.handle("disk-flows-get-formats", async (_event, url) => {
   return new Promise((resolve) => {
     const { exec } = require("child_process");
-    exec(`yt-dlp -j "${url}"`, { maxBuffer: 1024 * 1024 * 10 }, (error, stdout) => {
+    const binPath = getYtDlpPath();
+    if (!fs.existsSync(binPath)) {
+      resolve({ ok: false, error: "yt-dlp not found. Please wait for it to download." });
+      return;
+    }
+    
+    exec(`"${binPath}" -j "${url}"`, { maxBuffer: 1024 * 1024 * 10 }, (error, stdout) => {
       if (error) {
         resolve({ ok: false, error: String(error) });
         return;
@@ -116,7 +168,6 @@ ipcMain.handle("disk-flows-get-formats", async (_event, url) => {
 
 ipcMain.handle("disk-flows-download", async (_event, url, downloadId, formatId) => {
   const videosDir = path.join(app.getPath("videos"), "Delay");
-  const fs = require("fs");
   if (!fs.existsSync(videosDir)) fs.mkdirSync(videosDir, { recursive: true });
 
   return new Promise((resolve) => {
@@ -124,10 +175,11 @@ ipcMain.handle("disk-flows-download", async (_event, url, downloadId, formatId) 
     
     // Default to 'best' if no formatId is provided, otherwise target the specific format+bestaudio
     const formatArgs = formatId && formatId !== "best" ? ["-f", `${formatId}+bestaudio/best`] : ["-f", "best"];
+    const binPath = getYtDlpPath();
     
-    const bin = process.platform === "win32" ? "cmd.exe" : "yt-dlp";
+    const bin = process.platform === "win32" ? "cmd.exe" : binPath;
     const args = process.platform === "win32" 
-      ? ["/c", "yt-dlp", "--progress", "--newline", ...formatArgs, "-o", `"${outputTemplate}"`, `"${url}"`]
+      ? ["/c", `"${binPath}"`, "--progress", "--newline", ...formatArgs, "-o", `"${outputTemplate}"`, `"${url}"`]
       : ["--progress", "--newline", ...formatArgs, "-o", outputTemplate, url];
 
     const proc = spawn(bin, args, { shell: process.platform === "win32" });

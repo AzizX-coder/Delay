@@ -18,6 +18,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
     },
   },
   diskFlows: {
+    checkDependency: () => ipcRenderer.invoke("disk-flows-check-dependency"),
     getFormats: (url) => ipcRenderer.invoke("disk-flows-get-formats", url),
     download: (url, id, formatId) => ipcRenderer.invoke("disk-flows-download", url, id, formatId),
     openFolder: () => ipcRenderer.invoke("disk-flows-open-folder"),

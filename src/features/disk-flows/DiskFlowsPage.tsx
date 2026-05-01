@@ -45,10 +45,23 @@ export function DiskFlowsPage() {
   const [url, setUrl] = useState("");
   const [error, setError] = useState("");
   const [fetchingFormats, setFetchingFormats] = useState(false);
+  const [checkingDep, setCheckingDep] = useState(true);
   const [formatsModal, setFormatsModal] = useState<{ url: string, formats: any[], title: string, thumb: string } | null>(null);
 
   useEffect(() => {
     loadDownloads();
+    const checkYtDlp = async () => {
+      const electronAPI = (window as any).electronAPI;
+      if (electronAPI?.diskFlows?.checkDependency) {
+        try {
+          await electronAPI.diskFlows.checkDependency();
+        } catch (e) {
+          console.error("Failed to check or download yt-dlp", e);
+        }
+      }
+      setCheckingDep(false);
+    };
+    checkYtDlp();
   }, []);
 
   const handlePaste = async () => {
@@ -154,8 +167,8 @@ export function DiskFlowsPage() {
               value={url}
               onChange={(e) => setUrl(e.target.value)}
               onKeyDown={handleKeyDown}
-              disabled={fetchingFormats}
-              placeholder="Paste YouTube or Instagram URL..."
+              disabled={fetchingFormats || checkingDep}
+              placeholder={checkingDep ? "Downloading yt-dlp dependencies..." : "Paste YouTube or Instagram URL..."}
               className="w-full pl-12 pr-4 py-3.5 rounded-2xl bg-bg-secondary/60 border border-border/40
                 text-[14px] text-text-primary placeholder:text-text-tertiary
                 outline-none focus:border-accent/40 focus:ring-4 focus:ring-accent/5 transition-all disabled:opacity-50"

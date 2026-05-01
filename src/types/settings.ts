@@ -1,7 +1,14 @@
 export interface AppSettings {
-  theme: "light" | "dark" | "system";
+  theme: "light" | "dark" | "system" | "forest" | "mocha" | "ocean" | "rose";
   language: string;
+  ai_provider: "ollama" | "openrouter" | "groq" | "openai" | "anthropic" | "deepseek" | "gemini";
   ai_model: string;
+  api_key_openrouter: string;
+  api_key_groq: string;
+  api_key_openai: string;
+  api_key_anthropic: string;
+  api_key_deepseek: string;
+  api_key_gemini: string;
   onboarding_completed: boolean;
   sidebar_collapsed: boolean;
   enabled_modules: string[];
@@ -27,7 +34,14 @@ export const DEFAULT_MODULES = [
 export const DEFAULT_SETTINGS: AppSettings = {
   theme: "system",
   language: "en",
-  ai_model: "glm-5:cloud",
+  ai_provider: "ollama",
+  ai_model: "llama3",
+  api_key_openrouter: "",
+  api_key_groq: "",
+  api_key_openai: "",
+  api_key_anthropic: "",
+  api_key_deepseek: "",
+  api_key_gemini: "",
   onboarding_completed: false,
   sidebar_collapsed: false,
   enabled_modules: DEFAULT_MODULES,

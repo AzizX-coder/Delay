@@ -1,76 +1,117 @@
-import { useState, useRef, useCallback, useEffect } from "react";
-import { motion } from "motion/react";
+import { useEffect, useRef, useState, useCallback } from "react";
+import { motion, AnimatePresence } from "motion/react";
+import { useWhiteboardStore, ToolType, WBObject } from "@/stores/whiteboardStore";
 import {
   Square, Circle, Type, Minus, MousePointer, StickyNote,
   Diamond, Undo2, Trash2, ZoomIn, ZoomOut, Grid3X3, Pen,
+  ArrowRight, Layers, Settings2, Plus, ChevronDown, Lock, Eye, EyeOff,
+  BringToFront, SendToBack, ChevronRight
 } from "lucide-react";
 
-/* ── Types ── */
-type ToolType = "select" | "pen" | "sticky" | "rect" | "circle" | "diamond" | "line" | "text";
-type BgMode = "blank" | "dots" | "grid";
-
-interface WBObject {
-  id: string;
-  type: "sticky" | "rect" | "circle" | "diamond" | "line" | "text" | "path";
-  x: number; y: number;
-  w?: number; h?: number;
-  x2?: number; y2?: number;
-  text?: string;
-  color: string;
-  stroke?: string;
-  points?: number[][];
-}
-
-const COLORS = ["#6366F1", "#06B6D4", "#10B981", "#F59E0B", "#EF4444", "#EC4899", "#8B5CF6", "#FFFFFF"];
+/* ── Constants ── */
+const COLORS = ["#6366F1", "#06B6D4", "#10B981", "#F59E0B", "#EF4444", "#EC4899", "#8B5CF6", "#FFFFFF", "#1E293B"];
 const STICKY_COLORS = ["#FEF3C7", "#DBEAFE", "#D1FAE5", "#FCE7F3", "#EDE9FE", "#E0F2FE"];
-const LS_KEY = "delay-whiteboard-v2";
 
+/* ── Helpers ── */
 function uid() { return Math.random().toString(36).slice(2, 10); }
 
-/* ── Persistence ── */
-function loadBoard(): WBObject[] {
-  try { const d = localStorage.getItem(LS_KEY); return d ? JSON.parse(d) : []; } catch { return []; }
+function getBounds(obj: WBObject) {
+  if (obj.type === "line" || obj.type === "arrow") {
+    const minX = Math.min(obj.x, obj.x2 || obj.x);
+    const minY = Math.min(obj.y, obj.y2 || obj.y);
+    const w = Math.abs(obj.x - (obj.x2 || obj.x));
+    const h = Math.abs(obj.y - (obj.y2 || obj.y));
+    return { x: minX, y: minY, w, h };
+  }
+  if (obj.type === "path" && obj.points) {
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    obj.points.forEach(([px, py]) => {
+      minX = Math.min(minX, px); minY = Math.min(minY, py);
+      maxX = Math.max(maxX, px); maxY = Math.max(maxY, py);
+    });
+    return { x: minX, y: minY, w: maxX - minX, h: maxY - minY };
+  }
+  return { x: obj.x, y: obj.y, w: obj.w || 160, h: obj.h || 120 };
 }
-function saveBoard(objects: WBObject[]) { localStorage.setItem(LS_KEY, JSON.stringify(objects)); }
+
+function hitTest(obj: WBObject, px: number, py: number): boolean {
+  if (obj.hidden) return false;
+  if (obj.type === "line" || obj.type === "arrow") {
+    const d = distToLine(obj.x, obj.y, obj.x2 || obj.x, obj.y2 || obj.y, px, py);
+    return d < 8;
+  }
+  if (obj.type === "path" && obj.points) {
+    // Rough bounding box hit test for path
+    const { x, y, w, h } = getBounds(obj);
+    return px >= x && px <= x + w && py >= y && py <= y + h;
+  }
+  if (obj.type === "text") return px >= obj.x - 5 && px <= obj.x + 200 && py >= obj.y - 20 && py <= obj.y + 20;
+  
+  const w = obj.w || 160, h = obj.h || 120;
+  return px >= obj.x && px <= obj.x + w && py >= obj.y && py <= obj.y + h;
+}
+
+function distToLine(x1: number, y1: number, x2: number, y2: number, px: number, py: number): number {
+  const A = px - x1, B = py - y1, C = x2 - x1, D = y2 - y1;
+  const dot = A * C + B * D, lenSq = C * C + D * D;
+  let t = lenSq !== 0 ? dot / lenSq : -1;
+  t = Math.max(0, Math.min(1, t));
+  const xx = x1 + t * C, yy = y1 + t * D;
+  return Math.sqrt((px - xx) ** 2 + (py - yy) ** 2);
+}
+
+// Spline smoothing for pen
+function smoothPoints(points: number[][]): number[][] {
+  if (points.length < 3) return points;
+  const smoothed: number[][] = [];
+  smoothed.push(points[0]);
+  for (let i = 1; i < points.length - 1; i++) {
+    const xc = (points[i][0] + points[i + 1][0]) / 2;
+    const yc = (points[i][1] + points[i + 1][1]) / 2;
+    smoothed.push([xc, yc]);
+  }
+  smoothed.push(points[points.length - 1]);
+  return smoothed;
+}
 
 export function WhiteboardPage() {
-  const [objects, setObjects] = useState<WBObject[]>(() => loadBoard());
-  const [tool, setTool] = useState<ToolType>("select");
-  const [color, setColor] = useState("#6366F1");
-  const [bgMode, setBgMode] = useState<BgMode>("dots");
-  const [selected, setSelected] = useState<string | null>(null);
-  const [history, setHistory] = useState<WBObject[][]>([]);
-  const [pan, setPan] = useState({ x: 0, y: 0 });
-  const [zoom, setZoom] = useState(1);
+  const store = useWhiteboardStore();
+  const {
+    boards, activeBoardId, loadBoards, createBoard, switchBoard, deleteBoard,
+    tool, setTool, color, setColor, bgMode, setBgMode, selectedId, setSelectedId,
+    pan, setPan, zoom, setZoom, updateObjects, pushHistory, undo, deleteSelected,
+    bringForward, sendBackward
+  } = store;
+
+
+  // Local ephemeral state
+  const [showLeftPanel, setShowLeftPanel] = useState(true);
+  const [showRightPanel, setShowRightPanel] = useState(true);
+  const [showBoardsMenu, setShowBoardsMenu] = useState(false);
+  const [editingText, setEditingText] = useState<string | null>(null);
   const [dragging, setDragging] = useState<{ id: string; ox: number; oy: number } | null>(null);
+  const [resizing, setResizing] = useState<{ id: string; handle: string; startW: number; startH: number; startX: number; startY: number } | null>(null);
   const [drawing, setDrawing] = useState<{ startX: number; startY: number } | null>(null);
   const [penPoints, setPenPoints] = useState<number[][]>([]);
-  const [editingText, setEditingText] = useState<string | null>(null);
+  
   const svgRef = useRef<SVGSVGElement>(null);
   const isPanning = useRef(false);
   const panStart = useRef({ x: 0, y: 0, px: 0, py: 0 });
 
-  // Save whenever objects change
-  useEffect(() => { saveBoard(objects); }, [objects]);
+  useEffect(() => { loadBoards(); }, []);
 
-  const pushHistory = useCallback(() => {
-    setHistory(prev => [...prev.slice(-30), objects]);
-  }, [objects]);
+  const activeBoard = boards.find(b => b.id === activeBoardId);
+  const currentObjects = activeBoard?.objects || [];
+  const selectedObj = currentObjects.find(o => o.id === selectedId);
 
-  const undo = () => {
-    if (history.length === 0) return;
-    setObjects(history[history.length - 1]);
-    setHistory(prev => prev.slice(0, -1));
-  };
-
+  /* ── Canvas Interactivity ── */
   const toSVG = (clientX: number, clientY: number) => {
     const r = svgRef.current!.getBoundingClientRect();
     return { x: (clientX - r.left - pan.x) / zoom, y: (clientY - r.top - pan.y) / zoom };
   };
 
-  /* ── Mouse handlers ── */
   const onMouseDown = (e: React.MouseEvent) => {
-    if (e.button === 1 || (e.button === 0 && e.shiftKey)) {
+    if (e.button === 1 || (e.button === 0 && e.shiftKey) || tool === "select" && e.button === 0 && e.altKey) {
       isPanning.current = true;
       panStart.current = { x: e.clientX, y: e.clientY, px: pan.x, py: pan.y };
       return;
@@ -78,14 +119,22 @@ export function WhiteboardPage() {
 
     const pt = toSVG(e.clientX, e.clientY);
 
+    // Check resize handles first if an object is selected
+    if (tool === "select" && selectedObj && !selectedObj.locked) {
+      const handle = (e.target as HTMLElement).getAttribute("data-handle");
+      if (handle) {
+        setResizing({ id: selectedObj.id, handle, startW: selectedObj.w || 0, startH: selectedObj.h || 0, startX: pt.x, startY: pt.y });
+        return;
+      }
+    }
+
     if (tool === "select") {
-      // Check if clicking on an object
-      const hit = [...objects].reverse().find(o => hitTest(o, pt.x, pt.y));
+      const hit = [...currentObjects].reverse().find(o => hitTest(o, pt.x, pt.y));
       if (hit) {
-        setSelected(hit.id);
-        setDragging({ id: hit.id, ox: pt.x - hit.x, oy: pt.y - hit.y });
+        setSelectedId(hit.id);
+        if (!hit.locked) setDragging({ id: hit.id, ox: pt.x - hit.x, oy: pt.y - hit.y });
       } else {
-        setSelected(null);
+        setSelectedId(null);
       }
       return;
     }
@@ -97,6 +146,7 @@ export function WhiteboardPage() {
     }
 
     pushHistory();
+    setSelectedId(null);
     setDrawing({ startX: pt.x, startY: pt.y });
   };
 
@@ -108,8 +158,21 @@ export function WhiteboardPage() {
 
     const pt = toSVG(e.clientX, e.clientY);
 
+    if (resizing && selectedObj) {
+      const dx = pt.x - resizing.startX;
+      const dy = pt.y - resizing.startY;
+      updateObjects(objs => objs.map(o => {
+        if (o.id !== resizing.id) return o;
+        const no = { ...o };
+        if (resizing.handle.includes("e")) no.w = Math.max(10, resizing.startW + dx);
+        if (resizing.handle.includes("s")) no.h = Math.max(10, resizing.startH + dy);
+        return no;
+      }));
+      return;
+    }
+
     if (dragging) {
-      setObjects(prev => prev.map(o => o.id === dragging.id ? { ...o, x: pt.x - dragging.ox, y: pt.y - dragging.oy } : o));
+      updateObjects(objs => objs.map(o => o.id === dragging.id ? { ...o, x: pt.x - dragging.ox, y: pt.y - dragging.oy } : o));
       return;
     }
 
@@ -117,21 +180,18 @@ export function WhiteboardPage() {
       setPenPoints(prev => [...prev, [pt.x, pt.y]]);
       return;
     }
-
-    if (drawing) {
-      // Live preview handled via drawing state
-    }
   };
 
   const onMouseUp = (e: React.MouseEvent) => {
     isPanning.current = false;
-
     if (dragging) { setDragging(null); return; }
+    if (resizing) { setResizing(null); return; }
 
     const pt = toSVG(e.clientX, e.clientY);
 
     if (tool === "pen" && penPoints.length > 1) {
-      setObjects(prev => [...prev, { id: uid(), type: "path", x: 0, y: 0, color, points: penPoints }]);
+      const smoothed = smoothPoints(penPoints);
+      updateObjects(prev => [...prev, { id: uid(), type: "path", x: 0, y: 0, color, points: smoothed }]);
       setPenPoints([]);
       return;
     }
@@ -145,235 +205,435 @@ export function WhiteboardPage() {
 
     if (tool === "sticky") {
       const sc = STICKY_COLORS[Math.floor(Math.random() * STICKY_COLORS.length)];
-      setObjects(prev => [...prev, { id: uid(), type: "sticky", x: startX, y: startY, w: Math.max(w, 160), h: Math.max(h, 120), text: "Double-click to edit", color: sc }]);
-    } else if (tool === "rect") {
-      if (w > 5 && h > 5) setObjects(prev => [...prev, { id: uid(), type: "rect", x: minX, y: minY, w, h, color, stroke: color }]);
-    } else if (tool === "circle") {
-      if (w > 5 && h > 5) setObjects(prev => [...prev, { id: uid(), type: "circle", x: minX, y: minY, w, h, color, stroke: color }]);
-    } else if (tool === "diamond") {
-      if (w > 5 && h > 5) setObjects(prev => [...prev, { id: uid(), type: "diamond", x: minX, y: minY, w, h, color, stroke: color }]);
-    } else if (tool === "line") {
-      if (w > 3 || h > 3) setObjects(prev => [...prev, { id: uid(), type: "line", x: startX, y: startY, x2: pt.x, y2: pt.y, color, stroke: color }]);
+      updateObjects(prev => [...prev, { id: uid(), type: "sticky", x: startX, y: startY, w: Math.max(w, 160), h: Math.max(h, 120), text: "Double-click to edit", color: sc }]);
+    } else if (tool === "rect" || tool === "circle" || tool === "diamond") {
+      if (w > 5 && h > 5) updateObjects(prev => [...prev, { id: uid(), type: tool, x: minX, y: minY, w, h, color, stroke: color }]);
+    } else if (tool === "line" || tool === "arrow") {
+      if (w > 3 || h > 3) updateObjects(prev => [...prev, { id: uid(), type: tool, x: startX, y: startY, x2: pt.x, y2: pt.y, color, stroke: color }]);
     } else if (tool === "text") {
       const id = uid();
-      setObjects(prev => [...prev, { id, type: "text", x: startX, y: startY, text: "Text", color }]);
+      updateObjects(prev => [...prev, { id, type: "text", x: startX, y: startY, text: "Text", color, fontSize: 16 }]);
       setEditingText(id);
+      setSelectedId(id);
     }
-
+    
+    setTool("select");
     setDrawing(null);
   };
 
   const onWheel = (e: React.WheelEvent) => {
-    e.preventDefault();
-    const delta = e.deltaY > 0 ? 0.9 : 1.1;
-    setZoom(z => Math.min(5, Math.max(0.1, z * delta)));
-  };
-
-  const deleteSelected = () => {
-    if (!selected) return;
-    pushHistory();
-    setObjects(prev => prev.filter(o => o.id !== selected));
-    setSelected(null);
+    if (e.ctrlKey) {
+      e.preventDefault();
+      const delta = e.deltaY > 0 ? 0.9 : 1.1;
+      setZoom(z => Math.min(5, Math.max(0.1, z * delta)));
+    } else {
+      setPan(p => ({ x: p.x - e.deltaX, y: p.y - e.deltaY }));
+    }
   };
 
   const onDoubleClick = (e: React.MouseEvent) => {
     const pt = toSVG(e.clientX, e.clientY);
-    const hit = [...objects].reverse().find(o => hitTest(o, pt.x, pt.y));
+    const hit = [...currentObjects].reverse().find(o => hitTest(o, pt.x, pt.y));
     if (hit && (hit.type === "sticky" || hit.type === "text")) {
       setEditingText(hit.id);
+      setSelectedId(hit.id);
     }
   };
 
-  /* ── Keyboard ── */
+  // Global Keyboard
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if (e.key === "Delete" || e.key === "Backspace") { if (selected && !editingText) deleteSelected(); }
+      if ((e.key === "Delete" || e.key === "Backspace") && selectedId && !editingText) {
+        deleteSelected();
+      }
       if (e.ctrlKey && e.key === "z") undo();
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [selected, editingText, history]);
+  }, [selectedId, editingText]);
 
-  /* ── Background pattern ── */
-  const renderBg = () => {
-    if (bgMode === "dots") {
-      return (
-        <pattern id="dots" x={pan.x % (20 * zoom)} y={pan.y % (20 * zoom)} width={20 * zoom} height={20 * zoom} patternUnits="userSpaceOnUse">
-          <circle cx={10 * zoom} cy={10 * zoom} r={1.2} fill="var(--color-border-light)" opacity="0.5" />
-        </pattern>
-      );
-    }
-    if (bgMode === "grid") {
-      return (
-        <pattern id="grid" x={pan.x % (30 * zoom)} y={pan.y % (30 * zoom)} width={30 * zoom} height={30 * zoom} patternUnits="userSpaceOnUse">
-          <path d={`M ${30 * zoom} 0 L 0 0 0 ${30 * zoom}`} fill="none" stroke="var(--color-border-light)" strokeWidth="0.5" opacity="0.3" />
-        </pattern>
-      );
-    }
-    return null;
-  };
-
-  const TOOLS: { id: ToolType; icon: any; label: string }[] = [
-    { id: "select", icon: MousePointer, label: "Select" },
-    { id: "pen", icon: Pen, label: "Pen" },
-    { id: "sticky", icon: StickyNote, label: "Sticky Note" },
-    { id: "rect", icon: Square, label: "Rectangle" },
-    { id: "circle", icon: Circle, label: "Circle" },
-    { id: "diamond", icon: Diamond, label: "Diamond" },
-    { id: "line", icon: Minus, label: "Line" },
-    { id: "text", icon: Type, label: "Text" },
-  ];
+  if (!activeBoard) return null;
 
   return (
-    <div className="flex h-full bg-bg-primary relative overflow-hidden">
-      {/* ── Toolbar ── */}
-      <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1
-        bg-bg-elevated/90 backdrop-blur-xl border border-border/30 rounded-2xl p-1.5 shadow-2xl">
-        {TOOLS.map(t => (
-          <button key={t.id} onClick={() => setTool(t.id)} title={t.label}
-            className={`w-9 h-9 flex items-center justify-center rounded-xl transition-all cursor-pointer
-              ${tool === t.id ? "bg-accent text-white shadow-md" : "text-text-tertiary hover:text-text-primary hover:bg-bg-hover"}`}>
-            <t.icon size={16} />
-          </button>
-        ))}
-        <div className="w-px h-6 bg-border/20 mx-0.5" />
-        {COLORS.map(c => (
-          <button key={c} onClick={() => setColor(c)}
-            className={`w-5 h-5 rounded-full border-2 transition-all cursor-pointer ${color === c ? "border-accent scale-125" : "border-transparent hover:scale-110"}`}
-            style={{ background: c }} />
-        ))}
-        <div className="w-px h-6 bg-border/20 mx-0.5" />
-        <button onClick={() => setBgMode(bgMode === "blank" ? "dots" : bgMode === "dots" ? "grid" : "blank")} title="Toggle background"
-          className="w-9 h-9 flex items-center justify-center rounded-xl text-text-tertiary hover:text-text-primary hover:bg-bg-hover cursor-pointer">
-          <Grid3X3 size={16} />
-        </button>
-        <button onClick={undo} title="Undo"
-          className="w-9 h-9 flex items-center justify-center rounded-xl text-text-tertiary hover:text-text-primary hover:bg-bg-hover cursor-pointer">
-          <Undo2 size={16} />
-        </button>
-        {selected && (
-          <button onClick={deleteSelected} title="Delete"
-            className="w-9 h-9 flex items-center justify-center rounded-xl text-danger hover:bg-danger/10 cursor-pointer">
-            <Trash2 size={16} />
-          </button>
+    <div className="flex h-full bg-bg-primary overflow-hidden font-sans text-text-primary">
+      
+      {/* ─── LEFT PANEL (Layers / Boards) ─── */}
+      <AnimatePresence initial={false}>
+        {showLeftPanel && (
+          <motion.div
+            initial={{ width: 0, opacity: 0 }}
+            animate={{ width: 240, opacity: 1 }}
+            exit={{ width: 0, opacity: 0 }}
+            className="h-full border-r border-border/40 bg-bg-secondary/30 flex flex-col shrink-0"
+          >
+            {/* Boards Dropdown */}
+            <div className="p-3 border-b border-border/40 relative">
+              <button 
+                onClick={() => setShowBoardsMenu(!showBoardsMenu)}
+                className="w-full flex items-center justify-between bg-bg-primary px-3 py-2 rounded-lg border border-border text-[12px] font-bold shadow-sm"
+              >
+                <span className="truncate">{activeBoard.name}</span>
+                <ChevronDown size={14} className="text-text-tertiary" />
+              </button>
+              
+              <AnimatePresence>
+                {showBoardsMenu && (
+                  <motion.div 
+                    initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -5 }}
+                    className="absolute top-full left-3 right-3 mt-1 bg-bg-elevated border border-border shadow-2xl rounded-xl z-50 overflow-hidden"
+                  >
+                    <div className="max-h-48 overflow-y-auto py-1">
+                      {boards.map(b => (
+                        <div 
+                          key={b.id} 
+                          onClick={() => { switchBoard(b.id); setShowBoardsMenu(false); }}
+                          className={`px-3 py-2 text-[12px] cursor-pointer hover:bg-bg-hover flex items-center justify-between
+                            ${b.id === activeBoardId ? "text-accent font-bold" : "text-text-secondary"}
+                          `}
+                        >
+                          <span className="truncate">{b.name}</span>
+                          {boards.length > 1 && b.id !== activeBoardId && (
+                            <button onClick={(e) => { e.stopPropagation(); deleteBoard(b.id); }} className="text-text-tertiary hover:text-danger">
+                              <Trash2 size={12} />
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                    <div className="p-2 border-t border-border/40 bg-bg-secondary/50">
+                      <button 
+                        onClick={() => { createBoard("New Board"); setShowBoardsMenu(false); }}
+                        className="w-full flex items-center gap-1.5 justify-center px-2 py-1.5 bg-accent/10 text-accent rounded-lg text-[11px] font-bold hover:bg-accent hover:text-white transition-colors"
+                      >
+                        <Plus size={12} /> Create Board
+                      </button>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
+            {/* Layers List */}
+            <div className="p-3 pb-1 flex items-center gap-2 text-[11px] font-bold uppercase tracking-widest text-text-tertiary">
+              <Layers size={14} /> Layers
+            </div>
+            <div className="flex-1 overflow-y-auto p-2">
+              {[...currentObjects].reverse().map(obj => (
+                <div 
+                  key={obj.id}
+                  onClick={() => setSelectedId(obj.id)}
+                  className={`flex items-center justify-between px-2 py-1.5 rounded-lg mb-0.5 cursor-pointer text-[12px]
+                    ${selectedId === obj.id ? "bg-accent/15 text-accent font-medium" : "text-text-secondary hover:bg-bg-hover"}
+                  `}
+                >
+                  <div className="flex items-center gap-2 truncate">
+                    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: obj.color }} />
+                    <span className="capitalize">{obj.type} {obj.text ? `- ${obj.text.slice(0, 10)}` : ""}</span>
+                  </div>
+                  <div className="flex items-center gap-1 opacity-0 hover:opacity-100 transition-opacity">
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); updateObjects(os => os.map(o => o.id === obj.id ? { ...o, hidden: !o.hidden } : o)) }}
+                      className="text-text-tertiary hover:text-text-primary p-0.5"
+                    >
+                      {obj.hidden ? <EyeOff size={12} /> : <Eye size={12} />}
+                    </button>
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); updateObjects(os => os.map(o => o.id === obj.id ? { ...o, locked: !o.locked } : o)) }}
+                      className={`p-0.5 ${obj.locked ? "text-danger" : "text-text-tertiary hover:text-text-primary"}`}
+                    >
+                      <Lock size={12} />
+                    </button>
+                  </div>
+                </div>
+              ))}
+              {currentObjects.length === 0 && (
+                <p className="text-[11px] text-text-tertiary text-center mt-4 italic">No layers yet</p>
+              )}
+            </div>
+          </motion.div>
         )}
-      </div>
+      </AnimatePresence>
 
-      {/* ── Zoom controls ── */}
-      <div className="absolute bottom-4 right-4 z-20 flex items-center gap-1 bg-bg-elevated/90 backdrop-blur-xl border border-border/30 rounded-xl p-1 shadow-xl">
-        <button onClick={() => setZoom(z => Math.min(5, z * 1.2))} className="w-8 h-8 flex items-center justify-center rounded-lg text-text-tertiary hover:text-text-primary hover:bg-bg-hover cursor-pointer">
-          <ZoomIn size={14} />
-        </button>
-        <span className="text-[11px] font-bold text-text-secondary w-12 text-center">{Math.round(zoom * 100)}%</span>
-        <button onClick={() => setZoom(z => Math.max(0.1, z * 0.8))} className="w-8 h-8 flex items-center justify-center rounded-lg text-text-tertiary hover:text-text-primary hover:bg-bg-hover cursor-pointer">
-          <ZoomOut size={14} />
-        </button>
-      </div>
-
-      {/* ── Canvas ── */}
-      <svg ref={svgRef} className="w-full h-full" style={{ cursor: tool === "select" ? "default" : "crosshair" }}
-        onMouseDown={onMouseDown} onMouseMove={onMouseMove} onMouseUp={onMouseUp}
-        onMouseLeave={() => { isPanning.current = false; setDragging(null); setDrawing(null); setPenPoints([]); }}
-        onWheel={onWheel} onDoubleClick={onDoubleClick}>
-
-        {/* Background */}
-        <defs>{renderBg()}</defs>
-        <rect width="100%" height="100%" fill="var(--color-bg-primary)" />
-        {bgMode !== "blank" && <rect width="100%" height="100%" fill={`url(#${bgMode})`} />}
-
-        {/* Transform group */}
-        <g transform={`translate(${pan.x},${pan.y}) scale(${zoom})`}>
-          {objects.map(obj => (
-            <WBObjectRenderer key={obj.id} obj={obj} isSelected={selected === obj.id}
-              editingText={editingText} setEditingText={setEditingText}
-              updateText={(id, text) => setObjects(prev => prev.map(o => o.id === id ? { ...o, text } : o))} />
+      {/* ─── MAIN CANVAS AREA ─── */}
+      <div className="flex-1 flex flex-col relative">
+        
+        {/* Top Floating Toolbar */}
+        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1
+          bg-bg-elevated/95 backdrop-blur-xl border border-border/40 rounded-2xl p-1.5 shadow-[0_8px_30px_rgb(0,0,0,0.12)]">
+          <button onClick={() => setShowLeftPanel(!showLeftPanel)} className="w-8 h-8 flex items-center justify-center rounded-xl text-text-tertiary hover:bg-bg-hover mr-1">
+             <Layers size={14} />
+          </button>
+          <div className="w-px h-5 bg-border/40 mx-1" />
+          
+          {[
+            { id: "select", icon: MousePointer, tooltip: "Select (V)" },
+            { id: "pen", icon: Pen, tooltip: "Pen (P)" },
+            { id: "text", icon: Type, tooltip: "Text (T)" },
+            { id: "sticky", icon: StickyNote, tooltip: "Sticky Note (S)" },
+            { id: "rect", icon: Square, tooltip: "Rectangle (R)" },
+            { id: "circle", icon: Circle, tooltip: "Circle (O)" },
+            { id: "diamond", icon: Diamond, tooltip: "Diamond (D)" },
+            { id: "line", icon: Minus, tooltip: "Line (L)" },
+            { id: "arrow", icon: ArrowRight, tooltip: "Arrow (A)" },
+          ].map(t => (
+            <button 
+              key={t.id} 
+              onClick={() => setTool(t.id as ToolType)} 
+              title={t.tooltip}
+              className={`w-9 h-9 flex items-center justify-center rounded-xl transition-all cursor-pointer
+                ${tool === t.id ? "bg-accent text-white shadow-md scale-105" : "text-text-secondary hover:text-text-primary hover:bg-bg-hover"}`}
+            >
+              <t.icon size={16} />
+            </button>
           ))}
+          
+          <div className="w-px h-5 bg-border/40 mx-2" />
+          <button onClick={undo} title="Undo (Ctrl+Z)" className="w-9 h-9 flex items-center justify-center rounded-xl text-text-tertiary hover:text-text-primary hover:bg-bg-hover cursor-pointer">
+            <Undo2 size={16} />
+          </button>
+          <button onClick={() => setBgMode(bgMode === "blank" ? "dots" : bgMode === "dots" ? "grid" : "blank")} title="Toggle Background" className="w-9 h-9 flex items-center justify-center rounded-xl text-text-tertiary hover:text-text-primary hover:bg-bg-hover cursor-pointer">
+            <Grid3X3 size={16} />
+          </button>
+          
+          <div className="w-px h-5 bg-border/40 mx-1" />
+          <button onClick={() => setShowRightPanel(!showRightPanel)} className={`w-8 h-8 flex items-center justify-center rounded-xl transition-colors ${showRightPanel ? "bg-bg-secondary text-text-primary" : "text-text-tertiary hover:bg-bg-hover"}`}>
+             <Settings2 size={14} />
+          </button>
+        </div>
 
-          {/* Live pen stroke */}
-          {penPoints.length > 1 && (
-            <polyline points={penPoints.map(p => p.join(",")).join(" ")}
-              fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-          )}
+        {/* Canvas SVG */}
+        <svg 
+          ref={svgRef} 
+          className="w-full h-full outline-none" 
+          style={{ cursor: tool === "select" ? "default" : tool === "pen" ? "crosshair" : "cell" }}
+          onMouseDown={onMouseDown} 
+          onMouseMove={onMouseMove} 
+          onMouseUp={onMouseUp}
+          onMouseLeave={() => { isPanning.current = false; setDragging(null); setDrawing(null); setPenPoints([]); setResizing(null); }}
+          onWheel={onWheel} 
+          onDoubleClick={onDoubleClick}
+          tabIndex={0}
+        >
+          {/* Background Patterns */}
+          <defs>
+            <pattern id="dots" x={pan.x % (20 * zoom)} y={pan.y % (20 * zoom)} width={20 * zoom} height={20 * zoom} patternUnits="userSpaceOnUse">
+              <circle cx={10 * zoom} cy={10 * zoom} r={1.2} fill="var(--color-border-light)" opacity="0.6" />
+            </pattern>
+            <pattern id="grid" x={pan.x % (40 * zoom)} y={pan.y % (40 * zoom)} width={40 * zoom} height={40 * zoom} patternUnits="userSpaceOnUse">
+              <path d={`M ${40 * zoom} 0 L 0 0 0 ${40 * zoom}`} fill="none" stroke="var(--color-border-light)" strokeWidth="0.5" opacity="0.4" />
+            </pattern>
+            
+            {/* Arrowhead Marker */}
+            <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+              <polygon points="0 0, 10 3.5, 0 7" fill="currentColor" />
+            </marker>
+          </defs>
 
-          {/* Live shape preview */}
-          {drawing && tool !== "pen" && tool !== "select" && tool !== "text" && (
-            <LivePreview tool={tool} start={drawing} color={color} svgRef={svgRef} pan={pan} zoom={zoom} />
-          )}
-        </g>
-      </svg>
+          <rect width="100%" height="100%" fill="var(--color-bg-primary)" />
+          {bgMode !== "blank" && <rect width="100%" height="100%" fill={`url(#${bgMode})`} />}
+
+          {/* Group for Pan/Zoom */}
+          <g transform={`translate(${pan.x},${pan.y}) scale(${zoom})`}>
+            
+            {currentObjects.filter(o => !o.hidden).map(obj => {
+              const isSelected = selectedId === obj.id;
+              const isEditing = editingText === obj.id;
+              
+              let content = null;
+              if (obj.type === "sticky") {
+                content = (
+                  <foreignObject x={obj.x} y={obj.y} width={obj.w} height={obj.h} style={{ overflow: "visible" }}>
+                    <div style={{ width: "100%", height: "100%", background: obj.color, borderRadius: obj.borderRadius || 4, padding: 12, boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)", opacity: obj.opacity || 1 }}>
+                      {isEditing ? (
+                        <textarea autoFocus value={obj.text || ""} onChange={e => updateObjects(os => os.map(o => o.id === obj.id ? { ...o, text: e.target.value } : o))}
+                          onBlur={() => setEditingText(null)}
+                          style={{ width: "100%", height: "100%", background: "transparent", border: "none", outline: "none", resize: "none", fontSize: obj.fontSize || 14, fontFamily: "Inter, sans-serif", color: "#1a1a1a" }} />
+                      ) : (
+                        <div style={{ fontSize: obj.fontSize || 14, fontFamily: "Inter, sans-serif", color: "#1a1a1a", whiteSpace: "pre-wrap", wordBreak: "break-word" }}>{obj.text}</div>
+                      )}
+                    </div>
+                  </foreignObject>
+                );
+              } else if (obj.type === "rect") {
+                content = <rect x={obj.x} y={obj.y} width={obj.w} height={obj.h} fill="none" stroke={obj.stroke} strokeWidth="3" rx={obj.borderRadius || 4} opacity={obj.opacity || 1} />;
+              } else if (obj.type === "circle") {
+                content = <ellipse cx={obj.x + (obj.w || 0) / 2} cy={obj.y + (obj.h || 0) / 2} rx={(obj.w || 0) / 2} ry={(obj.h || 0) / 2} fill="none" stroke={obj.stroke} strokeWidth="3" opacity={obj.opacity || 1} />;
+              } else if (obj.type === "diamond") {
+                const cx = obj.x + (obj.w || 0) / 2, cy = obj.y + (obj.h || 0) / 2;
+                const hw = (obj.w || 0) / 2, hh = (obj.h || 0) / 2;
+                content = <polygon points={`${cx},${cy - hh} ${cx + hw},${cy} ${cx},${cy + hh} ${cx - hw},${cy}`} fill="none" stroke={obj.stroke} strokeWidth="3" opacity={obj.opacity || 1} />;
+              } else if (obj.type === "line") {
+                content = <line x1={obj.x} y1={obj.y} x2={obj.x2} y2={obj.y2} stroke={obj.stroke} strokeWidth="3" strokeLinecap="round" opacity={obj.opacity || 1} />;
+              } else if (obj.type === "arrow") {
+                content = <line x1={obj.x} y1={obj.y} x2={obj.x2} y2={obj.y2} stroke={obj.stroke} strokeWidth="3" strokeLinecap="round" markerEnd="url(#arrowhead)" style={{ color: obj.stroke }} opacity={obj.opacity || 1} />;
+              } else if (obj.type === "text") {
+                content = isEditing ? (
+                  <foreignObject x={obj.x} y={obj.y - 10} width={Math.max(200, (obj.w || 200))} height={(obj.h || 50) + 20} style={{ overflow: "visible" }}>
+                    <textarea autoFocus value={obj.text || ""} onChange={e => updateObjects(os => os.map(o => o.id === obj.id ? { ...o, text: e.target.value } : o))}
+                      onBlur={() => setEditingText(null)}
+                      style={{ width: "100%", height: "100%", background: "transparent", border: "none", outline: "2px solid #6366F1", borderRadius: 4, padding: 8, fontSize: obj.fontSize || 16, fontFamily: "Inter, sans-serif", color: obj.color, resize: "none" }} />
+                  </foreignObject>
+                ) : (
+                  <text x={obj.x} y={obj.y + (obj.fontSize || 16)} fill={obj.color} fontSize={obj.fontSize || 16} fontFamily="Inter, sans-serif" fontWeight="500" opacity={obj.opacity || 1} style={{ cursor: obj.locked ? "default" : "move" }}>
+                    {obj.text}
+                  </text>
+                );
+              } else if (obj.type === "path" && obj.points) {
+                content = <polyline points={obj.points.map(p => p.join(",")).join(" ")} fill="none" stroke={obj.color} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" opacity={obj.opacity || 1} />;
+              }
+
+              // Bounding box for selection & resize handles
+              return (
+                <g key={obj.id} style={{ opacity: obj.locked ? 0.7 : 1 }}>
+                  {content}
+                  {isSelected && !isEditing && obj.type !== "line" && obj.type !== "arrow" && obj.type !== "path" && (
+                    <g>
+                      <rect x={obj.x - 4} y={obj.y - 4} width={(obj.w || 0) + 8} height={(obj.h || 0) + 8} fill="none" stroke="#6366F1" strokeWidth="1.5" strokeDasharray="4 4" pointerEvents="none" />
+                      {!obj.locked && (
+                        <>
+                          <circle data-handle="e" cx={obj.x + (obj.w || 0) + 4} cy={obj.y + (obj.h || 0) / 2} r="5" fill="#fff" stroke="#6366F1" strokeWidth="2" style={{ cursor: "ew-resize" }} />
+                          <circle data-handle="s" cx={obj.x + (obj.w || 0) / 2} cy={obj.y + (obj.h || 0) + 4} r="5" fill="#fff" stroke="#6366F1" strokeWidth="2" style={{ cursor: "ns-resize" }} />
+                          <circle data-handle="se" cx={obj.x + (obj.w || 0) + 4} cy={obj.y + (obj.h || 0) + 4} r="5" fill="#fff" stroke="#6366F1" strokeWidth="2" style={{ cursor: "nwse-resize" }} />
+                        </>
+                      )}
+                    </g>
+                  )}
+                  {isSelected && (obj.type === "line" || obj.type === "arrow") && (
+                    <g>
+                       <circle cx={obj.x} cy={obj.y} r="4" fill="#fff" stroke="#6366F1" strokeWidth="2" />
+                       <circle cx={obj.x2} cy={obj.y2} r="4" fill="#fff" stroke="#6366F1" strokeWidth="2" />
+                    </g>
+                  )}
+                </g>
+              );
+            })}
+
+            {/* Live Drawing Preview */}
+            {drawing && tool !== "pen" && tool !== "select" && tool !== "text" && (
+               <LivePreview tool={tool} start={drawing} color={color} svgRef={svgRef} pan={pan} zoom={zoom} />
+            )}
+
+            {/* Live Pen Points */}
+            {penPoints.length > 1 && (
+              <polyline points={penPoints.map(p => p.join(",")).join(" ")} fill="none" stroke={color} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+            )}
+            
+          </g>
+        </svg>
+
+        {/* Minimap (Bottom Left) */}
+        <div className="absolute bottom-4 left-4 w-32 h-24 bg-bg-elevated/80 backdrop-blur-md border border-border/40 rounded-xl shadow-lg overflow-hidden pointer-events-none">
+           <div className="w-full h-full relative" style={{ transform: 'scale(0.1)', transformOrigin: 'top left' }}>
+              {currentObjects.filter(o => !o.hidden).map(o => {
+                 const { x, y, w, h } = getBounds(o);
+                 return <div key={o.id} className="absolute" style={{ left: x, top: y, width: w, height: h, backgroundColor: o.color || '#ccc', opacity: 0.5 }} />;
+              })}
+           </div>
+           {/* Viewport representation */}
+           <div className="absolute border-2 border-accent/50 bg-accent/10" 
+             style={{ 
+               left: Math.max(0, -pan.x / zoom * 0.1), 
+               top: Math.max(0, -pan.y / zoom * 0.1), 
+               width: `${100 / zoom}%`, 
+               height: `${100 / zoom}%`,
+               maxWidth: '100%', maxHeight: '100%'
+             }} 
+           />
+        </div>
+
+      </div>
+
+      {/* ─── RIGHT PANEL (Properties) ─── */}
+      <AnimatePresence initial={false}>
+        {showRightPanel && (
+          <motion.div
+            initial={{ width: 0, opacity: 0 }}
+            animate={{ width: 260, opacity: 1 }}
+            exit={{ width: 0, opacity: 0 }}
+            className="h-full border-l border-border/40 bg-bg-secondary/30 flex flex-col shrink-0 overflow-y-auto"
+          >
+            <div className="p-3 border-b border-border/40 flex items-center gap-2 text-[11px] font-bold uppercase tracking-widest text-text-tertiary">
+              <Settings2 size={14} /> Properties
+            </div>
+
+            {selectedObj ? (
+              <div className="p-4 flex flex-col gap-5">
+                
+                {/* Actions */}
+                <div>
+                   <label className="text-[10px] font-bold text-text-tertiary uppercase mb-2 block">Actions</label>
+                   <div className="flex items-center gap-2">
+                      <button onClick={bringForward} className="flex-1 flex items-center justify-center gap-1.5 py-1.5 bg-bg-primary border border-border rounded-lg text-[11px] font-medium hover:bg-bg-hover text-text-secondary"><BringToFront size={12} /> Forward</button>
+                      <button onClick={sendBackward} className="flex-1 flex items-center justify-center gap-1.5 py-1.5 bg-bg-primary border border-border rounded-lg text-[11px] font-medium hover:bg-bg-hover text-text-secondary"><SendToBack size={12} /> Back</button>
+                   </div>
+                </div>
+
+                {/* Geometry */}
+                {(selectedObj.w !== undefined || selectedObj.h !== undefined) && (
+                  <div>
+                    <label className="text-[10px] font-bold text-text-tertiary uppercase mb-2 block">Geometry</label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="flex items-center bg-bg-primary border border-border rounded-lg px-2 py-1">
+                        <span className="text-[10px] text-text-tertiary w-4">W</span>
+                        <input type="number" value={Math.round(selectedObj.w || 0)} onChange={e => updateObjects(os => os.map(o => o.id === selectedObj.id ? { ...o, w: Number(e.target.value) } : o))} className="w-full bg-transparent border-none outline-none text-[12px] text-text-primary text-right font-mono" />
+                      </div>
+                      <div className="flex items-center bg-bg-primary border border-border rounded-lg px-2 py-1">
+                        <span className="text-[10px] text-text-tertiary w-4">H</span>
+                        <input type="number" value={Math.round(selectedObj.h || 0)} onChange={e => updateObjects(os => os.map(o => o.id === selectedObj.id ? { ...o, h: Number(e.target.value) } : o))} className="w-full bg-transparent border-none outline-none text-[12px] text-text-primary text-right font-mono" />
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Color */}
+                <div>
+                  <label className="text-[10px] font-bold text-text-tertiary uppercase mb-2 block">Color</label>
+                  <div className="flex flex-wrap gap-1.5">
+                    {COLORS.map(c => (
+                      <button key={c} onClick={() => updateObjects(os => os.map(o => o.id === selectedObj.id ? { ...o, stroke: c, color: c } : o))}
+                        className={`w-6 h-6 rounded-md border transition-all ${selectedObj.stroke === c || selectedObj.color === c ? "border-accent scale-110 shadow-sm" : "border-border/40 hover:scale-105"}`}
+                        style={{ backgroundColor: c }} />
+                    ))}
+                  </div>
+                </div>
+
+                {/* Text Properties */}
+                {(selectedObj.type === "text" || selectedObj.type === "sticky") && (
+                   <div>
+                     <label className="text-[10px] font-bold text-text-tertiary uppercase mb-2 block">Text Size</label>
+                     <input type="range" min="10" max="64" value={selectedObj.fontSize || 14} 
+                        onChange={e => updateObjects(os => os.map(o => o.id === selectedObj.id ? { ...o, fontSize: Number(e.target.value) } : o))}
+                        className="w-full accent-accent" />
+                     <div className="text-right text-[11px] text-text-tertiary mt-1">{selectedObj.fontSize || 14}px</div>
+                   </div>
+                )}
+
+                {/* Appearance */}
+                <div>
+                   <label className="text-[10px] font-bold text-text-tertiary uppercase mb-2 block">Opacity</label>
+                   <input type="range" min="10" max="100" value={(selectedObj.opacity || 1) * 100} 
+                      onChange={e => updateObjects(os => os.map(o => o.id === selectedObj.id ? { ...o, opacity: Number(e.target.value) / 100 } : o))}
+                      className="w-full accent-accent" />
+                </div>
+                
+              </div>
+            ) : (
+              <div className="p-6 flex flex-col items-center justify-center text-center h-full opacity-50">
+                <MousePointer size={32} className="mb-3 text-text-tertiary" />
+                <p className="text-[12px] font-medium text-text-secondary">Select an object on the board to edit its properties.</p>
+              </div>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
     </div>
   );
 }
 
-/* ── Object renderer ── */
-function WBObjectRenderer({ obj, isSelected, editingText, setEditingText, updateText }: {
-  obj: WBObject; isSelected: boolean; editingText: string | null;
-  setEditingText: (id: string | null) => void;
-  updateText: (id: string, text: string) => void;
-}) {
-  const outline = isSelected ? "2px solid #6366F1" : "none";
-
-  if (obj.type === "sticky") {
-    return (
-      <foreignObject x={obj.x} y={obj.y} width={obj.w || 160} height={obj.h || 120} style={{ outline, borderRadius: 8 }}>
-        <div style={{ width: "100%", height: "100%", background: obj.color, borderRadius: 8, padding: 10, fontSize: 13, fontFamily: "Inter, sans-serif", color: "#1a1a1a", overflow: "hidden" }}>
-          {editingText === obj.id ? (
-            <textarea autoFocus value={obj.text || ""} onChange={e => updateText(obj.id, e.target.value)}
-              onBlur={() => setEditingText(null)} onKeyDown={e => { if (e.key === "Escape") setEditingText(null); }}
-              style={{ width: "100%", height: "100%", background: "transparent", border: "none", outline: "none", resize: "none", fontSize: 13, fontFamily: "Inter, sans-serif", color: "#1a1a1a" }} />
-          ) : (
-            <p style={{ margin: 0, whiteSpace: "pre-wrap", wordBreak: "break-word" }}>{obj.text || ""}</p>
-          )}
-        </div>
-      </foreignObject>
-    );
-  }
-
-  if (obj.type === "rect") {
-    return <rect x={obj.x} y={obj.y} width={obj.w} height={obj.h} fill="none" stroke={obj.stroke} strokeWidth="2" rx="4" style={{ outline }} />;
-  }
-
-  if (obj.type === "circle") {
-    return <ellipse cx={obj.x + (obj.w || 0) / 2} cy={obj.y + (obj.h || 0) / 2} rx={(obj.w || 0) / 2} ry={(obj.h || 0) / 2}
-      fill="none" stroke={obj.stroke} strokeWidth="2" style={{ outline }} />;
-  }
-
-  if (obj.type === "diamond") {
-    const cx = obj.x + (obj.w || 0) / 2, cy = obj.y + (obj.h || 0) / 2;
-    const hw = (obj.w || 0) / 2, hh = (obj.h || 0) / 2;
-    return <polygon points={`${cx},${cy - hh} ${cx + hw},${cy} ${cx},${cy + hh} ${cx - hw},${cy}`}
-      fill="none" stroke={obj.stroke} strokeWidth="2" style={{ outline }} />;
-  }
-
-  if (obj.type === "line") {
-    return <line x1={obj.x} y1={obj.y} x2={obj.x2} y2={obj.y2} stroke={obj.stroke} strokeWidth="2" strokeLinecap="round" style={{ outline: "none" }} />;
-  }
-
-  if (obj.type === "text") {
-    if (editingText === obj.id) {
-      return (
-        <foreignObject x={obj.x} y={obj.y - 20} width="300" height="40">
-          <input autoFocus value={obj.text || ""} onChange={e => updateText(obj.id, e.target.value)}
-            onBlur={() => setEditingText(null)} onKeyDown={e => { if (e.key === "Enter" || e.key === "Escape") setEditingText(null); }}
-            style={{ background: "transparent", border: "none", outline: "1px solid #6366F1", borderRadius: 4, padding: "4px 8px",
-              fontSize: 16, fontFamily: "Inter, sans-serif", color: obj.color, width: "100%" }} />
-        </foreignObject>
-      );
-    }
-    return <text x={obj.x} y={obj.y} fill={obj.color} fontSize="16" fontFamily="Inter, sans-serif" fontWeight="600" style={{ outline, cursor: "move" }}>{obj.text}</text>;
-  }
-
-  if (obj.type === "path" && obj.points) {
-    return <polyline points={obj.points.map(p => p.join(",")).join(" ")}
-      fill="none" stroke={obj.color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ outline: "none" }} />;
-  }
-
-  return null;
-}
-
-/* ── Live shape preview while dragging ── */
+/* ── Live Preview Sub-Component ── */
 function LivePreview({ tool, start, color, svgRef, pan, zoom }: {
-  tool: ToolType; start: { startX: number; startY: number }; color: string;
+  tool: string; start: { startX: number; startY: number }; color: string;
   svgRef: React.RefObject<SVGSVGElement | null>; pan: { x: number; y: number }; zoom: number;
 }) {
   const [pos, setPos] = useState({ x: start.startX, y: start.startY });
@@ -386,39 +646,19 @@ function LivePreview({ tool, start, color, svgRef, pan, zoom }: {
     };
     window.addEventListener("mousemove", handler);
     return () => window.removeEventListener("mousemove", handler);
-  }, []);
+  }, [pan, zoom, svgRef]);
 
   const x = Math.min(start.startX, pos.x), y = Math.min(start.startY, pos.y);
   const w = Math.abs(pos.x - start.startX), h = Math.abs(pos.y - start.startY);
 
-  if (tool === "rect" || tool === "sticky") return <rect x={x} y={y} width={w} height={h} fill="none" stroke={color} strokeWidth="1.5" strokeDasharray="5,5" rx="4" opacity="0.6" />;
-  if (tool === "circle") return <ellipse cx={x + w / 2} cy={y + h / 2} rx={w / 2} ry={h / 2} fill="none" stroke={color} strokeWidth="1.5" strokeDasharray="5,5" opacity="0.6" />;
+  if (tool === "rect" || tool === "sticky") return <rect x={x} y={y} width={w} height={h} fill="none" stroke={color} strokeWidth="2" strokeDasharray="5,5" rx="4" opacity="0.6" />;
+  if (tool === "circle") return <ellipse cx={x + w / 2} cy={y + h / 2} rx={w / 2} ry={h / 2} fill="none" stroke={color} strokeWidth="2" strokeDasharray="5,5" opacity="0.6" />;
   if (tool === "diamond") {
     const cx = x + w / 2, cy2 = y + h / 2;
-    return <polygon points={`${cx},${y} ${x + w},${cy2} ${cx},${y + h} ${x},${cy2}`} fill="none" stroke={color} strokeWidth="1.5" strokeDasharray="5,5" opacity="0.6" />;
+    return <polygon points={`${cx},${y} ${x + w},${cy2} ${cx},${y + h} ${x},${cy2}`} fill="none" stroke={color} strokeWidth="2" strokeDasharray="5,5" opacity="0.6" />;
   }
-  if (tool === "line") return <line x1={start.startX} y1={start.startY} x2={pos.x} y2={pos.y} stroke={color} strokeWidth="1.5" strokeDasharray="5,5" opacity="0.6" />;
+  if (tool === "line") return <line x1={start.startX} y1={start.startY} x2={pos.x} y2={pos.y} stroke={color} strokeWidth="2" strokeDasharray="5,5" opacity="0.6" />;
+  if (tool === "arrow") return <line x1={start.startX} y1={start.startY} x2={pos.x} y2={pos.y} stroke={color} strokeWidth="2" strokeDasharray="5,5" markerEnd="url(#arrowhead)" style={{ color }} opacity={0.6} />;
 
   return null;
-}
-
-/* ── Hit testing ── */
-function hitTest(obj: WBObject, px: number, py: number): boolean {
-  if (obj.type === "line") {
-    const d = distToLine(obj.x, obj.y, obj.x2 || obj.x, obj.y2 || obj.y, px, py);
-    return d < 8;
-  }
-  if (obj.type === "path") return false; // paths are hard to hit-test, skip
-  if (obj.type === "text") return px >= obj.x - 5 && px <= obj.x + 200 && py >= obj.y - 20 && py <= obj.y + 5;
-  const w = obj.w || 160, h = obj.h || 120;
-  return px >= obj.x && px <= obj.x + w && py >= obj.y && py <= obj.y + h;
-}
-
-function distToLine(x1: number, y1: number, x2: number, y2: number, px: number, py: number): number {
-  const A = px - x1, B = py - y1, C = x2 - x1, D = y2 - y1;
-  const dot = A * C + B * D, lenSq = C * C + D * D;
-  let t = lenSq !== 0 ? dot / lenSq : -1;
-  t = Math.max(0, Math.min(1, t));
-  const xx = x1 + t * C, yy = y1 + t * D;
-  return Math.sqrt((px - xx) ** 2 + (py - yy) ** 2);
 }
