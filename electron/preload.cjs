@@ -31,6 +31,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
     },
   },
   codeStudio: {
+    openPreviewWindow: (url) => ipcRenderer.invoke("open-preview-window", url),
     openInVSCode: (filename, code, language) =>
       ipcRenderer.invoke("code-studio-open-vscode", filename, code, language),
     openWorkspace: () => ipcRenderer.invoke("workspace-open"),

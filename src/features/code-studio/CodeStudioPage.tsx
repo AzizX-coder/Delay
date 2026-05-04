@@ -417,24 +417,19 @@ export function CodeStudioPage() {
               <Play size={12} fill="currentColor" /> Run
             </button>
             <button 
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${showPreview ? 'bg-accent text-white' : 'bg-accent/10 text-accent hover:bg-accent/20'}`}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all cursor-pointer bg-accent/10 text-accent hover:bg-accent/20"
               onClick={() => {
-                 if (!showPreview) {
-                   appendTerminalOutput(`\n[Live Server] Initializing preview...\n`);
-                   // Set preview URL based on active file
-                   if (activeFile?.path.endsWith(".html")) {
-                     const electronAPI = (window as any).electronAPI;
-                     if (electronAPI) {
-                       setPreviewUrl(`file://${activeFile.path.replace(/\\/g, '/')}`);
-                     }
-                   } else {
-                     setPreviewUrl("http://localhost:5173");
-                   }
-                 }
-                 setShowPreview(!showPreview);
+                const electronAPI = (window as any).electronAPI;
+                if (electronAPI?.codeStudio?.openPreviewWindow) {
+                  let url = "http://localhost:5173";
+                  if (activeFile?.path.endsWith(".html")) {
+                    url = `file://${activeFile.path.replace(/\\/g, '/')}`;
+                  }
+                  electronAPI.codeStudio.openPreviewWindow(url);
+                }
               }}
             >
-              <Globe size={12} /> {showPreview ? "Close Preview" : "Live Server"}
+              <Globe size={12} /> Open Preview Window
             </button>
             <div className="w-px h-4 bg-border/40 mx-1" />
             <button className="p-1.5 rounded-lg text-text-tertiary hover:text-text-primary hover:bg-bg-hover cursor-pointer" title="Git Commit">
@@ -450,7 +445,7 @@ export function CodeStudioPage() {
         {/* Editor & Preview Instance */}
         <div className="flex-1 relative flex overflow-hidden">
           {/* Main Editor */}
-          <div className={`flex-1 relative ${showPreview ? "border-r border-border/40" : ""}`}>
+          <div className="flex-1 relative pb-6">
             {activeFile ? (
               <div className="absolute inset-0 pt-2">
                 <Editor
@@ -459,8 +454,48 @@ export function CodeStudioPage() {
                   theme={themeResolved === "light" ? "vs" : "vs-dark"}
                   value={activeFile.content}
                   onChange={(val) => updateFileContent(activeFile.path, val || "")}
+                  onMount={(editor, monaco) => {
+                    // Register ! → HTML boilerplate snippet for html files
+                    monaco.languages.registerCompletionItemProvider("html", {
+                      triggerCharacters: ["!"],
+                      provideCompletionItems: (model: any, position: any) => {
+                        const word = model.getWordUntilPosition(position);
+                        const range = {
+                          startLineNumber: position.lineNumber,
+                          startColumn: word.startColumn,
+                          endLineNumber: position.lineNumber,
+                          endColumn: word.endColumn,
+                        };
+                        return {
+                          suggestions: [{
+                            label: "! — HTML5 Boilerplate",
+                            kind: monaco.languages.CompletionItemKind.Snippet,
+                            insertText: [
+                              '<!DOCTYPE html>',
+                              '<html lang="en">',
+                              '<head>',
+                              '  <meta charset="UTF-8">',
+                              '  <meta name="viewport" content="width=device-width, initial-scale=1.0">',
+                              '  <title>${1:Document}</title>',
+                              '  <style>',
+                              '    body { margin: 0; font-family: system-ui, sans-serif; }',
+                              '  </style>',
+                              '</head>',
+                              '<body>',
+                              '  ${2}',
+                              '</body>',
+                              '</html>'
+                            ].join('\n'),
+                            insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+                            documentation: "Full HTML5 boilerplate template",
+                            range,
+                          }],
+                        };
+                      },
+                    });
+                  }}
                   options={{
-                    minimap: { enabled: false },
+                    minimap: { enabled: true, scale: 2, showSlider: "mouseover" },
                     fontSize: 13,
                     fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
                     fontLigatures: true,
@@ -469,7 +504,21 @@ export function CodeStudioPage() {
                     cursorBlinking: "smooth",
                     cursorSmoothCaretAnimation: "on",
                     formatOnPaste: true,
+                    formatOnType: true,
                     scrollBeyondLastLine: false,
+                    autoClosingBrackets: "always",
+                    autoClosingQuotes: "always",
+                    autoClosingOvertype: "always",
+                    autoSurround: "languageDefined",
+                    bracketPairColorization: { enabled: true, independentColorPoolPerBracketType: true },
+                    guides: { bracketPairs: true, indentation: true },
+                    wordWrap: "on",
+                    suggest: { showSnippets: true, snippetsPreventQuickSuggestions: false },
+                    tabCompletion: "on",
+                    quickSuggestions: { other: true, comments: false, strings: true },
+                    parameterHints: { enabled: true },
+                    renderWhitespace: "selection",
+                    matchBrackets: "always",
                   }}
                 />
               </div>
@@ -482,65 +531,20 @@ export function CodeStudioPage() {
             )}
           </div>
 
-          {/* Live Preview Panel */}
-          <AnimatePresence>
-            {showPreview && (
-              <motion.div
-                initial={{ width: 0, opacity: 0 }}
-                animate={{ width: "50%", opacity: 1 }}
-                exit={{ width: 0, opacity: 0 }}
-                className="h-full flex flex-col bg-bg-secondary/20"
-              >
-                <div className="flex items-center justify-between p-2 border-b border-border/40 bg-bg-primary">
-                  <div className="flex items-center gap-2 bg-bg-secondary px-2 py-1 rounded border border-border">
-                    <Globe size={12} className="text-text-tertiary" />
-                    <input 
-                      value={previewUrl}
-                      onChange={e => setPreviewUrl(e.target.value)}
-                      className="bg-transparent border-none outline-none text-[11px] w-48 text-text-primary"
-                    />
-                    <button onClick={() => iframeRef.current && (iframeRef.current.src = previewUrl)} className="text-text-tertiary hover:text-text-primary">
-                      <RefreshCw size={12} />
-                    </button>
-                  </div>
-                  <div className="flex items-center gap-1 bg-bg-secondary p-0.5 rounded border border-border">
-                    <button 
-                      onClick={() => setDeviceSize("mobile")}
-                      className={`p-1.5 rounded ${deviceSize === "mobile" ? "bg-bg-primary text-accent shadow-sm" : "text-text-tertiary hover:text-text-primary"}`}
-                    >
-                      <Smartphone size={14} />
-                    </button>
-                    <button 
-                      onClick={() => setDeviceSize("tablet")}
-                      className={`p-1.5 rounded ${deviceSize === "tablet" ? "bg-bg-primary text-accent shadow-sm" : "text-text-tertiary hover:text-text-primary"}`}
-                    >
-                      <Tablet size={14} />
-                    </button>
-                    <button 
-                      onClick={() => setDeviceSize("desktop")}
-                      className={`p-1.5 rounded ${deviceSize === "desktop" ? "bg-bg-primary text-accent shadow-sm" : "text-text-tertiary hover:text-text-primary"}`}
-                    >
-                      <Monitor size={14} />
-                    </button>
-                  </div>
-                </div>
-                
-                <div className="flex-1 bg-bg-secondary/40 overflow-hidden flex items-center justify-center p-4">
-                  <div className={`
-                    bg-white overflow-hidden transition-all duration-300 shadow-2xl border border-border/20
-                    ${deviceSize === "mobile" ? "w-[375px] h-[667px] rounded-[2rem]" : deviceSize === "tablet" ? "w-[768px] h-[1024px] rounded-[2rem]" : "w-full h-full rounded-lg"}
-                  `}>
-                    <iframe 
-                      ref={iframeRef}
-                      src={previewUrl} 
-                      className="w-full h-full border-none bg-white"
-                      title="Live Preview"
-                    />
-                  </div>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+          {/* Status Bar */}
+          {activeFile && (
+            <div className="absolute bottom-0 left-0 right-0 h-6 bg-bg-secondary border-t border-border/40 flex items-center justify-between px-3 z-10 text-[10px] text-text-tertiary font-mono">
+              <div className="flex items-center gap-3">
+                <span className="capitalize">{activeFile.language}</span>
+                <span>UTF-8</span>
+                <span>Spaces: 2</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <span>{activeFile.content.split('\n').length} lines</span>
+                <span>{activeFile.content.length} bytes</span>
+              </div>
+            </div>
+          )}
 
           {/* AI Floating Input inside Editor Area */}
           <AnimatePresence>

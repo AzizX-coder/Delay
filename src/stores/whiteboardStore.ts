@@ -1,7 +1,8 @@
 import { create } from "zustand";
 
-export type ToolType = "select" | "pen" | "sticky" | "rect" | "circle" | "diamond" | "line" | "text" | "arrow";
+export type ToolType = "select" | "pen" | "sticky" | "rect" | "circle" | "diamond" | "line" | "text" | "arrow" | "connector";
 export type BgMode = "blank" | "dots" | "grid";
+export type DashStyle = "solid" | "dashed" | "dotted";
 
 export interface WBObject {
   id: string;
@@ -12,18 +13,33 @@ export interface WBObject {
   text?: string;
   color: string;
   stroke?: string;
+  fill?: string;
+  strokeWidth?: number;
+  dash?: DashStyle;
   points?: number[][];
   fontSize?: number;
+  fontFamily?: string;
   opacity?: number;
   borderRadius?: number;
   locked?: boolean;
   hidden?: boolean;
+  textAlign?: "left" | "center" | "right";
+}
+
+export interface Connector {
+  id: string;
+  fromId: string;
+  toId: string;
+  color: string;
+  strokeWidth?: number;
+  dash?: DashStyle;
 }
 
 export interface Board {
   id: string;
   name: string;
   objects: WBObject[];
+  connectors: Connector[];
 }
 
 interface WhiteboardState {
@@ -58,6 +74,10 @@ interface WhiteboardState {
   deleteSelected: () => void;
   bringForward: () => void;
   sendBackward: () => void;
+
+  // Connectors
+  addConnector: (fromId: string, toId: string, color: string) => void;
+  removeConnector: (id: string) => void;
 }
 
 const LS_KEY = "delay-whiteboard-v3";
@@ -93,14 +113,14 @@ export const useWhiteboardStore = create<WhiteboardState>((set, get) => ({
     
     // Default board
     const id = uid();
-    const defaultBoards = [{ id, name: "Untitled Board", objects: [] }];
+    const defaultBoards: Board[] = [{ id, name: "Untitled Board", objects: [], connectors: [] }];
     saveToLS(defaultBoards, id);
     set({ boards: defaultBoards, activeBoardId: id, history: [] });
   },
 
   createBoard: (name) => {
     const id = uid();
-    const newBoard = { id, name, objects: [] };
+    const newBoard: Board = { id, name, objects: [], connectors: [] };
     const { boards } = get();
     const nextBoards = [...boards, newBoard];
     saveToLS(nextBoards, id);
@@ -212,5 +232,24 @@ export const useWhiteboardStore = create<WhiteboardState>((set, get) => ({
       next[idx - 1] = temp;
       return next;
     });
+  },
+
+  addConnector: (fromId, toId, color) => {
+    const { boards, activeBoardId } = get();
+    const connector: Connector = { id: uid(), fromId, toId, color };
+    const nextBoards = boards.map(b =>
+      b.id === activeBoardId ? { ...b, connectors: [...(b.connectors || []), connector] } : b
+    );
+    saveToLS(nextBoards, activeBoardId);
+    set({ boards: nextBoards });
+  },
+
+  removeConnector: (id) => {
+    const { boards, activeBoardId } = get();
+    const nextBoards = boards.map(b =>
+      b.id === activeBoardId ? { ...b, connectors: (b.connectors || []).filter(c => c.id !== id) } : b
+    );
+    saveToLS(nextBoards, activeBoardId);
+    set({ boards: nextBoards });
   }
 }));

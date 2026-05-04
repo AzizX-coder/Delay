@@ -286,6 +286,22 @@ ipcMain.handle("code-studio-open-vscode", async (_event, filename, code, languag
 });
 
 // ── Code Studio IDE Extensions (Phase 3) ──
+ipcMain.handle("open-preview-window", async (_event, url) => {
+  const previewWindow = new BrowserWindow({
+    width: 1024,
+    height: 768,
+    title: "Preview",
+    backgroundColor: "#ffffff",
+    webPreferences: {
+      nodeIntegration: false,
+      contextIsolation: true,
+    }
+  });
+  previewWindow.setMenuBarVisibility(false);
+  previewWindow.loadURL(url);
+  return { ok: true };
+});
+
 ipcMain.handle("workspace-open", async () => {
   const result = await dialog.showOpenDialog(mainWindow, {
     properties: ["openDirectory"]

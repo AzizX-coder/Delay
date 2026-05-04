@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { useSettingsStore } from "@/stores/settingsStore";
+import { useTimerStore } from "@/stores/timerStore";
 import { ALL_MODULES } from "@/types/settings";
 
 const ICON_MAP: Record<string, any> = {
@@ -21,6 +22,10 @@ export function NavigationRail() {
   const { enabled_modules, toggleModule } = useSettingsStore();
 
   const visibleItems = ALL_MODULES.filter(m => enabled_modules.includes(m.id));
+  const { isRunning: timerRunning, remaining: timerRemaining } = useTimerStore();
+  const timerMin = Math.floor(timerRemaining / 60);
+  const timerSec = timerRemaining % 60;
+  const timerDisplay = `${timerMin}:${String(timerSec).padStart(2, '0')}`;
 
   return (
     <nav
@@ -49,25 +54,33 @@ export function NavigationRail() {
                 transition={{ type: "spring", stiffness: 400, damping: 30 }}
               />
             )}
-            <Icon
-              size={19}
-              strokeWidth={isActive ? 2.2 : 1.7}
-              className={`relative z-10 transition-all duration-200 ${
-                isActive
-                  ? "text-accent"
-                  : "text-text-tertiary group-hover:text-text-primary"
-              }`}
-            />
-            <span
-              className={`relative z-10 text-[8px] mt-0.5 font-medium transition-all duration-200 ${
-                isActive
-                  ? "text-accent"
-                  : "text-text-tertiary group-hover:text-text-secondary"
-              }`}
-            >
-              {item.label}
-            </span>
-            <AnimatedTooltip visible={isHovered && !isActive} label={item.label} />
+            {item.id === "timer" && timerRunning ? (
+              <span className={`relative z-10 text-[10px] font-bold font-mono tabular-nums animate-pulse ${
+                isActive ? "text-accent" : "text-text-secondary"
+              }`}>{timerDisplay}</span>
+            ) : (
+              <>
+                <Icon
+                  size={19}
+                  strokeWidth={isActive ? 2.2 : 1.7}
+                  className={`relative z-10 transition-all duration-200 ${
+                    isActive
+                      ? "text-accent"
+                      : "text-text-tertiary group-hover:text-text-primary"
+                  }`}
+                />
+                <span
+                  className={`relative z-10 text-[8px] mt-0.5 font-medium transition-all duration-200 ${
+                    isActive
+                      ? "text-accent"
+                      : "text-text-tertiary group-hover:text-text-secondary"
+                  }`}
+                >
+                  {item.label}
+                </span>
+              </>
+            )}
+            <AnimatedTooltip visible={isHovered && !isActive} label={item.id === "timer" && timerRunning ? timerDisplay : item.label} />
           </button>
         );
       })}

@@ -1,16 +1,18 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { useWhiteboardStore, ToolType, WBObject } from "@/stores/whiteboardStore";
+import { useWhiteboardStore, ToolType, WBObject, Connector } from "@/stores/whiteboardStore";
 import {
   Square, Circle, Type, Minus, MousePointer, StickyNote,
   Diamond, Undo2, Trash2, ZoomIn, ZoomOut, Grid3X3, Pen,
   ArrowRight, Layers, Settings2, Plus, ChevronDown, Lock, Eye, EyeOff,
-  BringToFront, SendToBack, ChevronRight
+  BringToFront, SendToBack, ChevronRight, Link2, AlignLeft, AlignCenter, AlignRight
 } from "lucide-react";
 
 /* ── Constants ── */
 const COLORS = ["#6366F1", "#06B6D4", "#10B981", "#F59E0B", "#EF4444", "#EC4899", "#8B5CF6", "#FFFFFF", "#1E293B"];
+const FILL_COLORS = ["transparent", "#FFFFFF", "#6366F1", "#06B6D4", "#10B981", "#F59E0B", "#EF4444", "#EC4899", "#1E293B"];
 const STICKY_COLORS = ["#FEF3C7", "#DBEAFE", "#D1FAE5", "#FCE7F3", "#EDE9FE", "#E0F2FE"];
+const FONTS = ["Inter", "JetBrains Mono", "Georgia", "Arial", "Caveat"];
 
 /* ── Helpers ── */
 function uid() { return Math.random().toString(36).slice(2, 10); }
@@ -80,7 +82,7 @@ export function WhiteboardPage() {
     boards, activeBoardId, loadBoards, createBoard, switchBoard, deleteBoard,
     tool, setTool, color, setColor, bgMode, setBgMode, selectedId, setSelectedId,
     pan, setPan, zoom, setZoom, updateObjects, pushHistory, undo, deleteSelected,
-    bringForward, sendBackward
+    bringForward, sendBackward, addConnector, removeConnector
   } = store;
 
 
@@ -93,6 +95,7 @@ export function WhiteboardPage() {
   const [resizing, setResizing] = useState<{ id: string; handle: string; startW: number; startH: number; startX: number; startY: number } | null>(null);
   const [drawing, setDrawing] = useState<{ startX: number; startY: number } | null>(null);
   const [penPoints, setPenPoints] = useState<number[][]>([]);
+  const [connectingFrom, setConnectingFrom] = useState<string | null>(null);
   
   const svgRef = useRef<SVGSVGElement>(null);
   const isPanning = useRef(false);
@@ -102,6 +105,7 @@ export function WhiteboardPage() {
 
   const activeBoard = boards.find(b => b.id === activeBoardId);
   const currentObjects = activeBoard?.objects || [];
+  const connectors = activeBoard?.connectors || [];
   const selectedObj = currentObjects.find(o => o.id === selectedId);
 
   /* ── Canvas Interactivity ── */
@@ -135,6 +139,22 @@ export function WhiteboardPage() {
         if (!hit.locked) setDragging({ id: hit.id, ox: pt.x - hit.x, oy: pt.y - hit.y });
       } else {
         setSelectedId(null);
+      }
+      return;
+    }
+
+    if (tool === "connector") {
+      const hit = [...currentObjects].reverse().find(o => hitTest(o, pt.x, pt.y) && o.type !== "path" && o.type !== "line" && o.type !== "arrow");
+      if (hit) {
+        if (connectingFrom && connectingFrom !== hit.id) {
+          addConnector(connectingFrom, hit.id, color);
+          setConnectingFrom(null);
+          setTool("select");
+        } else {
+          setConnectingFrom(hit.id);
+        }
+      } else {
+        setConnectingFrom(null);
       }
       return;
     }
@@ -375,6 +395,7 @@ export function WhiteboardPage() {
             { id: "diamond", icon: Diamond, tooltip: "Diamond (D)" },
             { id: "line", icon: Minus, tooltip: "Line (L)" },
             { id: "arrow", icon: ArrowRight, tooltip: "Arrow (A)" },
+            { id: "connector", icon: Link2, tooltip: "Connector (C)" },
           ].map(t => (
             <button 
               key={t.id} 
@@ -435,6 +456,33 @@ export function WhiteboardPage() {
           {/* Group for Pan/Zoom */}
           <g transform={`translate(${pan.x},${pan.y}) scale(${zoom})`}>
             
+            {/* Connectors */}
+            {connectors.map(c => {
+              const from = currentObjects.find(o => o.id === c.fromId);
+              const to = currentObjects.find(o => o.id === c.toId);
+              if (!from || !to) return null;
+              const fb = getBounds(from);
+              const tb = getBounds(to);
+              const fx = fb.x + fb.w / 2, fy = fb.y + fb.h / 2;
+              const tx = tb.x + tb.w / 2, ty = tb.y + tb.h / 2;
+              const dashArr = c.dash === "dashed" ? "8,4" : c.dash === "dotted" ? "2,4" : undefined;
+              return (
+                <line key={c.id} x1={fx} y1={fy} x2={tx} y2={ty}
+                  stroke={c.color} strokeWidth={c.strokeWidth || 2} strokeLinecap="round"
+                  markerEnd="url(#arrowhead)" style={{ color: c.color }}
+                  strokeDasharray={dashArr} opacity={0.8} />
+              );
+            })}
+
+            {/* Connecting-from highlight */}
+            {connectingFrom && (() => {
+              const obj = currentObjects.find(o => o.id === connectingFrom);
+              if (!obj) return null;
+              const b = getBounds(obj);
+              return <rect x={b.x - 6} y={b.y - 6} width={b.w + 12} height={b.h + 12}
+                fill="none" stroke="#6366F1" strokeWidth="2" strokeDasharray="6,3" rx="6" className="animate-pulse" />;
+            })()}
+
             {currentObjects.filter(o => !o.hidden).map(obj => {
               const isSelected = selectedId === obj.id;
               const isEditing = editingText === obj.id;
@@ -455,31 +503,37 @@ export function WhiteboardPage() {
                   </foreignObject>
                 );
               } else if (obj.type === "rect") {
-                content = <rect x={obj.x} y={obj.y} width={obj.w} height={obj.h} fill="none" stroke={obj.stroke} strokeWidth="3" rx={obj.borderRadius || 4} opacity={obj.opacity || 1} />;
+                const dashArr = obj.dash === "dashed" ? "8,4" : obj.dash === "dotted" ? "2,4" : undefined;
+                content = <rect x={obj.x} y={obj.y} width={obj.w} height={obj.h} fill={obj.fill || "none"} stroke={obj.stroke} strokeWidth={obj.strokeWidth || 3} rx={obj.borderRadius || 4} opacity={obj.opacity || 1} strokeDasharray={dashArr} />;
               } else if (obj.type === "circle") {
-                content = <ellipse cx={obj.x + (obj.w || 0) / 2} cy={obj.y + (obj.h || 0) / 2} rx={(obj.w || 0) / 2} ry={(obj.h || 0) / 2} fill="none" stroke={obj.stroke} strokeWidth="3" opacity={obj.opacity || 1} />;
+                const dashArr = obj.dash === "dashed" ? "8,4" : obj.dash === "dotted" ? "2,4" : undefined;
+                content = <ellipse cx={obj.x + (obj.w || 0) / 2} cy={obj.y + (obj.h || 0) / 2} rx={(obj.w || 0) / 2} ry={(obj.h || 0) / 2} fill={obj.fill || "none"} stroke={obj.stroke} strokeWidth={obj.strokeWidth || 3} opacity={obj.opacity || 1} strokeDasharray={dashArr} />;
               } else if (obj.type === "diamond") {
                 const cx = obj.x + (obj.w || 0) / 2, cy = obj.y + (obj.h || 0) / 2;
                 const hw = (obj.w || 0) / 2, hh = (obj.h || 0) / 2;
-                content = <polygon points={`${cx},${cy - hh} ${cx + hw},${cy} ${cx},${cy + hh} ${cx - hw},${cy}`} fill="none" stroke={obj.stroke} strokeWidth="3" opacity={obj.opacity || 1} />;
+                const dashArr = obj.dash === "dashed" ? "8,4" : obj.dash === "dotted" ? "2,4" : undefined;
+                content = <polygon points={`${cx},${cy - hh} ${cx + hw},${cy} ${cx},${cy + hh} ${cx - hw},${cy}`} fill={obj.fill || "none"} stroke={obj.stroke} strokeWidth={obj.strokeWidth || 3} opacity={obj.opacity || 1} strokeDasharray={dashArr} />;
               } else if (obj.type === "line") {
-                content = <line x1={obj.x} y1={obj.y} x2={obj.x2} y2={obj.y2} stroke={obj.stroke} strokeWidth="3" strokeLinecap="round" opacity={obj.opacity || 1} />;
+                const dashArr = obj.dash === "dashed" ? "8,4" : obj.dash === "dotted" ? "2,4" : undefined;
+                content = <line x1={obj.x} y1={obj.y} x2={obj.x2} y2={obj.y2} stroke={obj.stroke} strokeWidth={obj.strokeWidth || 3} strokeLinecap="round" opacity={obj.opacity || 1} strokeDasharray={dashArr} />;
               } else if (obj.type === "arrow") {
-                content = <line x1={obj.x} y1={obj.y} x2={obj.x2} y2={obj.y2} stroke={obj.stroke} strokeWidth="3" strokeLinecap="round" markerEnd="url(#arrowhead)" style={{ color: obj.stroke }} opacity={obj.opacity || 1} />;
+                const dashArr = obj.dash === "dashed" ? "8,4" : obj.dash === "dotted" ? "2,4" : undefined;
+                content = <line x1={obj.x} y1={obj.y} x2={obj.x2} y2={obj.y2} stroke={obj.stroke} strokeWidth={obj.strokeWidth || 3} strokeLinecap="round" markerEnd="url(#arrowhead)" style={{ color: obj.stroke }} opacity={obj.opacity || 1} strokeDasharray={dashArr} />;
               } else if (obj.type === "text") {
+                const ff = obj.fontFamily || "Inter";
                 content = isEditing ? (
                   <foreignObject x={obj.x} y={obj.y - 10} width={Math.max(200, (obj.w || 200))} height={(obj.h || 50) + 20} style={{ overflow: "visible" }}>
                     <textarea autoFocus value={obj.text || ""} onChange={e => updateObjects(os => os.map(o => o.id === obj.id ? { ...o, text: e.target.value } : o))}
                       onBlur={() => setEditingText(null)}
-                      style={{ width: "100%", height: "100%", background: "transparent", border: "none", outline: "2px solid #6366F1", borderRadius: 4, padding: 8, fontSize: obj.fontSize || 16, fontFamily: "Inter, sans-serif", color: obj.color, resize: "none" }} />
+                      style={{ width: "100%", height: "100%", background: "transparent", border: "none", outline: "2px solid #6366F1", borderRadius: 4, padding: 8, fontSize: obj.fontSize || 16, fontFamily: `${ff}, sans-serif`, color: obj.color, resize: "none", textAlign: obj.textAlign || "left" }} />
                   </foreignObject>
                 ) : (
-                  <text x={obj.x} y={obj.y + (obj.fontSize || 16)} fill={obj.color} fontSize={obj.fontSize || 16} fontFamily="Inter, sans-serif" fontWeight="500" opacity={obj.opacity || 1} style={{ cursor: obj.locked ? "default" : "move" }}>
+                  <text x={obj.x} y={obj.y + (obj.fontSize || 16)} fill={obj.color} fontSize={obj.fontSize || 16} fontFamily={`${ff}, sans-serif`} fontWeight="500" opacity={obj.opacity || 1} textAnchor={obj.textAlign === "center" ? "middle" : obj.textAlign === "right" ? "end" : "start"} style={{ cursor: obj.locked ? "default" : "move" }}>
                     {obj.text}
                   </text>
                 );
               } else if (obj.type === "path" && obj.points) {
-                content = <polyline points={obj.points.map(p => p.join(",")).join(" ")} fill="none" stroke={obj.color} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" opacity={obj.opacity || 1} />;
+                content = <polyline points={obj.points.map(p => p.join(",")).join(" ")} fill="none" stroke={obj.color} strokeWidth={obj.strokeWidth || 3} strokeLinecap="round" strokeLinejoin="round" opacity={obj.opacity || 1} />;
               }
 
               // Bounding box for selection & resize handles
@@ -597,7 +651,58 @@ export function WhiteboardPage() {
                   </div>
                 </div>
 
-                {/* Text Properties */}
+                {/* Fill Color */}
+                {(selectedObj.type === "rect" || selectedObj.type === "circle" || selectedObj.type === "diamond") && (
+                  <div>
+                    <label className="text-[10px] font-bold text-text-tertiary uppercase mb-2 block">Fill</label>
+                    <div className="flex flex-wrap gap-1.5">
+                      {FILL_COLORS.map(c => (
+                        <button key={c} onClick={() => updateObjects(os => os.map(o => o.id === selectedObj.id ? { ...o, fill: c } : o))}
+                          className={`w-6 h-6 rounded-md border transition-all ${selectedObj.fill === c ? "border-accent scale-110 shadow-sm" : "border-border/40 hover:scale-105"}`}
+                          style={{ backgroundColor: c === "transparent" ? undefined : c, backgroundImage: c === "transparent" ? "linear-gradient(45deg, #ccc 25%, transparent 25%, transparent 75%, #ccc 75%, #ccc), linear-gradient(45deg, #ccc 25%, transparent 25%, transparent 75%, #ccc 75%, #ccc)" : undefined, backgroundSize: c === "transparent" ? "6px 6px" : undefined, backgroundPosition: c === "transparent" ? "0 0, 3px 3px" : undefined }} />
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Stroke Width */}
+                {(selectedObj.type === "rect" || selectedObj.type === "circle" || selectedObj.type === "diamond" || selectedObj.type === "line" || selectedObj.type === "arrow") && (
+                  <div>
+                    <label className="text-[10px] font-bold text-text-tertiary uppercase mb-2 block">Stroke Width</label>
+                    <input type="range" min="1" max="8" value={selectedObj.strokeWidth || 3}
+                      onChange={e => updateObjects(os => os.map(o => o.id === selectedObj.id ? { ...o, strokeWidth: Number(e.target.value) } : o))}
+                      className="w-full accent-accent" />
+                    <div className="text-right text-[11px] text-text-tertiary mt-1">{selectedObj.strokeWidth || 3}px</div>
+                  </div>
+                )}
+
+                {/* Stroke Style */}
+                {(selectedObj.type !== "text" && selectedObj.type !== "sticky" && selectedObj.type !== "path") && (
+                  <div>
+                    <label className="text-[10px] font-bold text-text-tertiary uppercase mb-2 block">Stroke Style</label>
+                    <div className="flex gap-1">
+                      {(["solid", "dashed", "dotted"] as const).map(d => (
+                        <button key={d} onClick={() => updateObjects(os => os.map(o => o.id === selectedObj.id ? { ...o, dash: d } : o))}
+                          className={`flex-1 py-1.5 rounded-lg text-[10px] font-bold capitalize border transition-all ${(selectedObj.dash || "solid") === d ? "bg-accent/15 text-accent border-accent/30" : "bg-bg-primary border-border text-text-secondary hover:bg-bg-hover"}`}
+                        >{d}</button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Font Family */}
+                {(selectedObj.type === "text" || selectedObj.type === "sticky") && (
+                  <div>
+                    <label className="text-[10px] font-bold text-text-tertiary uppercase mb-2 block">Font</label>
+                    <select value={selectedObj.fontFamily || "Inter"}
+                      onChange={e => updateObjects(os => os.map(o => o.id === selectedObj.id ? { ...o, fontFamily: e.target.value } : o))}
+                      className="w-full bg-bg-primary border border-border rounded-lg px-2 py-1.5 text-[12px] text-text-primary outline-none cursor-pointer">
+                      {FONTS.map(f => <option key={f} value={f} style={{ fontFamily: f }}>{f}</option>)}
+                    </select>
+                  </div>
+                )}
+
+                {/* Text Size */}
                 {(selectedObj.type === "text" || selectedObj.type === "sticky") && (
                    <div>
                      <label className="text-[10px] font-bold text-text-tertiary uppercase mb-2 block">Text Size</label>
@@ -608,7 +713,47 @@ export function WhiteboardPage() {
                    </div>
                 )}
 
-                {/* Appearance */}
+                {/* Text Alignment */}
+                {(selectedObj.type === "text" || selectedObj.type === "sticky") && (
+                  <div>
+                    <label className="text-[10px] font-bold text-text-tertiary uppercase mb-2 block">Alignment</label>
+                    <div className="flex gap-1">
+                      {([["left", AlignLeft], ["center", AlignCenter], ["right", AlignRight]] as const).map(([align, Icon]) => (
+                        <button key={align} onClick={() => updateObjects(os => os.map(o => o.id === selectedObj.id ? { ...o, textAlign: align as "left"|"center"|"right" } : o))}
+                          className={`flex-1 py-1.5 flex items-center justify-center rounded-lg border transition-all ${(selectedObj.textAlign || "left") === align ? "bg-accent/15 text-accent border-accent/30" : "bg-bg-primary border-border text-text-secondary hover:bg-bg-hover"}`}
+                        ><Icon size={14} /></button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Border Radius */}
+                {(selectedObj.type === "rect" || selectedObj.type === "sticky") && (
+                  <div>
+                    <label className="text-[10px] font-bold text-text-tertiary uppercase mb-2 block">Corner Radius</label>
+                    <input type="range" min="0" max="40" value={selectedObj.borderRadius || 4}
+                      onChange={e => updateObjects(os => os.map(o => o.id === selectedObj.id ? { ...o, borderRadius: Number(e.target.value) } : o))}
+                      className="w-full accent-accent" />
+                    <div className="text-right text-[11px] text-text-tertiary mt-1">{selectedObj.borderRadius || 4}px</div>
+                  </div>
+                )}
+
+                {/* Position */}
+                <div>
+                  <label className="text-[10px] font-bold text-text-tertiary uppercase mb-2 block">Position</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="flex items-center bg-bg-primary border border-border rounded-lg px-2 py-1">
+                      <span className="text-[10px] text-text-tertiary w-4">X</span>
+                      <input type="number" value={Math.round(selectedObj.x)} onChange={e => updateObjects(os => os.map(o => o.id === selectedObj.id ? { ...o, x: Number(e.target.value) } : o))} className="w-full bg-transparent border-none outline-none text-[12px] text-text-primary text-right font-mono" />
+                    </div>
+                    <div className="flex items-center bg-bg-primary border border-border rounded-lg px-2 py-1">
+                      <span className="text-[10px] text-text-tertiary w-4">Y</span>
+                      <input type="number" value={Math.round(selectedObj.y)} onChange={e => updateObjects(os => os.map(o => o.id === selectedObj.id ? { ...o, y: Number(e.target.value) } : o))} className="w-full bg-transparent border-none outline-none text-[12px] text-text-primary text-right font-mono" />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Opacity */}
                 <div>
                    <label className="text-[10px] font-bold text-text-tertiary uppercase mb-2 block">Opacity</label>
                    <input type="range" min="10" max="100" value={(selectedObj.opacity || 1) * 100} 

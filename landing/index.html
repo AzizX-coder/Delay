@@ -4,9 +4,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Delay v2.4.0 — The Agentic OS</title>
+  <title>Delay v2.5.0 — The Agentic OS</title>
   <meta name="description"
-    content="The ultimate local-first Agentic OS. 10 workspace modules including Notes with slash commands, Miro-like Whiteboard, VS Code IDE, Kanban, Voice Studio — all powered by an autonomous AI Agent.">
+    content="The ultimate local-first Agentic OS. Powerful modules including Docs-like Notes, Miro-like Whiteboard, VS Code IDE, Kanban, and Disk Flows — all powered by an autonomous AI Agent.">
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
   <link
     href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500&display=swap"
@@ -23,14 +23,15 @@
     :root {
       --bg: #09090B;
       --bg-card: #111113;
+      --bg-elevated: #161618;
       --accent: #6366F1;
       --accent-2: #8B5CF6;
       --accent-3: #06B6D4;
       --text: #FAFAFA;
-      --text-dim: #71717A;
+      --text-dim: #A1A1AA;
       --text-muted: #52525B;
-      --border: rgba(255, 255, 255, 0.06);
-      --glass: rgba(17, 17, 19, 0.6);
+      --border: rgba(255, 255, 255, 0.08);
+      --glass: rgba(17, 17, 19, 0.7);
       --radius: 20px;
     }
 
@@ -58,18 +59,18 @@
       z-index: -1;
       pointer-events: none;
       overflow: hidden;
+      background: radial-gradient(circle at 50% 0%, rgba(99, 102, 241, 0.08), transparent 60%);
     }
 
     .mesh-orb {
       position: absolute;
       border-radius: 50%;
-      filter: blur(120px);
-      opacity: 0.12;
+      filter: blur(140px);
+      opacity: 0.15;
     }
 
     .orb-a { top: -15%; left: -10%; width: 60vw; height: 60vw; background: var(--accent); animation: orbFloat 30s infinite alternate ease-in-out; }
     .orb-b { bottom: -20%; right: -15%; width: 50vw; height: 50vw; background: var(--accent-2); animation: orbFloat 25s infinite alternate-reverse ease-in-out; }
-    .orb-c { top: 50%; left: 50%; transform: translate(-50%, -50%); width: 35vw; height: 35vw; background: var(--accent-3); opacity: 0.06; animation: orbFloat 35s infinite alternate ease-in-out; }
 
     @keyframes orbFloat {
       from { transform: translate(0, 0) scale(1); }
@@ -82,9 +83,11 @@
       position: fixed;
       inset: 0;
       z-index: -1;
-      opacity: 0.3;
-      background-image: radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.04) 1px, transparent 0);
-      background-size: 28px 28px;
+      opacity: 0.4;
+      background-image: radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.05) 1px, transparent 0);
+      background-size: 32px 32px;
+      mask-image: linear-gradient(to bottom, black 40%, transparent 100%);
+      -webkit-mask-image: linear-gradient(to bottom, black 40%, transparent 100%);
     }
 
     .container { max-width: 1200px; margin: 0 auto; padding: 0 1.5rem; }
@@ -92,7 +95,7 @@
     /* ─── Nav ─── */
     nav {
       position: fixed;
-      top: 1rem;
+      top: 1.5rem;
       left: 50%;
       transform: translateX(-50%);
       z-index: 1000;
@@ -100,21 +103,22 @@
       align-items: center;
       justify-content: space-between;
       width: 92%;
-      max-width: 900px;
-      padding: 0.65rem 1.25rem;
+      max-width: 1000px;
+      padding: 0.75rem 1.5rem;
       background: var(--glass);
       border: 1px solid var(--border);
-      backdrop-filter: blur(24px);
-      -webkit-backdrop-filter: blur(24px);
-      border-radius: 18px;
+      backdrop-filter: blur(32px);
+      -webkit-backdrop-filter: blur(32px);
+      border-radius: 100px;
+      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
     }
 
     .brand {
       display: flex;
       align-items: center;
-      gap: 0.6rem;
+      gap: 0.75rem;
       font-weight: 800;
-      font-size: 1.1rem;
+      font-size: 1.15rem;
       letter-spacing: -0.03em;
       color: #fff;
       text-decoration: none;
@@ -125,11 +129,11 @@
     .nav-links {
       display: flex;
       align-items: center;
-      gap: 1.75rem;
+      gap: 2rem;
     }
 
     .nav-links a {
-      font-size: 0.82rem;
+      font-size: 0.9rem;
       font-weight: 600;
       color: var(--text-dim);
       text-decoration: none;
@@ -141,10 +145,10 @@
       display: inline-flex;
       align-items: center;
       gap: 0.5rem;
-      padding: 0.6rem 1.4rem;
-      border-radius: 12px;
+      padding: 0.7rem 1.6rem;
+      border-radius: 100px;
       font-weight: 700;
-      font-size: 0.88rem;
+      font-size: 0.9rem;
       text-decoration: none;
       transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
       cursor: pointer;
@@ -154,10 +158,11 @@
     .btn-accent {
       background: var(--accent);
       color: #fff;
+      box-shadow: 0 0 0 1px rgba(255,255,255,0.1) inset, 0 4px 12px rgba(99, 102, 241, 0.2);
     }
     .btn-accent:hover {
       transform: translateY(-2px);
-      box-shadow: 0 8px 24px rgba(99, 102, 241, 0.35);
+      box-shadow: 0 0 0 1px rgba(255,255,255,0.2) inset, 0 8px 24px rgba(99, 102, 241, 0.4);
     }
 
     .btn-glass {
@@ -166,7 +171,7 @@
       color: #fff;
     }
     .btn-glass:hover {
-      background: rgba(255, 255, 255, 0.08);
+      background: rgba(255, 255, 255, 0.1);
       transform: translateY(-2px);
     }
 
@@ -178,30 +183,30 @@
       align-items: center;
       justify-content: center;
       text-align: center;
-      padding: 10rem 1.5rem 6rem;
+      padding: 12rem 1.5rem 6rem;
     }
 
     .badge {
       display: inline-flex;
       align-items: center;
       gap: 0.65rem;
-      padding: 0.45rem 1.1rem;
+      padding: 0.45rem 1.25rem;
       border-radius: 100px;
-      font-size: 0.82rem;
+      font-size: 0.85rem;
       font-weight: 700;
-      letter-spacing: 0.01em;
+      letter-spacing: 0.02em;
       animation: fadeUp 0.6s ease-out;
-      border: 1px solid rgba(99, 102, 241, 0.25);
-      background: rgba(99, 102, 241, 0.08);
+      border: 1px solid rgba(99, 102, 241, 0.3);
+      background: rgba(99, 102, 241, 0.1);
       color: #A5B4FC;
     }
 
     .badge .dot {
-      width: 7px;
-      height: 7px;
+      width: 8px;
+      height: 8px;
       border-radius: 50%;
       background: #10B981;
-      box-shadow: 0 0 8px #10B981;
+      box-shadow: 0 0 12px #10B981;
       animation: pulse 2s infinite;
     }
 
@@ -211,49 +216,53 @@
     }
 
     .hero h1 {
-      font-size: clamp(3rem, 8vw, 5.5rem);
+      font-size: clamp(3rem, 7vw, 6rem);
       font-weight: 900;
-      letter-spacing: -0.05em;
-      line-height: 1;
-      margin: 2rem 0 1.5rem;
-      max-width: 900px;
+      letter-spacing: -0.04em;
+      line-height: 1.05;
+      margin: 2.5rem 0 1.5rem;
+      max-width: 1000px;
     }
 
     .gradient-text {
-      background: linear-gradient(135deg, #fff 0%, #A5B4FC 50%, #818CF8 100%);
+      background: linear-gradient(135deg, #ffffff 0%, #A5B4FC 50%, #818CF8 100%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
     }
 
     .hero p {
-      font-size: 1.15rem;
+      font-size: 1.25rem;
       color: var(--text-dim);
-      max-width: 580px;
-      margin-bottom: 2.5rem;
+      max-width: 640px;
+      margin-bottom: 3rem;
       font-weight: 500;
       line-height: 1.7;
     }
 
     .hero-cta {
       display: flex;
-      gap: 0.75rem;
-      margin-bottom: 4rem;
+      gap: 1rem;
+      margin-bottom: 5rem;
     }
 
     /* ─── Stats ─── */
     .stats {
       display: flex;
       align-items: center;
-      gap: 3rem;
-      margin-bottom: 5rem;
+      gap: 4rem;
+      margin-bottom: 6rem;
       animation: fadeUp 0.8s ease-out 0.3s both;
+      background: var(--bg-elevated);
+      padding: 2rem 4rem;
+      border-radius: 24px;
+      border: 1px solid var(--border);
     }
 
     .stat {
       text-align: center;
     }
     .stat-value {
-      font-size: 2rem;
+      font-size: 2.5rem;
       font-weight: 900;
       letter-spacing: -0.03em;
       background: linear-gradient(135deg, #fff, var(--accent));
@@ -261,26 +270,26 @@
       -webkit-text-fill-color: transparent;
     }
     .stat-label {
-      font-size: 0.78rem;
+      font-size: 0.85rem;
       color: var(--text-muted);
-      font-weight: 600;
+      font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: 0.06em;
-      margin-top: 0.15rem;
+      letter-spacing: 0.08em;
+      margin-top: 0.25rem;
     }
 
     .stat-divider {
       width: 1px;
-      height: 36px;
+      height: 48px;
       background: var(--border);
     }
 
     /* ─── Preview ─── */
     .preview-frame {
-      max-width: 1100px;
+      max-width: 1200px;
       width: 100%;
       margin: 0 auto;
-      perspective: 1200px;
+      perspective: 1400px;
       animation: fadeUp 1s ease-out 0.2s both;
     }
 
@@ -289,31 +298,32 @@
       border: 1px solid var(--border);
       border-radius: 24px;
       overflow: hidden;
-      box-shadow: 0 40px 80px rgba(0, 0, 0, 0.6), 0 0 60px rgba(99, 102, 241, 0.06);
-      transform: rotateX(6deg);
-      transition: 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+      box-shadow: 0 40px 100px rgba(0, 0, 0, 0.8), 0 0 80px rgba(99, 102, 241, 0.1);
+      transform: rotateX(8deg);
+      transition: 0.6s cubic-bezier(0.23, 1, 0.32, 1);
     }
 
     .preview-frame:hover .preview-window {
-      transform: rotateX(0deg) translateY(-6px);
+      transform: rotateX(0deg) translateY(-8px);
+      box-shadow: 0 60px 120px rgba(0, 0, 0, 0.9), 0 0 100px rgba(99, 102, 241, 0.15);
     }
 
     .win-bar {
       display: flex;
       align-items: center;
-      gap: 8px;
-      padding: 1rem 1.25rem;
+      gap: 10px;
+      padding: 1.25rem 1.5rem;
       border-bottom: 1px solid var(--border);
-      background: rgba(0, 0, 0, 0.3);
+      background: rgba(0, 0, 0, 0.4);
     }
 
-    .win-dots { display: flex; gap: 7px; }
-    .win-dots span { width: 11px; height: 11px; border-radius: 50%; opacity: 0.8; }
+    .win-dots { display: flex; gap: 8px; }
+    .win-dots span { width: 12px; height: 12px; border-radius: 50%; opacity: 0.9; }
 
     .preview-inner {
-      height: 420px;
+      height: 540px;
       display: grid;
-      grid-template-columns: 56px 220px 1fr;
+      grid-template-columns: 64px 240px 1fr;
     }
 
     .mock-rail {
@@ -321,15 +331,16 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      padding: 1rem 0;
-      gap: 0.75rem;
+      padding: 1.5rem 0;
+      gap: 1rem;
+      background: rgba(255, 255, 255, 0.01);
     }
 
     .mock-rail-item {
-      width: 28px;
-      height: 28px;
-      border-radius: 8px;
-      background: rgba(255, 255, 255, 0.03);
+      width: 32px;
+      height: 32px;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.04);
     }
     .mock-rail-item.active {
       background: rgba(99, 102, 241, 0.15);
@@ -341,13 +352,14 @@
       padding: 1.5rem;
       display: flex;
       flex-direction: column;
-      gap: 0.6rem;
+      gap: 0.75rem;
+      background: rgba(255, 255, 255, 0.005);
     }
 
     .mock-sidebar-item {
-      height: 28px;
-      border-radius: 8px;
-      background: rgba(255, 255, 255, 0.02);
+      height: 32px;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.03);
     }
     .mock-sidebar-item.active {
       background: rgba(99, 102, 241, 0.08);
@@ -355,47 +367,48 @@
     }
 
     .mock-content {
-      padding: 2.5rem;
+      padding: 3rem;
       display: flex;
       flex-direction: column;
-      gap: 1rem;
+      gap: 1.25rem;
+      background: url('data:image/svg+xml;utf8,<svg width="20" height="20" xmlns="http://www.w3.org/2000/svg"><circle cx="2" cy="2" r="1" fill="rgba(255,255,255,0.05)"/></svg>');
     }
 
     .mock-line {
-      height: 16px;
-      border-radius: 6px;
-      background: rgba(255, 255, 255, 0.03);
+      height: 18px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.04);
     }
 
     /* ─── Section ─── */
     .section {
-      padding: 8rem 0;
+      padding: 10rem 0;
     }
 
     .section-label {
       text-align: center;
-      font-size: 0.78rem;
+      font-size: 0.85rem;
       font-weight: 800;
       color: var(--accent);
       text-transform: uppercase;
-      letter-spacing: 0.12em;
-      margin-bottom: 1rem;
+      letter-spacing: 0.15em;
+      margin-bottom: 1.25rem;
     }
 
     .section-title {
-      font-size: clamp(2rem, 5vw, 3.2rem);
-      font-weight: 800;
+      font-size: clamp(2.5rem, 5vw, 4rem);
+      font-weight: 900;
       text-align: center;
-      margin-bottom: 1.25rem;
+      margin-bottom: 1.5rem;
       letter-spacing: -0.04em;
     }
 
     .section-sub {
       text-align: center;
-      font-size: 1.05rem;
+      font-size: 1.15rem;
       color: var(--text-dim);
-      max-width: 550px;
-      margin: 0 auto 4rem;
+      max-width: 600px;
+      margin: 0 auto 5rem;
       font-weight: 500;
     }
 
@@ -403,14 +416,14 @@
     .bento {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
-      gap: 1.25rem;
+      gap: 1.5rem;
     }
 
     .bento-card {
       background: var(--bg-card);
       border: 1px solid var(--border);
       border-radius: var(--radius);
-      padding: 2.25rem;
+      padding: 2.5rem;
       display: flex;
       flex-direction: column;
       transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
@@ -418,10 +431,21 @@
       overflow: hidden;
     }
 
+    .bento-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: radial-gradient(circle at top left, rgba(255,255,255,0.03), transparent 70%);
+      pointer-events: none;
+    }
+
     .bento-card:hover {
-      border-color: rgba(255, 255, 255, 0.12);
-      transform: translateY(-6px);
-      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+      border-color: rgba(255, 255, 255, 0.15);
+      transform: translateY(-8px);
+      box-shadow: 0 24px 48px rgba(0, 0, 0, 0.4), 0 0 32px rgba(99, 102, 241, 0.1);
     }
 
     .bento-card.featured {
@@ -429,78 +453,145 @@
     }
 
     .card-icon {
-      width: 44px;
-      height: 44px;
+      width: 48px;
+      height: 48px;
       border-radius: 14px;
       display: flex;
       align-items: center;
       justify-content: center;
-      margin-bottom: 1.5rem;
-      font-size: 20px;
+      margin-bottom: 2rem;
+      font-size: 24px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2) inset;
     }
 
     .bento-card h3 {
-      font-size: 1.3rem;
+      font-size: 1.4rem;
       font-weight: 800;
-      margin-bottom: 0.6rem;
+      margin-bottom: 0.75rem;
       letter-spacing: -0.02em;
     }
 
     .bento-card p {
       color: var(--text-dim);
-      font-size: 0.92rem;
-      line-height: 1.65;
+      font-size: 0.95rem;
+      line-height: 1.7;
       font-weight: 500;
     }
 
     .card-tag {
       display: inline-flex;
-      padding: 0.25rem 0.7rem;
-      border-radius: 6px;
-      font-size: 0.7rem;
+      padding: 0.35rem 0.8rem;
+      border-radius: 8px;
+      font-size: 0.75rem;
       font-weight: 800;
       text-transform: uppercase;
-      letter-spacing: 0.06em;
-      margin-bottom: 1rem;
+      letter-spacing: 0.08em;
+      margin-bottom: 1.5rem;
       width: fit-content;
+    }
+
+    /* ─── Tech Stack ─── */
+    .tech-stack {
+      padding: 4rem 2rem;
+      border-radius: 24px;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      text-align: center;
+      margin: 8rem 0;
+    }
+
+    .tech-stack h3 {
+      font-size: 1.5rem;
+      font-weight: 800;
+      margin-bottom: 2rem;
+    }
+
+    .tech-grid {
+      display: flex;
+      justify-content: center;
+      gap: 3rem;
+      flex-wrap: wrap;
+    }
+
+    .tech-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .tech-icon {
+      width: 64px;
+      height: 64px;
+      background: rgba(255,255,255,0.03);
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid var(--border);
+      font-size: 24px;
+    }
+
+    .tech-name {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
     }
 
     /* ─── CTA Section ─── */
     .cta-section {
       text-align: center;
-      padding: 6rem 1.5rem 8rem;
+      padding: 8rem 1.5rem;
+      position: relative;
+    }
+
+    .cta-section::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 60vw;
+      height: 60vw;
+      background: radial-gradient(circle, rgba(99, 102, 241, 0.15), transparent 70%);
+      z-index: -1;
+      pointer-events: none;
     }
 
     .cta-section h2 {
-      font-size: clamp(2rem, 5vw, 3rem);
+      font-size: clamp(2.5rem, 6vw, 4rem);
       font-weight: 900;
       letter-spacing: -0.04em;
-      margin-bottom: 1rem;
+      margin-bottom: 1.25rem;
     }
 
     .cta-section p {
       color: var(--text-dim);
-      font-size: 1.05rem;
-      margin-bottom: 2.5rem;
+      font-size: 1.15rem;
+      margin-bottom: 3rem;
       font-weight: 500;
+      max-width: 500px;
+      margin-inline: auto;
     }
 
     .cta-buttons {
       display: flex;
-      gap: 0.75rem;
+      gap: 1rem;
       justify-content: center;
     }
 
     /* ─── Footer ─── */
     footer {
       border-top: 1px solid var(--border);
-      padding: 4rem 1.5rem;
+      padding: 5rem 1.5rem;
       text-align: center;
     }
 
     footer p {
       color: var(--text-muted);
-      font-size: 0.85rem;
+      font-size: 0.9rem;
       font-weight: 500;
     }
 
@@ -508,10 +599,15 @@
       color: #fff;
       text-decoration: none;
       font-weight: 700;
+      transition: color 0.2s;
+    }
+
+    footer a:hover {
+      color: var(--accent);
     }
 
     @keyframes fadeUp {
-      from { opacity: 0; transform: translateY(24px); }
+      from { opacity: 0; transform: translateY(30px); }
       to { opacity: 1; transform: translateY(0); }
     }
 
@@ -521,9 +617,9 @@
       .preview-inner { grid-template-columns: 1fr; }
       .mock-rail, .mock-sidebar { display: none; }
       .nav-links { display: none; }
-      .stats { flex-direction: column; gap: 1.5rem; }
-      .stat-divider { width: 40px; height: 1px; }
-      .hero-cta { flex-direction: column; }
+      .stats { flex-direction: column; gap: 2rem; padding: 2rem; }
+      .stat-divider { width: 60px; height: 1px; }
+      .hero-cta { flex-direction: column; align-items: stretch; }
     }
   </style>
 </head>
@@ -533,16 +629,16 @@
   <div class="bg-mesh">
     <div class="mesh-orb orb-a"></div>
     <div class="mesh-orb orb-b"></div>
-    <div class="mesh-orb orb-c"></div>
   </div>
 
   <nav>
     <a href="#" class="brand">
-      <img src="logo.png" alt="Delay" width="26" height="26">
+      <img src="logo.png" alt="Delay" width="28" height="28">
       Delay
     </a>
     <div class="nav-links">
       <a href="#features">Features</a>
+      <a href="#tech">Architecture</a>
       <a href="https://github.com/AzizX-coder/Delay">GitHub</a>
     </div>
     <a href="#download" class="btn btn-accent download-btn">
@@ -554,23 +650,23 @@
   <section class="hero">
     <div class="badge" id="v-tag">
       <span class="dot"></span>
-      The Full Workspace — 16 Modules
+      The Premium Workspace — 9 Core Modules
     </div>
 
-    <h1><span class="gradient-text">Your focus,<br>autonomously powered.</span></h1>
-    <p>16 workspace modules — Notes, Tasks, Calendar, Timer, Kanban, Docs, Sheets, Slides, Whiteboard, Code Studio, Voice, Photo & Video Editors, Disk Flows — all powered by an autonomous local AI Agent.</p>
+    <h1><span class="gradient-text">Your workflow,<br>re-engineered.</span></h1>
+    <p>A unified, local-first environment featuring a VS Code-grade IDE, Miro-like Whiteboards, Notion-style Notes, Kanban, and an autonomous AI Agent that ties it all together.</p>
 
     <div class="hero-cta">
-      <a href="https://github.com/AzizX-coder/Delay/releases" class="btn btn-accent download-btn" style="padding: 0.75rem 2rem; font-size: 0.95rem;">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+      <a href="https://github.com/AzizX-coder/Delay/releases" class="btn btn-accent download-btn" style="padding: 0.85rem 2.5rem; font-size: 1rem;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
           <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
           <polyline points="7 10 12 15 17 10" />
           <line x1="12" y1="15" x2="12" y2="3" />
         </svg>
-        Download Now
+        Download v2.5.0
       </a>
-      <a href="https://github.com/AzizX-coder/Delay" class="btn btn-glass" style="padding: 0.75rem 2rem; font-size: 0.95rem;">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+      <a href="https://github.com/AzizX-coder/Delay" class="btn btn-glass" style="padding: 0.85rem 2.5rem; font-size: 1rem;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
           <path d="M12 .5A11.5 11.5 0 0 0 .5 12a11.5 11.5 0 0 0 7.86 10.92c.58.11.79-.25.79-.56v-2c-3.2.7-3.88-1.38-3.88-1.38-.52-1.33-1.28-1.68-1.28-1.68-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.76 2.7 1.25 3.36.96.1-.75.4-1.25.73-1.54-2.55-.29-5.24-1.28-5.24-5.69 0-1.26.45-2.28 1.19-3.09-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.18 1.18a11 11 0 0 1 5.78 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.81 1.19 1.83 1.19 3.09 0 4.42-2.69 5.39-5.25 5.68.41.35.78 1.05.78 2.12v3.14c0 .31.21.67.8.56A11.5 11.5 0 0 0 23.5 12 11.5 11.5 0 0 0 12 .5z"/>
         </svg>
         Star on GitHub
@@ -579,18 +675,18 @@
 
     <div class="stats">
       <div class="stat">
+        <div class="stat-value">9</div>
+        <div class="stat-label">Core Workspaces</div>
+      </div>
+      <div class="stat-divider"></div>
+      <div class="stat">
         <div class="stat-value">18+</div>
-        <div class="stat-label">AI Tools</div>
+        <div class="stat-label">Agent Tools</div>
       </div>
       <div class="stat-divider"></div>
       <div class="stat">
-        <div class="stat-value">7</div>
-        <div class="stat-label">Workspaces</div>
-      </div>
-      <div class="stat-divider"></div>
-      <div class="stat">
-        <div class="stat-value">0</div>
-        <div class="stat-label">Cloud Required</div>
+        <div class="stat-value">0%</div>
+        <div class="stat-label">Cloud Telemetry</div>
       </div>
       <div class="stat-divider"></div>
       <div class="stat">
@@ -607,14 +703,12 @@
             <span style="background: #FFBD2E;"></span>
             <span style="background: #27C93F;"></span>
           </div>
-          <span style="margin-left: 12px; padding: 2px 8px; border-radius: 6px; background: rgba(99, 102, 241, 0.15); color: #A5B4FC; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em;">LATEST</span>
-          <span style="font-size: 11px; font-weight: 500; color: #52525B; margin-left: 6px;">Delay Agentic OS</span>
+          <span style="margin-left: 14px; padding: 3px 10px; border-radius: 6px; background: rgba(99, 102, 241, 0.15); color: #A5B4FC; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em;">LATEST UPDATE</span>
+          <span style="font-size: 12px; font-weight: 600; color: #71717A; margin-left: 8px;">Delay OS v2.5.0</span>
         </div>
         <div class="preview-inner">
           <div class="mock-rail">
             <div class="mock-rail-item active"></div>
-            <div class="mock-rail-item"></div>
-            <div class="mock-rail-item"></div>
             <div class="mock-rail-item"></div>
             <div class="mock-rail-item"></div>
             <div class="mock-rail-item"></div>
@@ -628,12 +722,12 @@
             <div style="margin-top:auto;" class="mock-sidebar-item"></div>
           </div>
           <div class="mock-content">
-            <div class="mock-line" style="width: 55%; height: 36px;"></div>
+            <div class="mock-line" style="width: 60%; height: 40px;"></div>
             <div class="mock-line" style="width: 100%;"></div>
-            <div class="mock-line" style="width: 85%;"></div>
-            <div class="mock-line" style="width: 92%;"></div>
-            <div style="margin-top: 1.5rem; border-radius: 16px; background: rgba(99, 102, 241, 0.04); border: 1px dashed rgba(99, 102, 241, 0.15); padding: 1.5rem;">
-              <div style="height: 16px; width: 35%; background: var(--accent); border-radius: 4px; opacity: 0.3;"></div>
+            <div class="mock-line" style="width: 90%;"></div>
+            <div class="mock-line" style="width: 95%;"></div>
+            <div style="margin-top: 2rem; border-radius: 20px; background: rgba(99, 102, 241, 0.05); border: 1px dashed rgba(99, 102, 241, 0.2); padding: 2rem;">
+              <div style="height: 20px; width: 40%; background: var(--accent); border-radius: 6px; opacity: 0.4;"></div>
             </div>
           </div>
         </div>
@@ -644,127 +738,148 @@
   <!-- ═══ Features ═══ -->
   <section class="section" id="features">
     <div class="container">
-      <div class="section-label">The Engine</div>
-      <h2 class="section-title">16 integrated workspaces.<br>Zero cloud.</h2>
-      <p class="section-sub">From notes to presentations, from code to video editing — everything runs locally with an AI Agent that controls it all.</p>
+      <div class="section-label">Enterprise Grade</div>
+      <h2 class="section-title">A focused environment.<br>Zero distractions.</h2>
+      <p class="section-sub">We removed the clutter and perfected the core. Code, plan, and create in a unified, deeply customizable workspace.</p>
 
       <div class="bento">
-        <!-- Agent -->
+        <!-- Code Studio -->
         <div class="bento-card featured">
-          <div class="card-tag" style="background: rgba(99, 102, 241, 0.1); color: #A5B4FC;">Core</div>
-          <div class="card-icon" style="background: rgba(99, 102, 241, 0.1); color: var(--accent);">
+          <div class="card-tag" style="background: rgba(99, 102, 241, 0.15); color: #A5B4FC;">Code Engine</div>
+          <div class="card-icon" style="background: rgba(139, 92, 246, 0.15); color: var(--accent-2);">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <polyline points="16 18 22 12 16 6" />
+              <polyline points="8 6 2 12 8 18" />
+            </svg>
+          </div>
+          <h3>VS Code-Grade IDE</h3>
+          <p>A full Monaco editor implementation with auto-closing tags, bracket pair colorization, Emmet HTML boilerplate, and native preview windows. Run dev servers directly inside Delay.</p>
+        </div>
+
+        <!-- Agent -->
+        <div class="bento-card">
+          <div class="card-tag" style="background: rgba(236, 72, 153, 0.15); color: #F472B6;">Intelligence</div>
+          <div class="card-icon" style="background: rgba(236, 72, 153, 0.15); color: #EC4899;">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
               <path d="M12 2L14.4 9.6L22 12L14.4 14.4L12 22L9.6 14.4L2 12L9.6 9.6L12 2Z" />
             </svg>
           </div>
           <h3>Autonomous Agent</h3>
-          <p>An 18-tool AI agent with ambient context, memory recall, and a 12-turn reasoning loop. It plans, executes, and verifies across your entire workspace autonomously.</p>
+          <p>An 18-tool AI agent that natively interfaces with your files, notes, and boards. Multiple model integrations (OpenRouter, Groq, Claude, OpenAI) built-in.</p>
+        </div>
+
+        <!-- Whiteboard -->
+        <div class="bento-card">
+          <div class="card-tag" style="background: rgba(245, 158, 11, 0.15); color: #FCD34D;">Canvas</div>
+          <div class="card-icon" style="background: rgba(245, 158, 11, 0.15); color: #F59E0B;">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <path d="M12 19l7-7 3 3-7 7-3-3z" /><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z" /><path d="M2 2l7.586 7.586" />
+            </svg>
+          </div>
+          <h3>Miro-like Whiteboard</h3>
+          <p>Infinite canvas with shape snapping, auto-routing connectors, custom fonts, advanced property panels, and complex object persistence.</p>
+        </div>
+
+        <!-- Notes -->
+        <div class="bento-card">
+          <div class="card-tag" style="background: rgba(16, 185, 129, 0.15); color: #6EE7B7;">Documentation</div>
+          <div class="card-icon" style="background: rgba(16, 185, 129, 0.15); color: #10B981;">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+              <polyline points="14 2 14 8 20 8" />
+              <line x1="16" y1="13" x2="8" y2="13" />
+              <line x1="16" y1="17" x2="8" y2="17" />
+              <polyline points="10 9 9 9 8 9" />
+            </svg>
+          </div>
+          <h3>Docs-Level Notes</h3>
+          <p>Rich text editing with slash commands, markdown support, export capabilities, and Notion-style block formatting.</p>
         </div>
 
         <!-- Timer -->
         <div class="bento-card">
-          <div class="card-tag" style="background: rgba(52, 199, 89, 0.1); color: #34C759;">New</div>
-          <div class="card-icon" style="background: rgba(52, 199, 89, 0.1); color: #34C759;">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <div class="card-tag" style="background: rgba(6, 182, 212, 0.15); color: #67E8F9;">Productivity</div>
+          <div class="card-icon" style="background: rgba(6, 182, 212, 0.15); color: var(--accent-3);">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
               <circle cx="12" cy="12" r="10" />
               <polyline points="12 6 12 12 16 14" />
             </svg>
           </div>
-          <h3>Smart Timer + Goals</h3>
-          <p>Pomodoro timer with purpose-driven goals — set focus/break durations, daily sessions, multi-day tracking, and progress visualization.</p>
-        </div>
-
-        <!-- Code Studio -->
-        <div class="bento-card">
-          <div class="card-tag" style="background: rgba(99, 102, 241, 0.1); color: #A5B4FC;">New</div>
-          <div class="card-icon" style="background: rgba(139, 92, 246, 0.1); color: var(--accent-2);">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-              <polyline points="16 18 22 12 16 6" />
-              <polyline points="8 6 2 12 8 18" />
-            </svg>
-          </div>
-          <h3>Code Studio Local IDE</h3>
-          <p>Full-fledged local workspace with a multi-tab Monaco editor, interactive File Tree, and a live terminal interface powered by your desktop.</p>
+          <h3>Dynamic Timer</h3>
+          <p>Pomodoro integration with live active countdowns directly in your navigation rail. Focus tracking, customizable intervals, and daily goals.</p>
         </div>
 
         <!-- Disk Flows -->
         <div class="bento-card">
-          <div class="card-tag" style="background: rgba(6, 182, 212, 0.1); color: var(--accent-3);">New</div>
-          <div class="card-icon" style="background: rgba(6, 182, 212, 0.1); color: var(--accent-3);">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <div class="card-tag" style="background: rgba(99, 102, 241, 0.15); color: #A5B4FC;">Utility</div>
+          <div class="card-icon" style="background: rgba(99, 102, 241, 0.15); color: var(--accent);">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
               <polyline points="7 10 12 15 17 10" />
               <line x1="12" y1="15" x2="12" y2="3" />
             </svg>
           </div>
           <h3>Disk Flows</h3>
-          <p>Download videos with quality selection, in-app playback, and native file management.</p>
+          <p>A native, automated download manager powered by yt-dlp. No manual dependency setup required — auto-installs and manages media instantly.</p>
         </div>
 
-        <!-- Kanban -->
-        <div class="bento-card">
-          <div class="card-tag" style="background: rgba(99, 102, 241, 0.1); color: #A5B4FC;">New</div>
-          <div class="card-icon" style="background: rgba(99, 102, 241, 0.1); color: var(--accent);">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-              <rect x="2" y="3" width="6" height="18" rx="1" /><rect x="9" y="3" width="6" height="12" rx="1" /><rect x="16" y="3" width="6" height="8" rx="1" />
-            </svg>
-          </div>
-          <h3>Kanban Board</h3>
-          <p>Drag-and-drop columns and cards. Add custom columns, color labels, and inline editing for agile workflows.</p>
-        </div>
-
-        <!-- Whiteboard -->
-        <div class="bento-card">
-          <div class="card-tag" style="background: rgba(236, 72, 153, 0.1); color: #EC4899;">Upgraded</div>
-          <div class="card-icon" style="background: rgba(236, 72, 153, 0.1); color: #EC4899;">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-              <path d="M12 19l7-7 3 3-7 7-3-3z" /><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z" /><path d="M2 2l7.586 7.586" />
-            </svg>
-          </div>
-          <h3>Miro-like Whiteboard</h3>
-          <p>Infinite canvas with sticky notes, shapes, freehand drawing, text, pan/zoom, dots/grid backgrounds, and object persistence.</p>
-        </div>
-
-        <!-- Voice -->
+        <!-- Kanban & Calendar -->
         <div class="bento-card featured">
-          <div class="card-tag" style="background: rgba(255, 59, 48, 0.1); color: #FF3B30;">Upgraded</div>
-          <div class="card-icon" style="background: rgba(255, 59, 48, 0.1); color: #FF3B30;">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-              <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
-              <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
-              <line x1="12" y1="19" x2="12" y2="23" />
-              <line x1="8" y1="23" x2="16" y2="23" />
+          <div class="card-tag" style="background: rgba(255, 59, 48, 0.15); color: #FF8A80;">Management</div>
+          <div class="card-icon" style="background: rgba(255, 59, 48, 0.15); color: #FF3B30;">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+              <line x1="16" y1="2" x2="16" y2="6" />
+              <line x1="8" y1="2" x2="8" y2="6" />
+              <line x1="3" y1="10" x2="21" y2="10" />
             </svg>
           </div>
-          <h3>Customizable Workspace</h3>
-          <p>Toggle modules on and off from the sidebar. Onboarding lets new users choose exactly which tools they need. Your OS, your rules.</p>
+          <h3>Project Organization</h3>
+          <p>Agile Kanban boards with drag-and-drop columns, color labels, and inline editing. Combined with a fully-featured Calendar and Task management system to keep your sprints on track.</p>
         </div>
+      </div>
+    </div>
+  </section>
 
-        <!-- Privacy -->
-        <div class="bento-card">
-          <div class="card-icon" style="background: rgba(255, 149, 0, 0.1); color: #FF9500;">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-              <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-              <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-            </svg>
-          </div>
-          <h3>Zero Cloud</h3>
-          <p>Everything runs on your machine. Your notes, tasks, code, and conversations never leave your device. Privacy as a foundation.</p>
+  <!-- ═══ Tech Stack ═══ -->
+  <section id="tech" class="container">
+    <div class="tech-stack">
+      <h3>Powered by Modern Infrastructure</h3>
+      <div class="tech-grid">
+        <div class="tech-item">
+          <div class="tech-icon"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#61DAFB" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg></div>
+          <span class="tech-name">React</span>
+        </div>
+        <div class="tech-item">
+          <div class="tech-icon"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#9FEAF9" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/><path d="M2 12h20"/></svg></div>
+          <span class="tech-name">Electron</span>
+        </div>
+        <div class="tech-item">
+          <div class="tech-icon"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#3178C6" stroke-width="2"><path d="M4 4h16v16H4z"/><path d="M9 14l3-3m0 0l3 3m-3-3v8"/></svg></div>
+          <span class="tech-name">TypeScript</span>
+        </div>
+        <div class="tech-item">
+          <div class="tech-icon"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#38BDF8" stroke-width="2"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg></div>
+          <span class="tech-name">Tailwind</span>
+        </div>
+        <div class="tech-item">
+          <div class="tech-icon"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg></div>
+          <span class="tech-name">Zustand</span>
         </div>
       </div>
     </div>
   </section>
 
   <!-- ═══ CTA ═══ -->
-  <section class="cta-section">
-    <h2 class="gradient-text">Ready to focus differently?</h2>
-    <p>Download Delay and experience the future of local-first productivity.</p>
-    <div class="cta-buttons" id="download" style="flex-direction: column; align-items: center; gap: 1rem;">
-      <div style="display: flex; gap: 1rem; width: 100%; max-width: 400px;">
-        <select id="release-select" class="btn btn-glass" style="flex: 1; padding: 0.85rem; appearance: auto; background: rgba(255, 255, 255, 0.05); text-align: center; border: 1px solid rgba(255, 255, 255, 0.1); cursor: pointer; color: white; font-family: inherit; border-radius: 12px; outline: none;">
+  <section class="cta-section" id="download">
+    <h2 class="gradient-text">Deploy your workspace.</h2>
+    <p>Get the latest Delay IDE release directly from GitHub.</p>
+    <div class="cta-buttons" style="flex-direction: column; align-items: center; gap: 1.25rem;">
+      <div style="display: flex; gap: 1rem; width: 100%; max-width: 480px;">
+        <select id="release-select" class="btn btn-glass" style="flex: 1; padding: 0.9rem; appearance: auto; background: rgba(255, 255, 255, 0.05); text-align: center; border: 1px solid rgba(255, 255, 255, 0.15); cursor: pointer; color: white; font-family: inherit; border-radius: 14px; outline: none;">
           <option value="" disabled selected>Loading versions...</option>
         </select>
-        <a id="dynamic-download-btn" href="https://github.com/AzizX-coder/Delay/releases" class="btn btn-accent download-btn" style="flex: 2; display: flex; justify-content: center;">
+        <a id="dynamic-download-btn" href="https://github.com/AzizX-coder/Delay/releases" class="btn btn-accent download-btn" style="flex: 1.5; display: flex; justify-content: center; border-radius: 14px;">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
             <polyline points="7 10 12 15 17 10" />
@@ -774,9 +889,9 @@
         </a>
       </div>
     </div>
-    <div class="cta-buttons" style="margin-top: 1rem;">
+    <div class="cta-buttons" style="margin-top: 1.5rem;">
       <a href="https://github.com/AzizX-coder/Delay" class="btn btn-glass" style="padding: 0.85rem 2.5rem; font-size: 1rem;">
-        View Source
+        View Source Code
       </a>
     </div>
   </section>
@@ -824,7 +939,7 @@
           const latest = releases[0];
           const tag = document.getElementById("v-tag");
           if (tag && latest.tag_name) {
-            tag.innerHTML = `<span class="dot"></span>${latest.tag_name} — Agentic OS is now stable`;
+            tag.innerHTML = `<span class="dot"></span>${latest.tag_name} — IDE is now stable`;
           }
         }
       } catch (e) {
@@ -843,11 +958,11 @@
       });
     }, { threshold: 0.1 });
 
-    document.querySelectorAll('.bento-card').forEach(card => {
-      card.style.opacity = '0';
-      card.style.transform = 'translateY(20px)';
-      card.style.transition = 'all 0.6s cubic-bezier(0.23, 1, 0.32, 1)';
-      observer.observe(card);
+    document.querySelectorAll('.bento-card, .tech-stack').forEach(el => {
+      el.style.opacity = '0';
+      el.style.transform = 'translateY(30px)';
+      el.style.transition = 'all 0.6s cubic-bezier(0.23, 1, 0.32, 1)';
+      observer.observe(el);
     });
   </script>
 
