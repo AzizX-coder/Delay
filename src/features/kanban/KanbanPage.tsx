@@ -127,7 +127,14 @@ export function KanbanPage() {
 
       {/* Board content */}
       {activeBoard ? (
-        <div className={`flex-1 flex overflow-x-auto p-5 gap-4 ${!activeBoardId ? 'hidden md:flex' : 'flex'}`}>
+        <div className={`flex-1 flex flex-col overflow-hidden ${!activeBoardId ? 'hidden md:flex' : 'flex'}`}>
+          <div className="md:hidden flex items-center p-3 border-b border-border/20 gap-2 shrink-0">
+            <button onClick={() => setActiveBoardId(null)} className="p-1.5 rounded-lg bg-bg-secondary text-text-secondary hover:text-text-primary">
+              <ChevronLeft size={16} />
+            </button>
+            <span className="font-bold text-text-primary text-[13px]">{activeBoard.name}</span>
+          </div>
+          <div className="flex-1 flex overflow-x-auto p-5 gap-4 items-start">
           <AnimatePresence mode="popLayout">
             {activeBoard.columns.map(col => (
               <motion.div key={col.id} layout initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }}
@@ -172,6 +179,7 @@ export function KanbanPage() {
               text-text-tertiary hover:text-accent hover:border-accent/40 transition-all cursor-pointer font-bold text-[12px]">
             <Plus size={14} /> Add Column
           </button>
+          </div>
         </div>
       ) : (
         <div className="flex-1 flex items-center justify-center">

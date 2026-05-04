@@ -27,7 +27,7 @@ interface CodeStudioState {
   loadFileTree: () => Promise<void>;
   openFile: (path: string, name: string) => Promise<void>;
   closeFile: (path: string) => void;
-  setActiveFile: (path: string) => void;
+  setActiveFile: (path: string | null) => void;
   updateFileContent: (path: string, content: string) => void;
   saveActiveFile: () => Promise<void>;
   appendTerminalOutput: (text: string) => void;

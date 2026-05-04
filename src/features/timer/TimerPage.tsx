@@ -174,7 +174,7 @@ export function TimerPage() {
           </div>
 
           {/* Stats row */}
-          <div className="flex items-center gap-8">
+          <div className="flex flex-wrap justify-center items-center gap-4 md:gap-8 mt-4 px-4">
             <div className="flex items-center gap-2.5">
               <div className="w-9 h-9 rounded-xl bg-accent/10 flex items-center justify-center"><Zap size={16} className="text-accent" /></div>
               <div>
@@ -182,7 +182,7 @@ export function TimerPage() {
                 <p className="text-[10px] text-text-tertiary font-medium uppercase tracking-wider">Sessions</p>
               </div>
             </div>
-            <div className="w-px h-10 bg-border/40" />
+            <div className="hidden md:block w-px h-10 bg-border/40" />
             <div className="flex items-center gap-2.5">
               <div className="w-9 h-9 rounded-xl bg-success/10 flex items-center justify-center"><Flame size={16} className="text-success" /></div>
               <div>
@@ -190,7 +190,7 @@ export function TimerPage() {
                 <p className="text-[10px] text-text-tertiary font-medium uppercase tracking-wider">Focus min</p>
               </div>
             </div>
-            <div className="w-px h-10 bg-border/40" />
+            <div className="hidden md:block w-px h-10 bg-border/40" />
             <div className="flex items-center gap-2.5">
               <div className="w-9 h-9 rounded-xl bg-warning/10 flex items-center justify-center"><Clock size={16} className="text-warning" /></div>
               <div>
@@ -214,13 +214,18 @@ export function TimerPage() {
       <AnimatePresence>
         {showGoals && (
           <motion.div
-            initial={{ width: 0, opacity: 0 }} animate={{ width: 340, opacity: 1 }} exit={{ width: 0, opacity: 0 }}
-            className="h-full border-l border-border/40 bg-bg-secondary/30 backdrop-blur-md flex flex-col overflow-hidden">
-            <div className="p-4 border-b border-border/20">
-              <h3 className="text-[14px] font-bold text-text-primary flex items-center gap-2">
-                <Target size={16} className="text-accent" /> Focus Goals
-              </h3>
-              <p className="text-[11px] text-text-tertiary mt-1">Set a purpose and auto-configure your timer schedule</p>
+            initial={{ width: 0, opacity: 0 }} animate={{ width: typeof window !== 'undefined' && window.innerWidth < 768 ? '100%' : 340, opacity: 1 }} exit={{ width: 0, opacity: 0 }}
+            className="absolute top-0 right-0 z-30 md:relative h-full border-l border-border/40 bg-bg-secondary/95 md:bg-bg-secondary/30 backdrop-blur-md flex flex-col overflow-hidden shadow-2xl md:shadow-none">
+            <div className="p-4 border-b border-border/20 flex items-center justify-between">
+              <div>
+                <h3 className="text-[14px] font-bold text-text-primary flex items-center gap-2">
+                  <Target size={16} className="text-accent" /> Focus Goals
+                </h3>
+                <p className="text-[11px] text-text-tertiary mt-1">Set a purpose and auto-configure your timer schedule</p>
+              </div>
+              <button onClick={() => setShowGoals(false)} className="md:hidden p-2 rounded-lg bg-bg-hover text-text-tertiary">
+                <ChevronRight size={18} />
+              </button>
             </div>
 
             {/* New goal form */}

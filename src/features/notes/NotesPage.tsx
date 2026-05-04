@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { useNotesStore } from "@/stores/notesStore";
 import { NotesList } from "./NotesList";
 import { NoteEditor } from "./NoteEditor";
-import { StickyNote, X } from "lucide-react";
+import { StickyNote, X, ChevronLeft } from "lucide-react";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { motion, AnimatePresence } from "motion/react";
 
@@ -23,6 +23,12 @@ export function NotesPage() {
         {/* IDE-style Tab Bar */}
         {openNoteIds.length > 0 && (
           <div className="flex items-center h-10 border-b border-border-light bg-bg-secondary/30 overflow-x-auto no-scrollbar">
+            <button
+              onClick={() => setActiveNote(null)}
+              className="md:hidden flex shrink-0 items-center justify-center h-full px-3 border-r border-border-light text-text-tertiary hover:text-text-primary"
+            >
+              <ChevronLeft size={16} />
+            </button>
             <AnimatePresence initial={false}>
               {openNoteIds.map((id) => {
                 const note = notes.find(n => n.id === id);

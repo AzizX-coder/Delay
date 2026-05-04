@@ -27,7 +27,8 @@ import {
   Monitor,
   Smartphone,
   Tablet,
-  RefreshCw
+  RefreshCw,
+  ChevronLeft
 } from "lucide-react";
 import { processCodingRequest } from "@/lib/codingAgent";
 
@@ -284,7 +285,7 @@ export function CodeStudioPage() {
     <div className="flex h-full text-text-primary overflow-hidden">
       
       {/* ─── SIDEBAR (FILE TREE) ─── */}
-      <div className="w-64 h-full flex flex-col border-r border-border/40 bg-bg-secondary/30">
+      <div className={`shrink-0 h-full flex flex-col border-r border-border/40 bg-bg-secondary/30 ${activeFilePath ? 'hidden md:flex md:w-64' : 'flex w-full md:w-64'}`}>
         <div className="p-3 border-b border-border/40 flex items-center justify-between">
           <h2 className="text-[11px] font-extrabold uppercase tracking-widest text-text-tertiary">
             Explorer
@@ -353,11 +354,17 @@ export function CodeStudioPage() {
       </div>
 
       {/* ─── EDITOR AND TERMINAL AREA ─── */}
-      <div className="flex-1 flex flex-col bg-bg-primary h-full min-w-0">
+      <div className={`flex-1 flex flex-col bg-bg-primary h-full min-w-0 ${!activeFilePath ? 'hidden md:flex' : 'flex'}`}>
         
         {/* Top Tabs */}
         {openFiles.length > 0 && (
           <div className="flex items-center overflow-x-auto border-b border-border/40 bg-bg-secondary/40 select-none scrollbar-hide">
+            <button
+              onClick={() => setActiveFile(null)}
+              className="md:hidden flex shrink-0 items-center justify-center h-full px-3 py-2 border-r border-border/40 text-text-tertiary hover:text-text-primary"
+            >
+              <ChevronLeft size={16} />
+            </button>
             {openFiles.map(file => {
               const isActive = file.path === activeFilePath;
               return (

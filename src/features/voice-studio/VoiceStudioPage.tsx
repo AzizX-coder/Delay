@@ -2,7 +2,7 @@ import { useState, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
   Mic, Square, Play, Pause, Trash2, Download, Clock, Volume2,
-  Settings2, Wand2, FastForward, SlidersHorizontal, Loader2,
+  Settings2, Wand2, FastForward, SlidersHorizontal, Loader2, X
 } from "lucide-react";
 
 interface Recording {
@@ -216,13 +216,18 @@ export function VoiceStudioPage() {
       {/* Audio processing panel */}
       <AnimatePresence>
         {editRec && (
-          <motion.div initial={{ width: 0, opacity: 0 }} animate={{ width: 280, opacity: 1 }} exit={{ width: 0, opacity: 0 }}
-            className="h-full border-l border-border/40 bg-bg-secondary/30 flex flex-col overflow-hidden">
-            <div className="p-4 border-b border-border/20">
-              <h3 className="text-[13px] font-bold text-text-primary flex items-center gap-2">
-                <Wand2 size={14} className="text-accent" /> Audio Processing
-              </h3>
-              <p className="text-[10px] text-text-tertiary mt-1 truncate">{editRec.name}</p>
+          <motion.div initial={{ width: 0, opacity: 0 }} animate={{ width: typeof window !== 'undefined' && window.innerWidth < 768 ? '100%' : 280, opacity: 1 }} exit={{ width: 0, opacity: 0 }}
+            className="absolute top-0 right-0 z-30 md:relative h-full border-l border-border/40 bg-bg-secondary/95 md:bg-bg-secondary/30 backdrop-blur-md flex flex-col overflow-hidden shadow-2xl md:shadow-none">
+            <div className="p-4 border-b border-border/20 flex items-center justify-between">
+              <div className="min-w-0">
+                <h3 className="text-[13px] font-bold text-text-primary flex items-center gap-2">
+                  <Wand2 size={14} className="text-accent" /> Audio Processing
+                </h3>
+                <p className="text-[10px] text-text-tertiary mt-1 truncate">{editRec.name}</p>
+              </div>
+              <button onClick={() => setEditingId(null)} className="md:hidden p-2 rounded-lg bg-bg-hover text-text-tertiary">
+                <X size={18} />
+              </button>
             </div>
             <div className="p-4 space-y-5 flex-1 overflow-y-auto">
               <div className="space-y-2">

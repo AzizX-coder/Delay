@@ -152,8 +152,8 @@ export function CalendarPage() {
   return (
     <div className="flex flex-col h-full p-6">
       {/* Header */}
-      <div className="flex items-center justify-between mb-5">
-        <div className="flex items-center gap-4">
+      <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between mb-5 gap-3">
+        <div className="flex items-center gap-2 md:gap-4 flex-wrap">
           <h1 className="text-[22px] font-bold text-text-primary">
             {view === "day"
               ? format(currentDate, "EEEE, MMMM d")
@@ -212,21 +212,29 @@ export function CalendarPage() {
       {/* Calendar views */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {view === "month" && (
-          <MonthView
-            days={days}
-            currentDate={currentDate}
-            getEventsForDate={getEventsForDate}
-            onDayClick={handleDayClick}
-          />
+          <div className="flex-1 overflow-x-auto no-scrollbar pb-2">
+            <div className="min-w-[700px] h-full flex flex-col">
+              <MonthView
+                days={days}
+                currentDate={currentDate}
+                getEventsForDate={getEventsForDate}
+                onDayClick={handleDayClick}
+              />
+            </div>
+          </div>
         )}
 
         {view === "week" && (
-          <WeekView
-            weekDays={weekDays}
-            hours={hours}
-            getEventsForDate={getEventsForDate}
-            onDayClick={handleDayClick}
-          />
+          <div className="flex-1 overflow-x-auto no-scrollbar pb-2">
+            <div className="min-w-[700px] h-full flex flex-col">
+              <WeekView
+                weekDays={weekDays}
+                hours={hours}
+                getEventsForDate={getEventsForDate}
+                onDayClick={handleDayClick}
+              />
+            </div>
+          </div>
         )}
 
         {view === "day" && (
@@ -263,7 +271,7 @@ export function CalendarPage() {
               animate={{ x: 0 }}
               exit={{ x: 320 }}
               transition={{ type: "spring", stiffness: 400, damping: 35 }}
-              className="w-80 h-full bg-bg-elevated border-l border-border-light shadow-lg p-5 overflow-y-auto"
+              className="w-full max-w-[320px] h-full bg-bg-elevated border-l border-border-light shadow-lg p-5 overflow-y-auto"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex items-center justify-between mb-4">

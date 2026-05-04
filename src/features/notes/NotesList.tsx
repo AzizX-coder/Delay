@@ -61,7 +61,7 @@ export function NotesList() {
   };
 
   return (
-    <div className="w-72 h-full flex flex-col border-r border-border-light bg-bg-secondary/40 backdrop-blur-xl">
+    <div className="w-full md:w-72 h-full flex flex-col border-r border-border-light bg-bg-secondary/40 backdrop-blur-xl shrink-0">
       {/* Header */}
       <div className="px-3 pt-4 pb-3 space-y-3">
         <div className="flex items-center justify-between">

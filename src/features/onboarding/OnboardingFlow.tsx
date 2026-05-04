@@ -103,7 +103,7 @@ export function OnboardingFlow() {
                     <p className="text-[14px] text-text-tertiary font-medium">Select your interface style to begin</p>
                   </div>
                 </div>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 flex-1">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-4 flex-1">
                   {[
                     { value: "light" as const, icon: <Sun size={24} />, label: "Aura Light", desc: "Clean & Bright" },
                     { value: "dark" as const, icon: <Moon size={24} />, label: "Obsidian", desc: "Sleek & Deep" },
@@ -115,9 +115,9 @@ export function OnboardingFlow() {
                   ].map((opt) => (
                     <motion.button key={opt.value} whileHover={{ y: -4, scale: 1.02 }} whileTap={{ scale: 0.98 }}
                       onClick={() => setTheme(opt.value)}
-                      className={`flex flex-col items-center justify-center p-6 rounded-3xl border-2 transition-all cursor-pointer relative
+                      className={`flex flex-col items-center justify-center p-4 md:p-6 rounded-3xl border-2 transition-all cursor-pointer relative
                         ${theme === opt.value ? "border-accent bg-accent/5 text-accent shadow-xl shadow-accent/5" : "border-border/40 bg-bg-secondary/20 text-text-secondary hover:border-border"}`}>
-                      <div className={`mb-4 p-3 rounded-2xl ${theme === opt.value ? "bg-accent text-white shadow-lg" : "bg-bg-hover text-text-tertiary"}`}>{opt.icon}</div>
+                      <div className={`mb-3 md:mb-4 p-2.5 md:p-3 rounded-2xl ${theme === opt.value ? "bg-accent text-white shadow-lg" : "bg-bg-hover text-text-tertiary"}`}>{opt.icon}</div>
                       <span className="text-[14px] font-bold mb-1">{opt.label}</span>
                       <span className="text-[11px] opacity-60 font-medium">{opt.desc}</span>
                       {theme === opt.value && (<motion.div layoutId="check" className="absolute top-3 right-3 text-accent"><Check size={18} strokeWidth={3} /></motion.div>)}
