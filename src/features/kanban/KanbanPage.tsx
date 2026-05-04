@@ -97,9 +97,9 @@ export function KanbanPage() {
   }
 
   return (
-    <div className="flex h-full bg-bg-primary">
+    <div className="flex h-full bg-bg-primary relative">
       {/* Boards sidebar */}
-      <div className="w-56 shrink-0 border-r border-border/40 bg-bg-secondary/30 flex flex-col">
+      <div className={`shrink-0 border-r border-border/40 bg-bg-secondary/30 flex flex-col h-full ${activeBoardId ? 'hidden md:flex w-56' : 'w-full md:w-56 flex'}`}>
         <div className="p-3 flex items-center justify-between border-b border-border/20">
           <h2 className="text-[11px] font-extrabold text-text-tertiary uppercase tracking-widest">Boards</h2>
           <button onClick={createBoard} className="w-7 h-7 flex items-center justify-center rounded-lg bg-accent text-white cursor-pointer">
@@ -127,7 +127,7 @@ export function KanbanPage() {
 
       {/* Board content */}
       {activeBoard ? (
-        <div className="flex-1 flex overflow-x-auto p-5 gap-4">
+        <div className={`flex-1 flex overflow-x-auto p-5 gap-4 ${!activeBoardId ? 'hidden md:flex' : 'flex'}`}>
           <AnimatePresence mode="popLayout">
             {activeBoard.columns.map(col => (
               <motion.div key={col.id} layout initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }}

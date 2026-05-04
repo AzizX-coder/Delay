@@ -37,3 +37,5 @@ yarn-error.log*
 # old remnants
 Delay/
 .claude/
+
+/android

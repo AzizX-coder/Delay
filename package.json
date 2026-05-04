@@ -1,6 +1,6 @@
 {
   "name": "delay",
-  "version": "2.5.0",
+  "version": "2.5.1",
   "description": "Notes, tasks, calendar & AI — beautifully organized.",
   "author": "AzizX-coder",
   "license": "Apache-2.0",
@@ -83,6 +83,9 @@
     }
   },
   "dependencies": {
+    "@capacitor/android": "^8.3.1",
+    "@capacitor/cli": "^8.3.1",
+    "@capacitor/core": "^8.3.1",
     "@emoji-mart/data": "^1.2.1",
     "@emoji-mart/react": "^1.1.1",
     "@monaco-editor/react": "^4.7.0",
@@ -117,9 +120,11 @@
     "react": "^19.2.5",
     "react-dom": "^19.2.5",
     "react-router-dom": "^7.14.0",
+    "tldraw": "^4.5.10",
     "zustand": "^5.0.12"
   },
   "devDependencies": {
+    "@capacitor/assets": "^3.0.5",
     "@tailwindcss/vite": "^4.2.2",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",

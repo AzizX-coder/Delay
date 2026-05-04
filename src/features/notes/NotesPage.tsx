@@ -14,9 +14,11 @@ export function NotesPage() {
   }, []);
 
   return (
-    <div className="flex h-full">
-      <NotesList />
-      <div className="flex-1 h-full flex flex-col overflow-hidden bg-bg-primary">
+    <div className="flex h-full relative">
+      <div className={`h-full shrink-0 ${activeNoteId ? 'hidden md:block' : 'w-full md:w-auto'}`}>
+        <NotesList />
+      </div>
+      <div className={`flex-1 h-full flex flex-col overflow-hidden bg-bg-primary ${!activeNoteId ? 'hidden md:flex' : 'flex'}`}>
         
         {/* IDE-style Tab Bar */}
         {openNoteIds.length > 0 && (

@@ -29,8 +29,8 @@ export function NavigationRail() {
 
   return (
     <nav
-      className="flex flex-col items-center w-[64px] shrink-0 py-3 gap-0.5
-        bg-bg-sidebar border-r border-border-light glass relative"
+      className="flex md:flex-col flex-row items-center md:w-[64px] w-full md:h-full h-[64px] shrink-0 md:py-3 py-1 px-2 md:px-0 gap-1 md:gap-0.5
+        bg-bg-sidebar md:border-r border-t md:border-t-0 border-border-light glass relative z-50 overflow-x-auto no-scrollbar"
     >
       {visibleItems.map((item) => {
         const path = `/${item.id}`;
@@ -44,7 +44,7 @@ export function NavigationRail() {
             onMouseEnter={() => setHoveredPath(path)}
             onMouseLeave={() => setHoveredPath(null)}
             className="group relative flex flex-col items-center justify-center
-              w-[48px] h-[44px] rounded-xl transition-all duration-200 cursor-pointer"
+              w-[48px] h-[44px] shrink-0 rounded-xl transition-all duration-200 cursor-pointer"
             title={item.label}
           >
             {isActive && (
@@ -91,7 +91,7 @@ export function NavigationRail() {
         onMouseEnter={() => setHoveredPath("/settings")}
         onMouseLeave={() => setHoveredPath(null)}
         className="group relative flex flex-col items-center justify-center
-          w-[48px] h-[44px] rounded-xl transition-all duration-200 cursor-pointer mt-auto"
+          w-[48px] h-[44px] shrink-0 rounded-xl transition-all duration-200 cursor-pointer md:mt-auto ml-auto md:ml-0"
         title="Settings"
       >
         {location.pathname === "/settings" && (
@@ -108,7 +108,7 @@ export function NavigationRail() {
       {/* Add/Remove modules button */}
       <button
         onClick={() => setShowManager(!showManager)}
-        className="w-[36px] h-[36px] mb-2 flex items-center justify-center rounded-xl
+        className="w-[36px] h-[36px] shrink-0 md:mb-2 ml-1 md:ml-0 flex items-center justify-center rounded-xl
           bg-bg-hover/50 text-text-tertiary hover:text-accent hover:bg-accent/10
           transition-all cursor-pointer border border-border/20"
         title="Customize Modules"
