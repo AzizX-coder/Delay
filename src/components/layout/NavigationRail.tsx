@@ -2,7 +2,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
 import {
   StickyNote, CheckSquare, Calendar, Sparkles, Timer, Code2,
-  HardDrive, Settings, Columns3, PenTool, Mic, Plus, X,
+  HardDrive, Settings, Columns3, PenTool, Mic, Plus, X, Archive,
 } from "lucide-react";
 import { useState } from "react";
 import { useSettingsStore } from "@/stores/settingsStore";
@@ -11,7 +11,7 @@ import { ALL_MODULES } from "@/types/settings";
 
 const ICON_MAP: Record<string, any> = {
   StickyNote, CheckSquare, Calendar, Timer, Sparkles, Code2,
-  HardDrive, Columns3, PenTool, Mic,
+  HardDrive, Columns3, PenTool, Mic, Archive,
 };
 
 export function NavigationRail() {
@@ -19,9 +19,13 @@ export function NavigationRail() {
   const navigate = useNavigate();
   const [hoveredPath, setHoveredPath] = useState<string | null>(null);
   const [showManager, setShowManager] = useState(false);
-  const { enabled_modules, toggleModule } = useSettingsStore();
+  const { enabled_modules, toggleModule, ai_enabled } = useSettingsStore();
 
-  const visibleItems = ALL_MODULES.filter(m => enabled_modules.includes(m.id));
+  const visibleItems = ALL_MODULES.filter(m => {
+    if (!enabled_modules.includes(m.id)) return false;
+    if (m.id === "ai" && !ai_enabled) return false;
+    return true;
+  });
   const { isRunning: timerRunning, remaining: timerRemaining } = useTimerStore();
   const timerMin = Math.floor(timerRemaining / 60);
   const timerSec = timerRemaining % 60;

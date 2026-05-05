@@ -1,6 +1,6 @@
 {
   "name": "delay",
-  "version": "2.5.1",
+  "version": "2.6.0",
   "description": "Notes, tasks, calendar & AI — beautifully organized.",
   "author": "AzizX-coder",
   "license": "Apache-2.0",
@@ -83,9 +83,13 @@
     }
   },
   "dependencies": {
+    "@capacitor-community/keep-awake": "^8.0.1",
+    "@capacitor-community/speech-recognition": "^7.0.1",
     "@capacitor/android": "^8.3.1",
     "@capacitor/cli": "^8.3.1",
     "@capacitor/core": "^8.3.1",
+    "@capacitor/dialog": "^8.0.1",
+    "@capacitor/filesystem": "^8.1.2",
     "@emoji-mart/data": "^1.2.1",
     "@emoji-mart/react": "^1.1.1",
     "@monaco-editor/react": "^4.7.0",

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, lazy, Suspense } from "react";
 import {
   HashRouter,
   Routes,
@@ -20,14 +20,17 @@ import { OnboardingFlow } from "@/features/onboarding/OnboardingFlow";
 import { KanbanPage } from "@/features/kanban/KanbanPage";
 import { WhiteboardPage } from "@/features/whiteboard/WhiteboardPage";
 import { VoiceStudioPage } from "@/features/voice-studio/VoiceStudioPage";
+import { BucketPage } from "@/features/bucket/BucketPage";
+import { AppLock } from "@/components/ui/AppLock";
 import { Logo } from "@/components/ui/Logo";
 import { motion } from "motion/react";
 
 export default function App() {
   const { initTheme } = useThemeStore();
-  const { onboarding_completed, loading, initSettings, language } = useSettingsStore();
+  const { onboarding_completed, loading, initSettings, language, security_pin } = useSettingsStore();
   const [ready, setReady] = useState(false);
   const [showSplash, setShowSplash] = useState(true);
+  const [isLocked, setIsLocked] = useState(false);
 
   useEffect(() => {
     async function init() {
@@ -46,8 +49,16 @@ export default function App() {
     document.documentElement.dir = language === "ar" ? "rtl" : "ltr";
   }, [language]);
 
+  useEffect(() => {
+    if (security_pin) setIsLocked(true);
+  }, [security_pin]);
+
   if (!ready || loading || showSplash) {
     return <SplashScreen />;
+  }
+
+  if (isLocked && security_pin) {
+    return <AppLock onUnlock={() => setIsLocked(false)} />;
   }
 
   if (!onboarding_completed) {
@@ -69,6 +80,7 @@ export default function App() {
           <Route path="kanban" element={<KanbanPage />} />
           <Route path="whiteboard" element={<WhiteboardPage />} />
           <Route path="voice-studio" element={<VoiceStudioPage />} />
+          <Route path="bucket" element={<BucketPage />} />
           <Route path="settings" element={<SettingsPage />} />
         </Route>
       </Routes>
@@ -97,3 +109,4 @@ function SplashScreen() {
     </div>
   );
 }
+

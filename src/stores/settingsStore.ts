@@ -27,6 +27,10 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
           settings.onboarding_completed = row.value === "true";
         } else if (row.key === "sidebar_collapsed") {
           settings.sidebar_collapsed = row.value === "true";
+        } else if (row.key === "ai_enabled") {
+          settings.ai_enabled = row.value === "true";
+        } else if (row.key === "security_pin") {
+          settings.security_pin = row.value === "null" ? null : row.value;
         } else if (row.key === "enabled_modules") {
           try { settings.enabled_modules = JSON.parse(row.value); } catch {}
         } else {

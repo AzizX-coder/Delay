@@ -27,6 +27,8 @@ import {
   Coffee,
   Waves,
   Flower2,
+  Shield,
+  Lock,
 } from "lucide-react";
 import { db } from "@/lib/database";
 import { LANGUAGES } from "@/types/settings";
@@ -37,7 +39,7 @@ import { useT } from "@/lib/i18n";
 export function SettingsPage() {
   const { theme, setTheme, customBgData, setCustomBg } = useThemeStore();
   const { 
-    language, ai_provider, ai_model, 
+    language, ai_provider, ai_model, ai_enabled, security_pin,
     api_key_openrouter, api_key_groq, api_key_openai, 
     api_key_anthropic, api_key_deepseek, api_key_gemini, 
     setSetting 
@@ -63,6 +65,8 @@ export function SettingsPage() {
   const [pendingLang, setPendingLang] = useState<string | null>(null);
   const [showWipeConfirm, setShowWipeConfirm] = useState(false);
   const [wiping, setWiping] = useState(false);
+  const [pinInput, setPinInput] = useState("");
+  const [pinMode, setPinMode] = useState<"idle" | "set" | "clear">("idle");
   const t = useT();
 
   const wipeAllData = async () => {
@@ -243,7 +247,23 @@ export function SettingsPage() {
           )}
         </Section>
 
-        <Section title="AI Provider & API Keys" icon={<Bot size={18} />}>
+        <Section title="AI Intelligence" icon={<Bot size={18} />}>
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <p className="text-[14px] font-medium text-text-primary">Enable AI Features</p>
+              <p className="text-[11px] text-text-tertiary mt-0.5">AI Agent, code assistant, note intelligence</p>
+            </div>
+            <button
+              onClick={() => setSetting("ai_enabled", !ai_enabled)}
+              className={`w-12 h-7 rounded-full transition-all relative cursor-pointer ${ai_enabled ? "bg-accent" : "bg-border/40"}`}
+            >
+              <motion.div
+                animate={{ x: ai_enabled ? 22 : 4 }}
+                className="absolute top-1 w-5 h-5 rounded-full bg-white shadow-sm"
+              />
+            </button>
+          </div>
+          {ai_enabled && (
           <div className="flex flex-col gap-4">
             
             {/* Provider Selection */}
@@ -330,8 +350,59 @@ export function SettingsPage() {
                 ))}
               </div>
             </div>
-
           </div>
+          )}
+        </Section>
+
+        {/* Security PIN */}
+        <Section title="App Security" icon={<Shield size={18} />}>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-[14px] font-medium text-text-primary">App Lock PIN</p>
+              <p className="text-[11px] text-text-tertiary mt-0.5">
+                {security_pin ? "PIN is set — app requires PIN on launch" : "No PIN set — app opens directly"}
+              </p>
+            </div>
+            {security_pin ? (
+              <button
+                onClick={() => { setSetting("security_pin", null); setPinMode("idle"); }}
+                className="px-3 py-1.5 rounded-lg bg-danger/10 text-danger text-[12px] font-bold cursor-pointer hover:bg-danger/15"
+              >
+                Remove PIN
+              </button>
+            ) : (
+              <button
+                onClick={() => { setPinMode("set"); setPinInput(""); }}
+                className="px-3 py-1.5 rounded-lg bg-accent/10 text-accent text-[12px] font-bold cursor-pointer hover:bg-accent/15"
+              >
+                <Lock size={12} className="inline mr-1" /> Set PIN
+              </button>
+            )}
+          </div>
+          <AnimatePresence>
+            {pinMode === "set" && (
+              <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }}
+                className="mt-3 overflow-hidden">
+                <div className="flex items-center gap-2">
+                  <input
+                    type="password"
+                    maxLength={4}
+                    value={pinInput}
+                    onChange={(e) => setPinInput(e.target.value.replace(/\D/g, "").slice(0, 4))}
+                    placeholder="Enter 4-digit PIN"
+                    className="flex-1 px-4 py-2.5 rounded-xl bg-bg-secondary border border-border-light text-[14px] text-text-primary outline-none focus:border-accent text-center tracking-[0.5em] font-bold"
+                  />
+                  <button
+                    disabled={pinInput.length !== 4}
+                    onClick={() => { setSetting("security_pin", pinInput); setPinMode("idle"); setPinInput(""); }}
+                    className="px-4 py-2.5 rounded-xl bg-accent text-white text-[12px] font-bold cursor-pointer disabled:opacity-40"
+                  >
+                    Save
+                  </button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </Section>
 
         <Section title={t("settings.updates")} icon={<Download size={18} />}>

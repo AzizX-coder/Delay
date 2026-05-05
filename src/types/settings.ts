@@ -1,6 +1,8 @@
 export interface AppSettings {
   theme: "light" | "dark" | "system" | "forest" | "mocha" | "ocean" | "rose";
   language: string;
+  security_pin: string | null;
+  ai_enabled: boolean;
   ai_provider: "ollama" | "openrouter" | "groq" | "openai" | "anthropic" | "deepseek" | "gemini";
   ai_model: string;
   api_key_openrouter: string;
@@ -24,18 +26,21 @@ export const ALL_MODULES = [
   { id: "code-studio",  label: "Code",        icon: "Code2",       group: "workspace", desc: "VS Code-like IDE" },
   { id: "disk-flows",   label: "Disk",        icon: "HardDrive",   group: "media",     desc: "Video downloader" },
   { id: "voice-studio", label: "Voice",       icon: "Mic",         group: "media",     desc: "Smart voice recording" },
+  { id: "bucket",       label: "Bucket",      icon: "Archive",     group: "workspace", desc: "Local saved files & messages" },
   { id: "ai",           label: "AI Agent",    icon: "Sparkles",    group: "system",    desc: "Autonomous assistant" },
 ] as const;
 
 export const DEFAULT_MODULES = [
-  "notes", "tasks", "calendar", "timer", "ai", "code-studio", "kanban", "whiteboard"
+  "notes", "tasks", "calendar", "timer", "bucket", "ai", "code-studio", "kanban", "whiteboard"
 ];
 
 export const DEFAULT_SETTINGS: AppSettings = {
   theme: "system",
   language: "en",
-  ai_provider: "ollama",
-  ai_model: "llama3",
+  security_pin: null,
+  ai_enabled: true,
+  ai_provider: "openrouter",
+  ai_model: "liquid/lfm-40b",
   api_key_openrouter: "",
   api_key_groq: "",
   api_key_openai: "",

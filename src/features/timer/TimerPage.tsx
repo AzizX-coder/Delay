@@ -37,6 +37,22 @@ export function TimerPage() {
   useEffect(() => { loadSessions(); }, []);
   useEffect(() => { localStorage.setItem("delay_timer_goals", JSON.stringify(goals)); }, [goals]);
 
+  // Keep screen awake while timer is running
+  useEffect(() => {
+    if (isRunning) {
+      let wakeLock: any = null;
+      const requestWakeLock = async () => {
+        try {
+          if ('wakeLock' in navigator) {
+            wakeLock = await (navigator as any).wakeLock.request('screen');
+          }
+        } catch {}
+      };
+      requestWakeLock();
+      return () => { wakeLock?.release().catch(() => {}); };
+    }
+  }, [isRunning]);
+
   const minutes = Math.floor(remaining / 60);
   const seconds = remaining % 60;
   const progress = duration > 0 ? (duration - remaining) / duration : 0;
@@ -139,7 +155,7 @@ export function TimerPage() {
                 style={{ filter: `drop-shadow(0 0 8px ${accentColor}40)` }} />
             </svg>
             <div className="relative flex flex-col items-center">
-              <span className="text-[72px] font-bold tracking-[-0.04em] text-text-primary leading-none tabular-nums"
+              <span className="text-[56px] md:text-[84px] font-bold tracking-[-0.04em] text-text-primary leading-none tabular-nums"
                 style={{ fontVariantNumeric: "tabular-nums" }}>
                 {String(minutes).padStart(2, "0")}:{String(seconds).padStart(2, "0")}
               </span>
