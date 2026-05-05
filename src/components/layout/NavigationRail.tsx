@@ -2,7 +2,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
 import {
   StickyNote, CheckSquare, Calendar, Sparkles, Timer, Code2,
-  HardDrive, Settings, Columns3, PenTool, Mic, Plus, X, Archive,
+  HardDrive, Settings, Columns3, PenTool, Mic, Plus, X, Archive, Bookmark, BarChart3,
 } from "lucide-react";
 import { useState } from "react";
 import { useSettingsStore } from "@/stores/settingsStore";
@@ -11,7 +11,7 @@ import { ALL_MODULES } from "@/types/settings";
 
 const ICON_MAP: Record<string, any> = {
   StickyNote, CheckSquare, Calendar, Timer, Sparkles, Code2,
-  HardDrive, Columns3, PenTool, Mic, Archive,
+  HardDrive, Columns3, PenTool, Mic, Archive, Bookmark, BarChart3,
 };
 
 export function NavigationRail() {
@@ -124,18 +124,19 @@ export function NavigationRail() {
       <AnimatePresence>
         {showManager && (
           <>
-            <div className="fixed inset-0 z-40" onClick={() => setShowManager(false)} />
+            <div className="fixed inset-0 z-40 bg-black/20 backdrop-blur-sm" onClick={() => setShowManager(false)} />
+            {/* Desktop: side popover */}
             <motion.div
-              initial={{ opacity: 0, x: -10, scale: 0.95 }}
-              animate={{ opacity: 1, x: 0, scale: 1 }}
-              exit={{ opacity: 0, x: -10, scale: 0.95 }}
-              className="absolute bottom-14 left-[72px] z-50 w-72 bg-bg-elevated/95 backdrop-blur-2xl
-                border border-border/50 rounded-2xl shadow-2xl p-3 overflow-hidden"
+              initial={{ opacity: 0, y: 10, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 10, scale: 0.95 }}
+              className="fixed z-50 bg-bg-elevated/95 backdrop-blur-2xl border border-border/50 rounded-2xl shadow-2xl p-3 overflow-hidden
+                bottom-[80px] left-2 right-2 md:bottom-14 md:left-[72px] md:right-auto md:w-72"
             >
               <p className="text-[10px] font-extrabold text-text-tertiary uppercase tracking-widest mb-3 px-2">
                 Manage Modules
               </p>
-              <div className="max-h-[400px] overflow-y-auto space-y-0.5">
+              <div className="max-h-[50vh] md:max-h-[400px] overflow-y-auto space-y-0.5">
                 {ALL_MODULES.map(m => {
                   const Icon = ICON_MAP[m.icon] || Sparkles;
                   const enabled = enabled_modules.includes(m.id);

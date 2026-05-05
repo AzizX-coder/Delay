@@ -1,241 +1,220 @@
 import { useState, useEffect, useRef } from "react";
-import { useBucketStore, BucketItem } from "@/stores/bucketStore";
+import { useBucketStore } from "@/stores/bucketStore";
 import { motion, AnimatePresence } from "motion/react";
 import {
-  Send, Paperclip, Pin, PinOff, Trash2, Link2, FileText,
-  Archive, Download, Search, X, ExternalLink, Image as ImageIcon,
+  FolderPlus, Upload, Trash2, FileText, Image as ImageIcon,
+  Archive, Download, Search, X, Folder, ChevronLeft, MoreVertical,
+  Edit3, Film, Music, File, Share2, Shield,
 } from "lucide-react";
 import { EmptyState } from "@/components/ui/EmptyState";
 
+const formatSize = (bytes: number) => {
+  if (bytes < 1024) return bytes + " B";
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
+  return (bytes / (1024 * 1024)).toFixed(1) + " MB";
+};
+
+const getFileIcon = (type: string) => {
+  if (type.startsWith("image/")) return <ImageIcon size={18} className="text-accent" />;
+  if (type.startsWith("video/")) return <Film size={18} className="text-warning" />;
+  if (type.startsWith("audio/")) return <Music size={18} className="text-success" />;
+  if (type.includes("pdf")) return <FileText size={18} className="text-danger" />;
+  return <File size={18} className="text-text-tertiary" />;
+};
+
 export function BucketPage() {
-  const { items, loading, loadItems, addItem, removeItem, togglePin } = useBucketStore();
-  const [input, setInput] = useState("");
+  const { files, folders, loading, loadVault, addFolder, renameFolder, removeFolder, addFile, removeFile, moveFile } = useBucketStore();
+  const [activeFolderId, setActiveFolderId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
-  const [showSearch, setShowSearch] = useState(false);
-  const endRef = useRef<HTMLDivElement>(null);
+  const [showNewFolder, setShowNewFolder] = useState(false);
+  const [newFolderName, setNewFolderName] = useState("");
+  const [editingFolderId, setEditingFolderId] = useState<string | null>(null);
+  const [editName, setEditName] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    loadItems();
-  }, []);
+  useEffect(() => { loadVault(); }, []);
 
-  useEffect(() => {
-    endRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [items.length]);
-
-  const handleSend = () => {
-    const text = input.trim();
-    if (!text) return;
-    // Detect links
-    const isLink = /^https?:\/\//i.test(text);
-    addItem({ type: isLink ? "link" : "text", content: text });
-    setInput("");
-  };
-
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      const base64 = reader.result as string;
-      addItem({
-        type: "file",
-        content: file.name,
-        fileName: file.name,
-        fileData: base64,
-        fileType: file.type,
-      });
-    };
-    reader.readAsDataURL(file);
+  const handleUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const fileList = e.target.files;
+    if (!fileList) return;
+    Array.from(fileList).forEach((file) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        addFile({
+          name: file.name,
+          folderId: activeFolderId,
+          fileData: reader.result as string,
+          fileType: file.type,
+          size: file.size,
+        });
+      };
+      reader.readAsDataURL(file);
+    });
     e.target.value = "";
   };
 
-  const downloadFile = (item: BucketItem) => {
-    if (!item.fileData) return;
+  const downloadFile = (file: { fileData: string; name: string }) => {
     const a = document.createElement("a");
-    a.href = item.fileData;
-    a.download = item.fileName || "file";
+    a.href = file.fileData;
+    a.download = file.name;
     a.click();
   };
 
-  const pinnedItems = items.filter((i) => i.pinned);
-  const regularItems = items.filter((i) => !i.pinned);
-  const filtered = (search
-    ? [...pinnedItems, ...regularItems].filter(
-        (i) =>
-          i.content.toLowerCase().includes(search.toLowerCase()) ||
-          (i.fileName || "").toLowerCase().includes(search.toLowerCase())
-      )
-    : [...pinnedItems, ...regularItems]
-  );
-
-  const formatDate = (ts: number) => {
-    const d = new Date(ts);
-    const now = new Date();
-    if (d.toDateString() === now.toDateString()) {
-      return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-    }
-    return d.toLocaleDateString([], { month: "short", day: "numeric" }) + " " + d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  const shareFile = async (file: { fileData: string; name: string; fileType: string }) => {
+    try {
+      if (navigator.share) {
+        const res = await fetch(file.fileData);
+        const blob = await res.blob();
+        const f = new window.File([blob], file.name, { type: file.fileType });
+        await navigator.share({ files: [f], title: file.name });
+      }
+    } catch {}
   };
 
-  const isImage = (item: BucketItem) => item.fileType?.startsWith("image/");
+  const handleCreateFolder = () => {
+    if (!newFolderName.trim()) return;
+    addFolder(newFolderName.trim());
+    setNewFolderName("");
+    setShowNewFolder(false);
+  };
+
+  const activeFolder = folders.find(f => f.id === activeFolderId);
+  const currentFiles = files.filter(f => f.folderId === activeFolderId);
+  const rootFiles = files.filter(f => f.folderId === null);
+  const displayFiles = activeFolderId ? currentFiles : rootFiles;
+  const filtered = search
+    ? displayFiles.filter(f => f.name.toLowerCase().includes(search.toLowerCase()))
+    : displayFiles;
 
   return (
     <div className="flex flex-col h-full bg-bg-primary">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 md:px-6 py-3 border-b border-border/30 bg-bg-secondary/30 backdrop-blur-md shrink-0">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-accent/10 flex items-center justify-center">
-            <Archive size={18} className="text-accent" />
-          </div>
-          <div>
-            <h1 className="text-[15px] font-bold text-text-primary">Bucket</h1>
-            <p className="text-[10px] text-text-tertiary">{items.length} saved items</p>
-          </div>
+      <div className="flex items-center gap-3 px-4 md:px-6 py-3 border-b border-border/30 bg-bg-secondary/30 backdrop-blur-md shrink-0">
+        {activeFolderId && (
+          <button onClick={() => setActiveFolderId(null)} className="p-1.5 rounded-lg bg-bg-hover text-text-secondary hover:text-text-primary cursor-pointer">
+            <ChevronLeft size={16} />
+          </button>
+        )}
+        <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ background: activeFolder ? activeFolder.color + "20" : "rgba(99,102,241,0.1)" }}>
+          {activeFolder ? <Folder size={18} style={{ color: activeFolder.color }} /> : <Archive size={18} className="text-accent" />}
         </div>
-        <div className="flex items-center gap-2">
-          {showSearch ? (
-            <div className="flex items-center gap-1 px-2 py-1.5 rounded-lg bg-bg-primary border border-border/30">
-              <Search size={13} className="text-text-tertiary" />
-              <input
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search..."
-                className="bg-transparent outline-none text-[12px] text-text-primary w-[120px] md:w-[200px]"
-                autoFocus
-              />
-              <button onClick={() => { setShowSearch(false); setSearch(""); }} className="text-text-tertiary cursor-pointer">
-                <X size={13} />
-              </button>
-            </div>
-          ) : (
-            <button onClick={() => setShowSearch(true)} className="p-2 rounded-lg hover:bg-bg-hover text-text-tertiary cursor-pointer">
-              <Search size={16} />
-            </button>
-          )}
+        <div className="flex-1 min-w-0">
+          <h1 className="text-[15px] font-bold text-text-primary truncate">{activeFolder ? activeFolder.name : "Vault"}</h1>
+          <p className="text-[10px] text-text-tertiary">
+            {activeFolder ? `${currentFiles.length} files` : `${folders.length} folders · ${rootFiles.length} files`}
+          </p>
+        </div>
+        <div className="flex items-center gap-1.5 shrink-0">
+          <div className="hidden md:flex items-center gap-1 px-2 py-1.5 rounded-lg bg-bg-primary border border-border/30">
+            <Search size={13} className="text-text-tertiary" />
+            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search..." className="bg-transparent outline-none text-[12px] text-text-primary w-[120px]" />
+          </div>
+          <button onClick={() => fileInputRef.current?.click()} className="p-2 rounded-lg bg-accent text-white cursor-pointer hover:bg-accent/90" title="Upload Files">
+            <Upload size={16} />
+          </button>
         </div>
       </div>
 
-      {/* Messages area */}
-      <div className="flex-1 overflow-y-auto px-3 md:px-6 py-4 space-y-2">
+      <input type="file" ref={fileInputRef} onChange={handleUpload} multiple className="hidden" />
+
+      {/* Content */}
+      <div className="flex-1 overflow-y-auto p-4 md:p-6">
         {loading ? (
           <div className="flex items-center justify-center h-full text-text-tertiary text-[12px]">Loading...</div>
-        ) : filtered.length === 0 ? (
-          <EmptyState
-            icon={<Archive size={40} />}
-            title="Your Bucket is empty"
-            description="Save text, links, and files here. They stay on your device, safe and private."
-          />
         ) : (
-          <AnimatePresence initial={false}>
-            {filtered.map((item) => (
-              <motion.div
-                key={item.id}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, x: -50 }}
-                className={`group max-w-[85%] md:max-w-[60%] ml-auto rounded-2xl rounded-br-md p-3 border transition-all relative
-                  ${item.pinned
-                    ? "bg-accent/5 border-accent/20"
-                    : "bg-bg-secondary/60 border-border/20 hover:border-border/40"
-                  }`}
-              >
-                {item.pinned && (
-                  <div className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-accent flex items-center justify-center">
-                    <Pin size={10} className="text-white" />
-                  </div>
-                )}
-
-                {/* Content */}
-                {item.type === "text" && (
-                  <p className="text-[13px] text-text-primary whitespace-pre-wrap break-words leading-relaxed">{item.content}</p>
-                )}
-                {item.type === "link" && (
-                  <a
-                    href={item.content}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2 text-accent text-[13px] font-medium hover:underline break-all"
-                  >
-                    <Link2 size={14} className="shrink-0" />
-                    {item.content}
-                    <ExternalLink size={11} className="shrink-0 opacity-60" />
-                  </a>
-                )}
-                {item.type === "file" && (
-                  <div>
-                    {isImage(item) && item.fileData ? (
-                      <img src={item.fileData} alt={item.fileName} className="rounded-lg max-h-[200px] w-auto mb-2 border border-border/10" />
-                    ) : (
-                      <div className="flex items-center gap-2 mb-1">
-                        <div className="w-8 h-8 rounded-lg bg-bg-hover flex items-center justify-center">
-                          <FileText size={14} className="text-text-tertiary" />
-                        </div>
-                        <span className="text-[12px] font-bold text-text-primary truncate">{item.fileName}</span>
-                      </div>
-                    )}
-                    <button
-                      onClick={() => downloadFile(item)}
-                      className="flex items-center gap-1.5 text-[10px] font-bold text-accent cursor-pointer hover:underline"
-                    >
-                      <Download size={11} /> Download
-                    </button>
-                  </div>
-                )}
-
-                {/* Meta row */}
-                <div className="flex items-center justify-between mt-2 gap-2">
-                  <span className="text-[9px] text-text-tertiary">{formatDate(item.created_at)}</span>
-                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button
-                      onClick={() => togglePin(item.id)}
-                      className="p-1 rounded text-text-tertiary hover:text-accent cursor-pointer"
-                      title={item.pinned ? "Unpin" : "Pin"}
-                    >
-                      {item.pinned ? <PinOff size={11} /> : <Pin size={11} />}
-                    </button>
-                    <button
-                      onClick={() => removeItem(item.id)}
-                      className="p-1 rounded text-text-tertiary hover:text-danger cursor-pointer"
-                      title="Delete"
-                    >
-                      <Trash2 size={11} />
-                    </button>
-                  </div>
+          <>
+            {/* Folders grid (only in root view) */}
+            {!activeFolderId && (
+              <div className="mb-6">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-[11px] font-extrabold text-text-tertiary uppercase tracking-widest">Folders</h3>
+                  <button onClick={() => setShowNewFolder(true)} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-bold text-accent bg-accent/10 cursor-pointer hover:bg-accent/15">
+                    <FolderPlus size={13} /> New
+                  </button>
                 </div>
-              </motion.div>
-            ))}
-          </AnimatePresence>
-        )}
-        <div ref={endRef} />
-      </div>
 
-      {/* Input bar */}
-      <div className="shrink-0 border-t border-border/30 bg-bg-secondary/30 backdrop-blur-md px-3 md:px-6 py-3">
-        <div className="flex items-center gap-2">
-          <input type="file" ref={fileInputRef} onChange={handleFileUpload} className="hidden" />
-          <button
-            onClick={() => fileInputRef.current?.click()}
-            className="p-2.5 rounded-xl hover:bg-bg-hover text-text-tertiary hover:text-accent transition-colors cursor-pointer shrink-0"
-            title="Attach file"
-          >
-            <Paperclip size={18} />
-          </button>
-          <input
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSend()}
-            placeholder="Save a message, link, or note..."
-            className="flex-1 px-4 py-2.5 rounded-xl bg-bg-primary border border-border/30 text-[13px] text-text-primary outline-none placeholder:text-text-tertiary focus:border-accent/40 transition-colors"
-          />
-          <button
-            onClick={handleSend}
-            disabled={!input.trim()}
-            className="p-2.5 rounded-xl bg-accent text-white hover:bg-accent/90 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
-          >
-            <Send size={18} />
-          </button>
-        </div>
+                <AnimatePresence>
+                  {showNewFolder && (
+                    <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="mb-3 overflow-hidden">
+                      <div className="flex items-center gap-2">
+                        <input value={newFolderName} onChange={e => setNewFolderName(e.target.value)} onKeyDown={e => e.key === "Enter" && handleCreateFolder()} placeholder="Folder name..." autoFocus
+                          className="flex-1 px-3 py-2 rounded-lg bg-bg-secondary border border-border/30 text-[13px] text-text-primary outline-none focus:border-accent" />
+                        <button onClick={handleCreateFolder} className="px-3 py-2 rounded-lg bg-accent text-white text-[12px] font-bold cursor-pointer">Create</button>
+                        <button onClick={() => setShowNewFolder(false)} className="p-2 text-text-tertiary cursor-pointer"><X size={14} /></button>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                  {folders.map(folder => (
+                    <motion.div key={folder.id} whileHover={{ y: -2 }} onClick={() => setActiveFolderId(folder.id)}
+                      className="group flex items-center gap-3 p-3 rounded-xl border border-border/20 bg-bg-secondary/40 hover:border-border/40 cursor-pointer transition-all">
+                      <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: folder.color + "15" }}>
+                        <Folder size={20} style={{ color: folder.color }} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        {editingFolderId === folder.id ? (
+                          <input value={editName} onChange={e => setEditName(e.target.value)} autoFocus
+                            onBlur={() => { renameFolder(folder.id, editName); setEditingFolderId(null); }}
+                            onKeyDown={e => { if (e.key === "Enter") { renameFolder(folder.id, editName); setEditingFolderId(null); } }}
+                            onClick={e => e.stopPropagation()}
+                            className="bg-transparent outline-none text-[13px] font-bold text-text-primary w-full border-b border-accent" />
+                        ) : (
+                          <p className="text-[13px] font-bold text-text-primary truncate">{folder.name}</p>
+                        )}
+                        <p className="text-[10px] text-text-tertiary">{files.filter(f => f.folderId === folder.id).length} files</p>
+                      </div>
+                      <div className="opacity-0 group-hover:opacity-100 flex items-center gap-0.5">
+                        <button onClick={e => { e.stopPropagation(); setEditingFolderId(folder.id); setEditName(folder.name); }} className="p-1 text-text-tertiary hover:text-accent cursor-pointer"><Edit3 size={12} /></button>
+                        <button onClick={e => { e.stopPropagation(); removeFolder(folder.id); }} className="p-1 text-text-tertiary hover:text-danger cursor-pointer"><Trash2 size={12} /></button>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Files list */}
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-[11px] font-extrabold text-text-tertiary uppercase tracking-widest flex items-center gap-2">
+                  <Shield size={11} /> Files {activeFolderId && <span className="text-accent font-mono">({filtered.length})</span>}
+                </h3>
+              </div>
+              {filtered.length === 0 ? (
+                <EmptyState icon={<Archive size={36} />} title={activeFolderId ? "Empty folder" : "No files"} description="Upload files to keep them safe in your Vault." />
+              ) : (
+                <div className="space-y-1.5">
+                  {filtered.map(file => (
+                    <motion.div key={file.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+                      className="group flex items-center gap-3 p-3 rounded-xl border border-border/20 bg-bg-secondary/30 hover:border-border/40 transition-all">
+                      {/* Thumbnail or icon */}
+                      <div className="w-10 h-10 rounded-lg bg-bg-hover flex items-center justify-center shrink-0 overflow-hidden">
+                        {file.fileType.startsWith("image/") ? (
+                          <img src={file.fileData} alt="" className="w-full h-full object-cover" />
+                        ) : (
+                          getFileIcon(file.fileType)
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[13px] font-bold text-text-primary truncate">{file.name}</p>
+                        <p className="text-[10px] text-text-tertiary">{formatSize(file.size)} · {new Date(file.created_at).toLocaleDateString()}</p>
+                      </div>
+                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 shrink-0">
+                        {'share' in navigator && (
+                          <button onClick={() => shareFile(file)} className="p-1.5 rounded-lg text-text-tertiary hover:text-accent cursor-pointer" title="Share"><Share2 size={13} /></button>
+                        )}
+                        <button onClick={() => downloadFile(file)} className="p-1.5 rounded-lg text-text-tertiary hover:text-accent cursor-pointer" title="Download"><Download size={13} /></button>
+                        <button onClick={() => removeFile(file.id)} className="p-1.5 rounded-lg text-text-tertiary hover:text-danger cursor-pointer" title="Delete"><Trash2 size={13} /></button>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

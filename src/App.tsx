@@ -21,6 +21,8 @@ import { KanbanPage } from "@/features/kanban/KanbanPage";
 import { WhiteboardPage } from "@/features/whiteboard/WhiteboardPage";
 import { VoiceStudioPage } from "@/features/voice-studio/VoiceStudioPage";
 import { BucketPage } from "@/features/bucket/BucketPage";
+import { SavedPage } from "@/features/saved/SavedPage";
+import { StatusPage } from "@/features/status/StatusPage";
 import { AppLock } from "@/components/ui/AppLock";
 import { Logo } from "@/components/ui/Logo";
 import { motion } from "motion/react";
@@ -81,6 +83,8 @@ export default function App() {
           <Route path="whiteboard" element={<WhiteboardPage />} />
           <Route path="voice-studio" element={<VoiceStudioPage />} />
           <Route path="bucket" element={<BucketPage />} />
+          <Route path="saved" element={<SavedPage />} />
+          <Route path="status" element={<StatusPage />} />
           <Route path="settings" element={<SettingsPage />} />
         </Route>
       </Routes>

@@ -17,21 +17,23 @@ export interface AppSettings {
 }
 
 export const ALL_MODULES = [
-  { id: "notes",        label: "Notes",       icon: "StickyNote",  group: "core",      desc: "Rich documents & export" },
-  { id: "tasks",        label: "Tasks",       icon: "CheckSquare", group: "core",      desc: "Todo lists & projects" },
-  { id: "calendar",     label: "Calendar",    icon: "Calendar",    group: "core",      desc: "Events & schedule" },
-  { id: "timer",        label: "Timer",       icon: "Timer",       group: "core",      desc: "Pomodoro focus sessions" },
-  { id: "kanban",       label: "Kanban",      icon: "Columns3",    group: "workspace", desc: "Drag & drop boards" },
-  { id: "whiteboard",   label: "Whiteboard",  icon: "PenTool",     group: "workspace", desc: "Miro-like infinite canvas" },
-  { id: "code-studio",  label: "Code",        icon: "Code2",       group: "workspace", desc: "VS Code-like IDE" },
-  { id: "disk-flows",   label: "Disk",        icon: "HardDrive",   group: "media",     desc: "Video downloader" },
-  { id: "voice-studio", label: "Voice",       icon: "Mic",         group: "media",     desc: "Smart voice recording" },
-  { id: "bucket",       label: "Bucket",      icon: "Archive",     group: "workspace", desc: "Local saved files & messages" },
-  { id: "ai",           label: "AI Agent",    icon: "Sparkles",    group: "system",    desc: "Autonomous assistant" },
+  { id: "notes",        label: "Docs",        icon: "StickyNote",  group: "core",      desc: "Rich documents & knowledge base" },
+  { id: "tasks",        label: "Planner",     icon: "CheckSquare", group: "core",      desc: "Projects & task management" },
+  { id: "calendar",     label: "Schedule",    icon: "Calendar",    group: "core",      desc: "Events, deadlines & agenda" },
+  { id: "timer",        label: "Focus",       icon: "Timer",       group: "core",      desc: "Pomodoro & deep work sessions" },
+  { id: "saved",        label: "Saved",       icon: "Bookmark",    group: "core",      desc: "Saved messages & link previews" },
+  { id: "kanban",       label: "Boards",      icon: "Columns3",    group: "workspace", desc: "Kanban project boards" },
+  { id: "whiteboard",   label: "Canvas",      icon: "PenTool",     group: "workspace", desc: "Infinite design canvas" },
+  { id: "code-studio",  label: "Studio",      icon: "Code2",       group: "workspace", desc: "Code editor & terminal" },
+  { id: "bucket",       label: "Vault",       icon: "Archive",     group: "workspace", desc: "Secure file storage & folders" },
+  { id: "disk-flows",   label: "Media",       icon: "HardDrive",   group: "media",     desc: "Media downloads & library" },
+  { id: "voice-studio", label: "Voice",       icon: "Mic",         group: "media",     desc: "Audio recording & processing" },
+  { id: "status",       label: "Status",      icon: "BarChart3",   group: "system",    desc: "Activity graphs & analytics" },
+  { id: "ai",           label: "Copilot",     icon: "Sparkles",    group: "system",    desc: "AI-powered assistant" },
 ] as const;
 
 export const DEFAULT_MODULES = [
-  "notes", "tasks", "calendar", "timer", "bucket", "ai", "code-studio", "kanban", "whiteboard"
+  "notes", "tasks", "calendar", "timer", "saved", "bucket", "status", "ai", "code-studio", "kanban", "whiteboard"
 ];
 
 export const DEFAULT_SETTINGS: AppSettings = {
