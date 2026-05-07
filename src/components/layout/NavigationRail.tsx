@@ -20,54 +20,41 @@ function LiveClock() {
     const id = setInterval(() => setTime(new Date()), 1000);
     return () => clearInterval(id);
   }, []);
+
   const h = time.getHours();
   const m = time.getMinutes();
   const s = time.getSeconds();
-  const hStr = String(h).padStart(2, "0");
-  const mStr = String(m).padStart(2, "0");
-  const sStr = String(s).padStart(2, "0");
-  const dateStr = time.toLocaleDateString([], { weekday: "short", month: "short", day: "numeric" });
-
-  // Analog clock angles
-  const sAngle = s * 6;
-  const mAngle = m * 6 + s * 0.1;
   const hAngle = (h % 12) * 30 + m * 0.5;
+  const mAngle = m * 6;
+  const sAngle = s * 6;
 
   return (
-    <div className="flex flex-col items-center gap-1 py-2 px-1">
-      {/* Analog clock face */}
-      <div className="relative w-[44px] h-[44px]">
-        <svg viewBox="0 0 100 100" className="w-full h-full">
-          <circle cx="50" cy="50" r="46" fill="none" stroke="currentColor" strokeWidth="2" className="text-border/30" />
-          {/* Hour markers */}
-          {[...Array(12)].map((_, i) => {
-            const angle = (i * 30 - 90) * Math.PI / 180;
-            const x1 = 50 + 38 * Math.cos(angle);
-            const y1 = 50 + 38 * Math.sin(angle);
-            const x2 = 50 + 43 * Math.cos(angle);
-            const y2 = 50 + 43 * Math.sin(angle);
-            return <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} stroke="currentColor" strokeWidth={i % 3 === 0 ? "3" : "1.5"} className="text-text-tertiary" strokeLinecap="round" />;
-          })}
-          {/* Hour hand */}
-          <line x1="50" y1="50"
-            x2={50 + 24 * Math.cos((hAngle - 90) * Math.PI / 180)}
-            y2={50 + 24 * Math.sin((hAngle - 90) * Math.PI / 180)}
-            stroke="currentColor" strokeWidth="4" strokeLinecap="round" className="text-text-primary" />
-          {/* Minute hand */}
-          <line x1="50" y1="50"
-            x2={50 + 32 * Math.cos((mAngle - 90) * Math.PI / 180)}
-            y2={50 + 32 * Math.sin((mAngle - 90) * Math.PI / 180)}
-            stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" className="text-text-secondary" />
-          {/* Second hand */}
-          <line x1="50" y1="50"
-            x2={50 + 36 * Math.cos((sAngle - 90) * Math.PI / 180)}
-            y2={50 + 36 * Math.sin((sAngle - 90) * Math.PI / 180)}
-            stroke="currentColor" strokeWidth="1" strokeLinecap="round" className="text-accent" />
-          <circle cx="50" cy="50" r="3" fill="currentColor" className="text-accent" />
+    <div className="flex flex-col items-center gap-1 py-2">
+      {/* Analog face */}
+      <div className="relative w-[42px] h-[42px]">
+        <svg viewBox="0 0 42 42" className="w-full h-full">
+          <circle cx="21" cy="21" r="19" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-border/40" />
+          {[0,30,60,90,120,150,180,210,240,270,300,330].map(a => (
+            <line key={a} x1="21" y1="4" x2="21" y2={a % 90 === 0 ? "7" : "5.5"}
+              stroke="currentColor" strokeWidth={a % 90 === 0 ? "1.5" : "0.8"}
+              className="text-text-tertiary" transform={`rotate(${a} 21 21)`} />
+          ))}
+          {/* Hour */}
+          <line x1="21" y1="21" x2="21" y2="10" stroke="currentColor" strokeWidth="2" strokeLinecap="round"
+            className="text-text-primary" transform={`rotate(${hAngle} 21 21)`} />
+          {/* Minute */}
+          <line x1="21" y1="21" x2="21" y2="7" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"
+            className="text-accent" transform={`rotate(${mAngle} 21 21)`} />
+          {/* Second */}
+          <line x1="21" y1="21" x2="21" y2="6" stroke="currentColor" strokeWidth="0.6" strokeLinecap="round"
+            className="text-danger" transform={`rotate(${sAngle} 21 21)`} />
+          <circle cx="21" cy="21" r="1.5" className="fill-accent" />
         </svg>
       </div>
-      <span className="text-[10px] font-bold tabular-nums text-text-secondary">{hStr}:{mStr}<span className="text-text-tertiary">:{sStr}</span></span>
-      <span className="text-[7px] text-text-tertiary font-medium hidden md:block">{dateStr}</span>
+      {/* Digital */}
+      <span className="text-[9px] font-bold font-mono tabular-nums text-text-tertiary">
+        {String(h).padStart(2,"0")}:{String(m).padStart(2,"0")}
+      </span>
     </div>
   );
 }
@@ -92,154 +79,108 @@ export function NavigationRail() {
   const isTelegram = nav_style === "telegram";
   const isCompact = nav_style === "compact";
 
+  // Item size classes based on style
+  const itemClass = isTelegram
+    ? "w-full flex items-center gap-3 px-4 py-2.5 rounded-2xl transition-all duration-200 cursor-pointer"
+    : isCompact
+    ? "flex flex-col items-center justify-center w-[40px] h-[40px] shrink-0 rounded-lg transition-all duration-200 cursor-pointer"
+    : "group relative flex flex-col items-center justify-center w-[48px] h-[44px] shrink-0 rounded-xl transition-all duration-200 cursor-pointer";
+
+  const renderItem = (item: typeof visibleItems[number]) => {
+    const path = `/${item.id}`;
+    const isActive = location.pathname.startsWith(path);
+    const Icon = ICON_MAP[item.icon] || Sparkles;
+    const isHovered = hoveredPath === path;
+
+    if (isTelegram) {
+      return (
+        <button key={item.id} onClick={() => navigate(path)}
+          className={`${itemClass} ${isActive ? "bg-accent/10 text-accent" : "text-text-secondary hover:bg-bg-hover"}`}>
+          <Icon size={18} strokeWidth={isActive ? 2.2 : 1.7} />
+          <span className="text-[13px] font-semibold flex-1">{item.label}</span>
+          {item.id === "timer" && timerRunning && (
+            <span className="text-[10px] font-mono font-bold tabular-nums animate-pulse text-accent">{timerDisplay}</span>
+          )}
+        </button>
+      );
+    }
+
+    return (
+      <button key={item.id} onClick={() => navigate(path)}
+        onMouseEnter={() => setHoveredPath(path)} onMouseLeave={() => setHoveredPath(null)}
+        className={itemClass} title={item.label}>
+        {isActive && !isCompact && (
+          <motion.div layoutId="nav-pill" className="absolute inset-0 rounded-xl bg-accent/12"
+            transition={{ type: "spring", stiffness: 400, damping: 30 }} />
+        )}
+        {item.id === "timer" && timerRunning ? (
+          <span className={`relative z-10 text-[10px] font-bold font-mono tabular-nums animate-pulse ${isActive ? "text-accent" : "text-text-secondary"}`}>{timerDisplay}</span>
+        ) : (
+          <>
+            <Icon size={isCompact ? 17 : 19} strokeWidth={isActive ? 2.2 : 1.7}
+              className={`relative z-10 transition-all duration-200 ${isActive ? "text-accent" : "text-text-tertiary group-hover:text-text-primary"}`} />
+            {!isCompact && (
+              <span className={`relative z-10 text-[8px] mt-0.5 font-medium transition-all duration-200 ${isActive ? "text-accent" : "text-text-tertiary group-hover:text-text-secondary"}`}>
+                {item.label}
+              </span>
+            )}
+          </>
+        )}
+        {isCompact && isActive && <div className="absolute bottom-0 w-4 h-[2px] rounded-full bg-accent" />}
+        {!isTelegram && <AnimatedTooltip visible={isHovered && !isActive} label={item.id === "timer" && timerRunning ? timerDisplay : item.label} />}
+      </button>
+    );
+  };
+
+  const navWidth = isTelegram ? "md:w-[200px]" : isCompact ? "md:w-[52px]" : "md:w-[64px]";
+
   return (
-    <nav
-      className={`flex md:flex-col flex-row items-center shrink-0 md:py-2 py-1 px-1 md:px-0 gap-0.5
-        bg-bg-sidebar md:border-r border-t md:border-t-0 border-border-light glass relative z-50 overflow-x-auto no-scrollbar
-        ${isTelegram ? "md:w-[220px] w-full md:h-full h-[56px]" : isCompact ? "md:w-[52px] w-full md:h-full h-[52px]" : "md:w-[64px] w-full md:h-full h-[56px]"}`}
-    >
-      {/* Clock widget - desktop sidebar only */}
-      {show_clock && !isTelegram && (
-        <div className="hidden md:block w-full border-b border-border/20 mb-1">
+    <nav className={`flex md:flex-col flex-row items-center ${navWidth} w-full md:h-full h-[56px] shrink-0 md:py-2 py-1 ${isTelegram ? "md:px-2 px-2" : "px-1 md:px-0"} gap-0.5
+      bg-bg-sidebar md:border-r border-t md:border-t-0 border-border-light glass relative z-50 overflow-x-auto md:overflow-x-visible md:overflow-y-auto no-scrollbar`}>
+
+      {/* Clock widget (desktop sidebar only) */}
+      {show_clock && (
+        <div className="hidden md:flex w-full justify-center border-b border-border/20 mb-1">
           <LiveClock />
         </div>
       )}
 
-      {visibleItems.map((item) => {
-        const path = `/${item.id}`;
-        const isActive = location.pathname.startsWith(path);
-        const Icon = ICON_MAP[item.icon] || Sparkles;
-        const isHovered = hoveredPath === path;
-
-        if (isTelegram) {
-          // Telegram-style: horizontal list item with label
-          return (
-            <button
-              key={item.id}
-              onClick={() => navigate(path)}
-              className={`hidden md:flex w-full items-center gap-3 px-3 py-2 rounded-xl transition-all cursor-pointer text-left
-                ${isActive ? "bg-accent/12 text-accent" : "text-text-tertiary hover:bg-bg-hover hover:text-text-primary"}`}
-            >
-              <Icon size={17} strokeWidth={isActive ? 2.2 : 1.6} />
-              <span className={`text-[13px] font-semibold truncate ${isActive ? "text-accent" : ""}`}>{item.label}</span>
-            </button>
-          );
-        }
-
-        // Mobile: always show compact bottom bar
-        // Desktop: rail or compact style
-        return (
-          <button
-            key={item.id}
-            onClick={() => navigate(path)}
-            onMouseEnter={() => setHoveredPath(path)}
-            onMouseLeave={() => setHoveredPath(null)}
-            className={`group relative flex flex-col items-center justify-center shrink-0 rounded-xl transition-all duration-200 cursor-pointer
-              ${isCompact ? "w-[40px] h-[38px]" : "w-[48px] h-[44px]"}`}
-            title={item.label}
-          >
-            {isActive && (
-              <motion.div
-                layoutId="nav-pill"
-                className="absolute inset-0 rounded-xl bg-accent/12"
-                transition={{ type: "spring", stiffness: 400, damping: 30 }}
-              />
-            )}
-            {item.id === "timer" && timerRunning ? (
-              <span className={`relative z-10 text-[10px] font-bold font-mono tabular-nums animate-pulse ${
-                isActive ? "text-accent" : "text-text-secondary"
-              }`}>{timerDisplay}</span>
-            ) : (
-              <>
-                <Icon
-                  size={isCompact ? 17 : 19}
-                  strokeWidth={isActive ? 2.2 : 1.7}
-                  className={`relative z-10 transition-all duration-200 ${
-                    isActive ? "text-accent" : "text-text-tertiary group-hover:text-text-primary"
-                  }`}
-                />
-                {!isCompact && (
-                  <span className={`relative z-10 text-[8px] mt-0.5 font-medium transition-all duration-200 ${
-                    isActive ? "text-accent" : "text-text-tertiary group-hover:text-text-secondary"
-                  }`}>
-                    {item.label}
-                  </span>
-                )}
-              </>
-            )}
-            {!isTelegram && <AnimatedTooltip visible={isHovered && !isActive} label={item.id === "timer" && timerRunning ? timerDisplay : item.label} />}
-          </button>
-        );
-      })}
-
-      {/* Telegram style: mobile bottom tab items */}
-      {isTelegram && visibleItems.map((item) => {
-        const path = `/${item.id}`;
-        const isActive = location.pathname.startsWith(path);
-        const Icon = ICON_MAP[item.icon] || Sparkles;
-        return (
-          <button key={item.id} onClick={() => navigate(path)}
-            className={`md:hidden flex flex-col items-center justify-center w-[48px] h-[44px] shrink-0 rounded-xl cursor-pointer
-              ${isActive ? "text-accent" : "text-text-tertiary"}`}>
-            <Icon size={18} strokeWidth={isActive ? 2.2 : 1.6} />
-            <span className="text-[7px] mt-0.5 font-medium">{item.label}</span>
-          </button>
-        );
-      })}
+      {/* Module items */}
+      {visibleItems.map(renderItem)}
 
       {/* Settings */}
-      {isTelegram ? (
-        <>
-          <button onClick={() => navigate("/settings")}
-            className={`hidden md:flex w-full items-center gap-3 px-3 py-2 rounded-xl transition-all cursor-pointer mt-auto text-left
-              ${location.pathname === "/settings" ? "bg-accent/12 text-accent" : "text-text-tertiary hover:bg-bg-hover hover:text-text-primary"}`}>
-            <Settings size={17} strokeWidth={location.pathname === "/settings" ? 2.2 : 1.6} />
-            <span className="text-[13px] font-semibold">Settings</span>
-          </button>
-          <button onClick={() => navigate("/settings")}
-            className={`md:hidden flex flex-col items-center justify-center w-[48px] h-[44px] shrink-0 rounded-xl cursor-pointer ml-auto
-              ${location.pathname === "/settings" ? "text-accent" : "text-text-tertiary"}`}>
-            <Settings size={18} strokeWidth={location.pathname === "/settings" ? 2.2 : 1.6} />
-            <span className="text-[7px] mt-0.5 font-medium">Settings</span>
-          </button>
-        </>
-      ) : (
-        <button
-          onClick={() => navigate("/settings")}
-          onMouseEnter={() => setHoveredPath("/settings")}
-          onMouseLeave={() => setHoveredPath(null)}
-          className={`group relative flex flex-col items-center justify-center shrink-0 rounded-xl transition-all duration-200 cursor-pointer md:mt-auto ml-auto md:ml-0
-            ${isCompact ? "w-[40px] h-[38px]" : "w-[48px] h-[44px]"}`}
-          title="Settings"
-        >
-          {location.pathname === "/settings" && (
-            <motion.div layoutId="nav-pill" className="absolute inset-0 rounded-xl bg-accent/12"
-              transition={{ type: "spring", stiffness: 400, damping: 30 }} />
-          )}
-          <Settings size={isCompact ? 17 : 19} strokeWidth={location.pathname === "/settings" ? 2.2 : 1.7}
-            className={`relative z-10 transition-all ${location.pathname === "/settings" ? "text-accent" : "text-text-tertiary group-hover:text-text-primary"}`} />
-          {!isCompact && (
-            <span className={`relative z-10 text-[8px] mt-0.5 font-medium ${location.pathname === "/settings" ? "text-accent" : "text-text-tertiary"}`}>
-              Settings
-            </span>
-          )}
-        </button>
-      )}
-
-      {/* Add/Remove modules button */}
-      <button
-        onClick={(e) => { e.stopPropagation(); setShowManager(!showManager); }}
-        className={`shrink-0 md:mb-2 ml-1 md:ml-0 flex items-center justify-center rounded-xl
-          bg-bg-hover/50 text-text-tertiary hover:text-accent hover:bg-accent/10
-          transition-all cursor-pointer border border-border/20
-          ${isTelegram ? "w-full md:py-2 md:w-auto md:mx-2 w-[36px] h-[36px]" : "w-[36px] h-[36px]"}`}
-        title="Customize Modules"
-      >
-        {showManager ? <X size={14} /> : <Plus size={14} />}
-        {isTelegram && <span className="hidden md:inline text-[11px] font-bold ml-2">Modules</span>}
+      <button onClick={() => navigate("/settings")}
+        onMouseEnter={() => setHoveredPath("/settings")} onMouseLeave={() => setHoveredPath(null)}
+        className={`${isTelegram
+          ? "w-full flex items-center gap-3 px-4 py-2.5 rounded-2xl transition-all duration-200 cursor-pointer md:mt-auto ml-auto md:ml-0"
+          : `group relative flex flex-col items-center justify-center ${isCompact ? "w-[40px] h-[40px] rounded-lg" : "w-[48px] h-[44px] rounded-xl"} shrink-0 transition-all duration-200 cursor-pointer md:mt-auto ml-auto md:ml-0`}`}
+        title="Settings">
+        {location.pathname === "/settings" && !isTelegram && !isCompact && (
+          <motion.div layoutId="nav-pill" className="absolute inset-0 rounded-xl bg-accent/12"
+            transition={{ type: "spring", stiffness: 400, damping: 30 }} />
+        )}
+        <Settings size={isTelegram ? 18 : isCompact ? 17 : 19} strokeWidth={location.pathname === "/settings" ? 2.2 : 1.7}
+          className={`relative z-10 transition-all ${location.pathname === "/settings"
+            ? "text-accent"
+            : isTelegram ? "text-text-secondary" : "text-text-tertiary group-hover:text-text-primary"}`} />
+        {isTelegram ? (
+          <span className={`text-[13px] font-semibold flex-1 ${location.pathname === "/settings" ? "text-accent" : "text-text-secondary"}`}>Settings</span>
+        ) : !isCompact ? (
+          <span className={`relative z-10 text-[8px] mt-0.5 font-medium ${location.pathname === "/settings" ? "text-accent" : "text-text-tertiary"}`}>Settings</span>
+        ) : null}
       </button>
 
-      {/* Module Manager Popover */}
+      {/* + Module Manager */}
+      <button onClick={() => setShowManager(!showManager)}
+        className={`${isTelegram
+          ? "w-full flex items-center justify-center gap-2 px-4 py-2 rounded-2xl bg-bg-hover/50 text-text-tertiary hover:text-accent hover:bg-accent/10 border border-border/20 md:mb-2"
+          : `w-[36px] h-[36px] shrink-0 md:mb-2 ml-1 md:ml-0 flex items-center justify-center rounded-xl bg-bg-hover/50 text-text-tertiary hover:text-accent hover:bg-accent/10 border border-border/20`} transition-all cursor-pointer`}
+        title="Customize Modules">
+        {showManager ? <X size={14} /> : <Plus size={14} />}
+        {isTelegram && <span className="text-[11px] font-bold">{showManager ? "Close" : "Modules"}</span>}
+      </button>
+
+      {/* Module Manager */}
       <AnimatePresence>
         {showManager && (
           <>
@@ -249,32 +190,23 @@ export function NavigationRail() {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 10, scale: 0.95 }}
               className="fixed z-50 bg-bg-elevated/95 backdrop-blur-2xl border border-border/50 rounded-2xl shadow-2xl p-3 overflow-hidden
-                bottom-[72px] left-2 right-2 md:bottom-14 md:left-[72px] md:right-auto md:w-72"
-            >
-              <p className="text-[10px] font-extrabold text-text-tertiary uppercase tracking-widest mb-3 px-2">
-                Manage Modules
-              </p>
+                bottom-[72px] left-2 right-2 md:bottom-14 md:left-[72px] md:right-auto md:w-72">
+              <p className="text-[10px] font-extrabold text-text-tertiary uppercase tracking-widest mb-3 px-2">Manage Modules</p>
               <div className="max-h-[50vh] md:max-h-[400px] overflow-y-auto space-y-0.5">
                 {ALL_MODULES.map(m => {
                   const Icon = ICON_MAP[m.icon] || Sparkles;
                   const enabled = enabled_modules.includes(m.id);
                   return (
-                    <button
-                      key={m.id}
-                      onClick={() => toggleModule(m.id)}
+                    <button key={m.id} onClick={() => toggleModule(m.id)}
                       className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all cursor-pointer
-                        ${enabled ? "bg-accent/8 text-text-primary" : "text-text-tertiary hover:bg-bg-hover"}`}
-                    >
+                        ${enabled ? "bg-accent/8 text-text-primary" : "text-text-tertiary hover:bg-bg-hover"}`}>
                       <Icon size={15} className={enabled ? "text-accent" : ""} />
                       <div className="flex-1 text-left">
                         <p className="text-[12px] font-bold">{m.label}</p>
                         <p className="text-[10px] opacity-60">{m.desc}</p>
                       </div>
                       <div className={`w-8 h-5 rounded-full transition-all relative ${enabled ? "bg-accent" : "bg-border/40"}`}>
-                        <motion.div
-                          animate={{ x: enabled ? 14 : 2 }}
-                          className="absolute top-0.5 w-4 h-4 rounded-full bg-white shadow-sm"
-                        />
+                        <motion.div animate={{ x: enabled ? 14 : 2 }} className="absolute top-0.5 w-4 h-4 rounded-full bg-white shadow-sm" />
                       </div>
                     </button>
                   );
@@ -284,28 +216,7 @@ export function NavigationRail() {
           </>
         )}
       </AnimatePresence>
-
-      {/* Mobile pull-up clock */}
-      {show_clock && (
-        <div className="md:hidden flex items-center gap-1 px-2 shrink-0">
-          <Clock size={12} className="text-text-tertiary" />
-          <MobileClock />
-        </div>
-      )}
     </nav>
-  );
-}
-
-function MobileClock() {
-  const [time, setTime] = useState(new Date());
-  useEffect(() => {
-    const id = setInterval(() => setTime(new Date()), 1000);
-    return () => clearInterval(id);
-  }, []);
-  return (
-    <span className="text-[10px] font-bold tabular-nums text-text-tertiary">
-      {String(time.getHours()).padStart(2,"0")}:{String(time.getMinutes()).padStart(2,"0")}
-    </span>
   );
 }
 

@@ -1,11 +1,11 @@
+export type NavPosition = "left" | "right" | "bottom";
+export type NavStyle = "pill" | "compact" | "telegram";
+
 export interface AppSettings {
   theme: "light" | "dark" | "system" | "forest" | "mocha" | "ocean" | "rose";
   language: string;
   security_pin: string | null;
   ai_enabled: boolean;
-  nav_position: "left" | "right" | "bottom";
-  nav_style: "rail" | "compact" | "telegram";
-  show_clock: boolean;
   ai_provider: "ollama" | "openrouter" | "groq" | "openai" | "anthropic" | "deepseek" | "gemini";
   ai_model: string;
   api_key_openrouter: string;
@@ -17,6 +17,9 @@ export interface AppSettings {
   onboarding_completed: boolean;
   sidebar_collapsed: boolean;
   enabled_modules: string[];
+  nav_position: NavPosition;
+  nav_style: NavStyle;
+  show_clock: boolean;
 }
 
 export const ALL_MODULES = [
@@ -44,9 +47,6 @@ export const DEFAULT_SETTINGS: AppSettings = {
   language: "en",
   security_pin: null,
   ai_enabled: true,
-  nav_position: "left",
-  nav_style: "rail",
-  show_clock: true,
   ai_provider: "openrouter",
   ai_model: "liquid/lfm-40b",
   api_key_openrouter: "",
@@ -58,6 +58,9 @@ export const DEFAULT_SETTINGS: AppSettings = {
   onboarding_completed: false,
   sidebar_collapsed: false,
   enabled_modules: DEFAULT_MODULES,
+  nav_position: "left",
+  nav_style: "pill",
+  show_clock: true,
 };
 
 export const LANGUAGES = [

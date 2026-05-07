@@ -364,7 +364,7 @@ function DownloadCard({ download, onDelete, onRetry }: { download: any; onDelete
     if (electronAPI?.diskFlows?.showInFolder && download.file_path) {
       electronAPI.diskFlows.showInFolder(download.file_path);
     } else {
-      alert("This feature requires the desktop app. On mobile, files are managed in the Vault.");
+      alert("This action is only available on the Desktop version.");
     }
   };
 
@@ -373,12 +373,7 @@ function DownloadCard({ download, onDelete, onRetry }: { download: any; onDelete
     if (electronAPI?.diskFlows?.moveToDownloads && download.file_path) {
       electronAPI.diskFlows.moveToDownloads(download.file_path);
     } else {
-      // On web/mobile, try to open the URL directly
-      if (download.url) {
-        window.open(download.url, "_blank");
-      } else {
-        alert("This feature requires the desktop app.");
-      }
+      alert("This action is only available on the Desktop version. On mobile, files are saved in the app's storage.");
     }
   };
 

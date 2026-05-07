@@ -32,7 +32,7 @@ import {
   Layout,
   PanelLeft,
   PanelRight,
-  Clock,
+  PanelBottom,
 } from "lucide-react";
 import { db } from "@/lib/database";
 import { LANGUAGES } from "@/types/settings";
@@ -252,40 +252,34 @@ export function SettingsPage() {
           )}
         </Section>
 
-        <Section title="Navigation & Layout" icon={<Layout size={18} />}>
-          {/* Sidebar Position */}
+        <Section title="Navigation & Display" icon={<Layout size={18} />}>
+          {/* Nav Position */}
           <div className="mb-5">
             <p className="text-[12px] font-bold text-text-tertiary uppercase mb-2">Sidebar Position</p>
-            <div className="grid grid-cols-3 gap-2">
-              {([
-                { value: "left", label: "Left", icon: <PanelLeft size={16} /> },
-                { value: "right", label: "Right", icon: <PanelRight size={16} /> },
-                { value: "bottom", label: "Bottom", icon: <Layout size={16} /> },
-              ] as const).map(opt => (
-                <button key={opt.value} onClick={() => setSetting("nav_position", opt.value)}
-                  className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border transition-all cursor-pointer
-                    ${nav_position === opt.value ? "bg-accent/10 border-accent/30 text-accent" : "bg-bg-secondary/30 border-border/20 text-text-tertiary hover:text-text-secondary"}`}>
-                  {opt.icon}
-                  <span className="text-[11px] font-bold">{opt.label}</span>
-                </button>
-              ))}
+            <div className="flex gap-2">
+              {(["left", "right", "bottom"] as const).map(pos => {
+                const Icon = pos === "left" ? PanelLeft : pos === "right" ? PanelRight : PanelBottom;
+                return (
+                  <button key={pos} onClick={() => setSetting("nav_position", pos)}
+                    className={`flex-1 flex flex-col items-center gap-1.5 py-3 rounded-xl border transition-all cursor-pointer
+                      ${nav_position === pos ? "bg-accent/10 border-accent/30 text-accent" : "bg-bg-secondary/40 border-border/20 text-text-tertiary hover:border-border/40"}`}>
+                    <Icon size={18} />
+                    <span className="text-[11px] font-bold capitalize">{pos}</span>
+                  </button>
+                );
+              })}
             </div>
           </div>
 
           {/* Nav Style */}
           <div className="mb-5">
             <p className="text-[12px] font-bold text-text-tertiary uppercase mb-2">Menu Style</p>
-            <div className="grid grid-cols-3 gap-2">
-              {([
-                { value: "rail", label: "Icons", desc: "Icon + label" },
-                { value: "compact", label: "Compact", desc: "Icons only" },
-                { value: "telegram", label: "List", desc: "Like Telegram" },
-              ] as const).map(opt => (
-                <button key={opt.value} onClick={() => setSetting("nav_style", opt.value)}
-                  className={`flex flex-col items-center gap-1 p-3 rounded-xl border transition-all cursor-pointer
-                    ${nav_style === opt.value ? "bg-accent/10 border-accent/30 text-accent" : "bg-bg-secondary/30 border-border/20 text-text-tertiary hover:text-text-secondary"}`}>
-                  <span className="text-[12px] font-bold">{opt.label}</span>
-                  <span className="text-[9px] opacity-60">{opt.desc}</span>
+            <div className="flex gap-2">
+              {(["pill", "compact", "telegram"] as const).map(style => (
+                <button key={style} onClick={() => setSetting("nav_style", style)}
+                  className={`flex-1 py-2.5 rounded-xl border text-[12px] font-bold transition-all cursor-pointer capitalize
+                    ${nav_style === style ? "bg-accent/10 border-accent/30 text-accent" : "bg-bg-secondary/40 border-border/20 text-text-tertiary hover:border-border/40"}`}>
+                  {style}
                 </button>
               ))}
             </div>
@@ -293,21 +287,13 @@ export function SettingsPage() {
 
           {/* Clock Toggle */}
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Clock size={16} className="text-text-tertiary" />
-              <div>
-                <p className="text-[14px] font-medium text-text-primary">Show Clock</p>
-                <p className="text-[11px] text-text-tertiary">Analog clock in sidebar, digital on mobile</p>
-              </div>
+            <div>
+              <p className="text-[14px] font-medium text-text-primary">Sidebar Clock</p>
+              <p className="text-[11px] text-text-tertiary mt-0.5">Show analog clock widget in sidebar</p>
             </div>
-            <button
-              onClick={() => setSetting("show_clock", !show_clock)}
-              className={`w-12 h-7 rounded-full transition-all relative cursor-pointer ${show_clock ? "bg-accent" : "bg-border/40"}`}
-            >
-              <motion.div
-                animate={{ x: show_clock ? 22 : 4 }}
-                className="absolute top-1 w-5 h-5 rounded-full bg-white shadow-sm"
-              />
+            <button onClick={() => setSetting("show_clock", !show_clock)}
+              className={`w-12 h-7 rounded-full transition-all relative cursor-pointer ${show_clock ? "bg-accent" : "bg-border/40"}`}>
+              <motion.div animate={{ x: show_clock ? 22 : 4 }} className="absolute top-1 w-5 h-5 rounded-full bg-white shadow-sm" />
             </button>
           </div>
         </Section>
