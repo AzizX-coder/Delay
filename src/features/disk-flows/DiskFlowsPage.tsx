@@ -363,6 +363,8 @@ function DownloadCard({ download, onDelete, onRetry }: { download: any; onDelete
     const electronAPI = (window as any).electronAPI;
     if (electronAPI?.diskFlows?.showInFolder && download.file_path) {
       electronAPI.diskFlows.showInFolder(download.file_path);
+    } else {
+      alert("This feature requires the desktop app. On mobile, files are managed in the Vault.");
     }
   };
 
@@ -370,6 +372,13 @@ function DownloadCard({ download, onDelete, onRetry }: { download: any; onDelete
     const electronAPI = (window as any).electronAPI;
     if (electronAPI?.diskFlows?.moveToDownloads && download.file_path) {
       electronAPI.diskFlows.moveToDownloads(download.file_path);
+    } else {
+      // On web/mobile, try to open the URL directly
+      if (download.url) {
+        window.open(download.url, "_blank");
+      } else {
+        alert("This feature requires the desktop app.");
+      }
     }
   };
 

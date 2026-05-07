@@ -29,6 +29,10 @@ import {
   Flower2,
   Shield,
   Lock,
+  Layout,
+  PanelLeft,
+  PanelRight,
+  Clock,
 } from "lucide-react";
 import { db } from "@/lib/database";
 import { LANGUAGES } from "@/types/settings";
@@ -40,6 +44,7 @@ export function SettingsPage() {
   const { theme, setTheme, customBgData, setCustomBg } = useThemeStore();
   const { 
     language, ai_provider, ai_model, ai_enabled, security_pin,
+    nav_position, nav_style, show_clock,
     api_key_openrouter, api_key_groq, api_key_openai, 
     api_key_anthropic, api_key_deepseek, api_key_gemini, 
     setSetting 
@@ -245,6 +250,66 @@ export function SettingsPage() {
               </button>
             </motion.div>
           )}
+        </Section>
+
+        <Section title="Navigation & Layout" icon={<Layout size={18} />}>
+          {/* Sidebar Position */}
+          <div className="mb-5">
+            <p className="text-[12px] font-bold text-text-tertiary uppercase mb-2">Sidebar Position</p>
+            <div className="grid grid-cols-3 gap-2">
+              {([
+                { value: "left", label: "Left", icon: <PanelLeft size={16} /> },
+                { value: "right", label: "Right", icon: <PanelRight size={16} /> },
+                { value: "bottom", label: "Bottom", icon: <Layout size={16} /> },
+              ] as const).map(opt => (
+                <button key={opt.value} onClick={() => setSetting("nav_position", opt.value)}
+                  className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border transition-all cursor-pointer
+                    ${nav_position === opt.value ? "bg-accent/10 border-accent/30 text-accent" : "bg-bg-secondary/30 border-border/20 text-text-tertiary hover:text-text-secondary"}`}>
+                  {opt.icon}
+                  <span className="text-[11px] font-bold">{opt.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Nav Style */}
+          <div className="mb-5">
+            <p className="text-[12px] font-bold text-text-tertiary uppercase mb-2">Menu Style</p>
+            <div className="grid grid-cols-3 gap-2">
+              {([
+                { value: "rail", label: "Icons", desc: "Icon + label" },
+                { value: "compact", label: "Compact", desc: "Icons only" },
+                { value: "telegram", label: "List", desc: "Like Telegram" },
+              ] as const).map(opt => (
+                <button key={opt.value} onClick={() => setSetting("nav_style", opt.value)}
+                  className={`flex flex-col items-center gap-1 p-3 rounded-xl border transition-all cursor-pointer
+                    ${nav_style === opt.value ? "bg-accent/10 border-accent/30 text-accent" : "bg-bg-secondary/30 border-border/20 text-text-tertiary hover:text-text-secondary"}`}>
+                  <span className="text-[12px] font-bold">{opt.label}</span>
+                  <span className="text-[9px] opacity-60">{opt.desc}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Clock Toggle */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Clock size={16} className="text-text-tertiary" />
+              <div>
+                <p className="text-[14px] font-medium text-text-primary">Show Clock</p>
+                <p className="text-[11px] text-text-tertiary">Analog clock in sidebar, digital on mobile</p>
+              </div>
+            </div>
+            <button
+              onClick={() => setSetting("show_clock", !show_clock)}
+              className={`w-12 h-7 rounded-full transition-all relative cursor-pointer ${show_clock ? "bg-accent" : "bg-border/40"}`}
+            >
+              <motion.div
+                animate={{ x: show_clock ? 22 : 4 }}
+                className="absolute top-1 w-5 h-5 rounded-full bg-white shadow-sm"
+              />
+            </button>
+          </div>
         </Section>
 
         <Section title="AI Intelligence" icon={<Bot size={18} />}>

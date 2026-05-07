@@ -3,6 +3,9 @@ export interface AppSettings {
   language: string;
   security_pin: string | null;
   ai_enabled: boolean;
+  nav_position: "left" | "right" | "bottom";
+  nav_style: "rail" | "compact" | "telegram";
+  show_clock: boolean;
   ai_provider: "ollama" | "openrouter" | "groq" | "openai" | "anthropic" | "deepseek" | "gemini";
   ai_model: string;
   api_key_openrouter: string;
@@ -41,6 +44,9 @@ export const DEFAULT_SETTINGS: AppSettings = {
   language: "en",
   security_pin: null,
   ai_enabled: true,
+  nav_position: "left",
+  nav_style: "rail",
+  show_clock: true,
   ai_provider: "openrouter",
   ai_model: "liquid/lfm-40b",
   api_key_openrouter: "",
