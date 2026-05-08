@@ -64,7 +64,7 @@ export function NavigationRail() {
   const navigate = useNavigate();
   const [hoveredPath, setHoveredPath] = useState<string | null>(null);
   const [showManager, setShowManager] = useState(false);
-  const { enabled_modules, toggleModule, ai_enabled, nav_style, show_clock } = useSettingsStore();
+  const { enabled_modules, toggleModule, ai_enabled, nav_style, nav_position, show_clock } = useSettingsStore();
 
   const visibleItems = ALL_MODULES.filter(m => {
     if (!enabled_modules.includes(m.id)) return false;
@@ -79,12 +79,12 @@ export function NavigationRail() {
   const isTelegram = nav_style === "telegram";
   const isCompact = nav_style === "compact";
 
-  // Item size classes based on style
+  // Item size classes — larger on mobile for proper touch targets (Material 48dp minimum)
   const itemClass = isTelegram
-    ? "w-full flex items-center gap-3 px-4 py-2.5 rounded-2xl transition-all duration-200 cursor-pointer"
+    ? "w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-200 cursor-pointer min-h-[48px]"
     : isCompact
-    ? "flex flex-col items-center justify-center w-[40px] h-[40px] shrink-0 rounded-lg transition-all duration-200 cursor-pointer"
-    : "group relative flex flex-col items-center justify-center w-[48px] h-[44px] shrink-0 rounded-xl transition-all duration-200 cursor-pointer";
+    ? "flex flex-col items-center justify-center min-w-[48px] h-[48px] md:min-w-[42px] md:h-[42px] shrink-0 rounded-lg md:rounded-xl transition-all duration-200 cursor-pointer"
+    : "group relative flex flex-col items-center justify-center min-w-[56px] h-[52px] md:min-w-[48px] md:h-[44px] shrink-0 rounded-xl transition-all duration-200 cursor-pointer";
 
   const renderItem = (item: typeof visibleItems[number]) => {
     const path = `/${item.id}`;
@@ -117,10 +117,10 @@ export function NavigationRail() {
           <span className={`relative z-10 text-[10px] font-bold font-mono tabular-nums animate-pulse ${isActive ? "text-accent" : "text-text-secondary"}`}>{timerDisplay}</span>
         ) : (
           <>
-            <Icon size={isCompact ? 17 : 19} strokeWidth={isActive ? 2.2 : 1.7}
+            <Icon size={isCompact ? 19 : 21} strokeWidth={isActive ? 2.2 : 1.7}
               className={`relative z-10 transition-all duration-200 ${isActive ? "text-accent" : "text-text-tertiary group-hover:text-text-primary"}`} />
             {!isCompact && (
-              <span className={`relative z-10 text-[8px] mt-0.5 font-medium transition-all duration-200 ${isActive ? "text-accent" : "text-text-tertiary group-hover:text-text-secondary"}`}>
+              <span className={`relative z-10 text-[9.5px] md:text-[8.5px] mt-0.5 font-semibold transition-all duration-200 ${isActive ? "text-accent" : "text-text-tertiary group-hover:text-text-secondary"}`}>
                 {item.label}
               </span>
             )}
@@ -132,14 +132,22 @@ export function NavigationRail() {
     );
   };
 
-  const navWidth = isTelegram ? "md:w-[200px]" : isCompact ? "md:w-[52px]" : "md:w-[64px]";
+  const isHorizontal = nav_position === "bottom";
+  const navWidth = isHorizontal ? "w-full" : isTelegram ? "md:w-[208px]" : isCompact ? "md:w-[56px]" : "md:w-[68px]";
+  const navHeight = isHorizontal ? "h-[64px] md:h-[68px]" : "md:h-full h-[64px]";
+  const flexDir = isHorizontal ? "flex-row" : "md:flex-col flex-row";
+  const borderClass = nav_position === "right"
+    ? "md:border-l border-t md:border-t-0"
+    : isHorizontal
+    ? "border-t md:border-t border-b-0"
+    : "md:border-r border-t md:border-t-0";
 
   return (
-    <nav className={`flex md:flex-col flex-row items-center ${navWidth} w-full md:h-full h-[56px] shrink-0 md:py-2 py-1 ${isTelegram ? "md:px-2 px-2" : "px-1 md:px-0"} gap-0.5
-      bg-bg-sidebar md:border-r border-t md:border-t-0 border-border-light glass relative z-50 overflow-x-auto md:overflow-x-visible md:overflow-y-auto no-scrollbar`}>
+    <nav className={`flex ${flexDir} items-center ${navWidth} ${navHeight} shrink-0 ${isHorizontal ? "px-2 py-1" : "md:py-2 py-1"} ${isTelegram && !isHorizontal ? "md:px-2 px-2" : "px-1 md:px-0"} gap-0.5
+      bg-bg-sidebar ${borderClass} border-border-light glass relative z-50 ${isHorizontal ? "overflow-x-auto" : "overflow-x-auto md:overflow-x-visible md:overflow-y-auto"} no-scrollbar`}>
 
-      {/* Clock widget (desktop sidebar only) */}
-      {show_clock && (
+      {/* Clock widget (vertical sidebar only — not when bottom-nav) */}
+      {show_clock && !isHorizontal && (
         <div className="hidden md:flex w-full justify-center border-b border-border/20 mb-1">
           <LiveClock />
         </div>
@@ -170,53 +178,93 @@ export function NavigationRail() {
         ) : null}
       </button>
 
-      {/* + Module Manager */}
-      <button onClick={() => setShowManager(!showManager)}
+      {/* + Module Manager — bigger, more visible */}
+      <button onClick={() => setShowManager(true)}
         className={`${isTelegram
-          ? "w-full flex items-center justify-center gap-2 px-4 py-2 rounded-2xl bg-bg-hover/50 text-text-tertiary hover:text-accent hover:bg-accent/10 border border-border/20 md:mb-2"
-          : `w-[36px] h-[36px] shrink-0 md:mb-2 ml-1 md:ml-0 flex items-center justify-center rounded-xl bg-bg-hover/50 text-text-tertiary hover:text-accent hover:bg-accent/10 border border-border/20`} transition-all cursor-pointer`}
-        title="Customize Modules">
-        {showManager ? <X size={14} /> : <Plus size={14} />}
-        {isTelegram && <span className="text-[11px] font-bold">{showManager ? "Close" : "Modules"}</span>}
+          ? "w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-2xl bg-accent/10 text-accent hover:bg-accent/15 border border-accent/20 md:mb-2 font-bold"
+          : `w-[44px] h-[44px] shrink-0 md:mb-2 ml-1 md:ml-0 flex items-center justify-center rounded-xl bg-accent/10 text-accent hover:bg-accent/15 border border-accent/20 active:scale-95`} transition-all cursor-pointer shadow-sm`}
+        title="Customize Modules" aria-label="Open module manager">
+        <Plus size={isTelegram ? 16 : 18} strokeWidth={2.5} />
+        {isTelegram && <span className="text-[12px] font-bold">Modules</span>}
       </button>
 
-      {/* Module Manager */}
+      {/* Module Manager — centered modal works on any nav position */}
       <AnimatePresence>
         {showManager && (
-          <>
-            <div className="fixed inset-0 z-40 bg-black/20 backdrop-blur-sm" onClick={() => setShowManager(false)} />
-            <motion.div
-              initial={{ opacity: 0, y: 10, scale: 0.95 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 10, scale: 0.95 }}
-              className="fixed z-50 bg-bg-elevated/95 backdrop-blur-2xl border border-border/50 rounded-2xl shadow-2xl p-3 overflow-hidden
-                bottom-[72px] left-2 right-2 md:bottom-14 md:left-[72px] md:right-auto md:w-72">
-              <p className="text-[10px] font-extrabold text-text-tertiary uppercase tracking-widest mb-3 px-2">Manage Modules</p>
-              <div className="max-h-[50vh] md:max-h-[400px] overflow-y-auto space-y-0.5">
-                {ALL_MODULES.map(m => {
-                  const Icon = ICON_MAP[m.icon] || Sparkles;
-                  const enabled = enabled_modules.includes(m.id);
-                  return (
-                    <button key={m.id} onClick={() => toggleModule(m.id)}
-                      className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all cursor-pointer
-                        ${enabled ? "bg-accent/8 text-text-primary" : "text-text-tertiary hover:bg-bg-hover"}`}>
-                      <Icon size={15} className={enabled ? "text-accent" : ""} />
-                      <div className="flex-1 text-left">
-                        <p className="text-[12px] font-bold">{m.label}</p>
-                        <p className="text-[10px] opacity-60">{m.desc}</p>
-                      </div>
-                      <div className={`w-8 h-5 rounded-full transition-all relative ${enabled ? "bg-accent" : "bg-border/40"}`}>
-                        <motion.div animate={{ x: enabled ? 14 : 2 }} className="absolute top-0.5 w-4 h-4 rounded-full bg-white shadow-sm" />
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            </motion.div>
-          </>
+          <ModuleManagerModal
+            onClose={() => setShowManager(false)}
+            enabled_modules={enabled_modules}
+            toggleModule={toggleModule}
+            navPosition={nav_position}
+          />
         )}
       </AnimatePresence>
     </nav>
+  );
+}
+
+function ModuleManagerModal({ onClose, enabled_modules, toggleModule, navPosition }: {
+  onClose: () => void;
+  enabled_modules: string[];
+  toggleModule: (id: string) => void;
+  navPosition: string;
+}) {
+  // Close on Escape
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  return (
+    <>
+      <motion.div
+        initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+        className="fixed inset-0 z-[100] bg-black/40 backdrop-blur-sm" onClick={onClose}
+        aria-hidden="true" />
+      <motion.div
+        initial={{ opacity: 0, y: 20, scale: 0.96 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        exit={{ opacity: 0, y: 20, scale: 0.96 }}
+        transition={{ type: "spring", stiffness: 360, damping: 30 }}
+        role="dialog" aria-label="Module manager"
+        className="fixed z-[101] bg-bg-elevated/98 backdrop-blur-2xl border border-border/50 rounded-3xl shadow-2xl overflow-hidden
+          left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2
+          w-[min(420px,calc(100vw-24px))] max-h-[min(560px,calc(100vh-120px))]">
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-4 border-b border-border/30">
+          <div>
+            <p className="text-[15px] font-extrabold text-text-primary">Modules</p>
+            <p className="text-[11px] text-text-tertiary">Toggle the workspaces you need · {navPosition} nav</p>
+          </div>
+          <button onClick={onClose} className="w-9 h-9 flex items-center justify-center rounded-xl text-text-tertiary hover:text-text-primary hover:bg-bg-hover transition-all cursor-pointer" aria-label="Close">
+            <X size={16} />
+          </button>
+        </div>
+        <div className="overflow-y-auto p-2 max-h-[440px]">
+          {ALL_MODULES.map(m => {
+            const Icon = ICON_MAP[m.icon] || Sparkles;
+            const enabled = enabled_modules.includes(m.id);
+            return (
+              <button key={m.id} onClick={() => toggleModule(m.id)}
+                className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-all cursor-pointer
+                  ${enabled ? "bg-accent/8" : "hover:bg-bg-hover"}`}>
+                <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${enabled ? "bg-accent text-white shadow-sm" : "bg-bg-hover text-text-tertiary"}`}>
+                  <Icon size={16} strokeWidth={enabled ? 2.4 : 1.8} />
+                </div>
+                <div className="flex-1 text-left">
+                  <p className={`text-[13px] font-bold ${enabled ? "text-text-primary" : "text-text-secondary"}`}>{m.label}</p>
+                  <p className="text-[10.5px] opacity-60">{m.desc}</p>
+                </div>
+                <div className={`w-9 h-5 rounded-full transition-all relative shrink-0 ${enabled ? "bg-accent" : "bg-border/40"}`}>
+                  <motion.div animate={{ x: enabled ? 16 : 2 }} className="absolute top-0.5 w-4 h-4 rounded-full bg-white shadow-sm" />
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </motion.div>
+    </>
   );
 }
 

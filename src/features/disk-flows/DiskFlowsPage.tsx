@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { useDiskFlowsStore } from "@/stores/diskFlowsStore";
+import { useBucketStore } from "@/stores/bucketStore";
 import {
   Download,
   Link2,
@@ -359,22 +360,42 @@ function DownloadCard({ download, onDelete, onRetry }: { download: any; onDelete
   const platformColor = PLATFORM_COLORS[download.platform as keyof typeof PLATFORM_COLORS] || "#007AFF";
   const platformIcon = PLATFORM_ICONS[download.platform as keyof typeof PLATFORM_ICONS] || <Globe size={16} />;
 
+  const addToVault = useBucketStore(s => s.addFile);
+  const [savedToVault, setSavedToVault] = useState(false);
+
   const handleShowInFolder = () => {
     const electronAPI = (window as any).electronAPI;
     if (electronAPI?.diskFlows?.showInFolder && download.file_path) {
       electronAPI.diskFlows.showInFolder(download.file_path);
+      return;
+    }
+    // Mobile/web fallback: open the URL the file was downloaded from
+    if (download.url) {
+      window.open(download.url, "_blank", "noopener,noreferrer");
     } else {
-      alert("This action is only available on the Desktop version.");
+      alert("Folder access requires the Desktop version.");
     }
   };
 
-  const handleMoveToDownloads = () => {
+  const handleMoveToDownloads = async () => {
     const electronAPI = (window as any).electronAPI;
     if (electronAPI?.diskFlows?.moveToDownloads && download.file_path) {
       electronAPI.diskFlows.moveToDownloads(download.file_path);
-    } else {
-      alert("This action is only available on the Desktop version. On mobile, files are saved in the app's storage.");
+      return;
     }
+    // Mobile/web fallback: copy URL to clipboard and add a shortcut to the Vault
+    try {
+      await navigator.clipboard?.writeText(download.url || download.title || "");
+    } catch {}
+    addToVault({
+      name: download.title || "Saved link",
+      folderId: null,
+      fileData: download.url || "",
+      fileType: "text/uri-list",
+      size: (download.url || "").length,
+    });
+    setSavedToVault(true);
+    setTimeout(() => setSavedToVault(false), 2000);
   };
 
   const isPlayable = download.file_path && (download.file_path.endsWith('.mp4') || download.file_path.endsWith('.webm') || download.file_path.endsWith('.m4a'));
@@ -437,8 +458,9 @@ function DownloadCard({ download, onDelete, onRetry }: { download: any; onDelete
             <button onClick={handleShowInFolder} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-bg-hover/60 text-[11px] font-semibold text-text-secondary hover:text-text-primary hover:bg-bg-active transition-all cursor-pointer">
               <FolderOpen size={12} /> Show
             </button>
-            <button onClick={handleMoveToDownloads} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-bg-hover/60 text-[11px] font-semibold text-text-secondary hover:text-text-primary hover:bg-bg-active transition-all cursor-pointer">
-              <Download size={12} /> Save
+            <button onClick={handleMoveToDownloads} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold transition-all cursor-pointer ${savedToVault ? "bg-success/15 text-success" : "bg-bg-hover/60 text-text-secondary hover:text-text-primary hover:bg-bg-active"}`}>
+              {savedToVault ? <CheckCircle2 size={12} /> : <Download size={12} />}
+              {savedToVault ? "Saved!" : "Save"}
             </button>
             {download.file_path && (
               <span className="ml-auto text-[10px] text-text-tertiary truncate max-w-[150px] flex items-center gap-1" title={download.file_path}>

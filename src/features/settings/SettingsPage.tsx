@@ -165,19 +165,33 @@ export function SettingsPage() {
               )}
               <label className="px-4 py-1.5 rounded-lg bg-bg-hover border border-border/80 text-[12px] font-medium hover:bg-bg-active cursor-pointer transition-colors block">
                 {customBgData ? "Change Image" : "Upload Image"}
-                <input 
-                  type="file" 
-                  accept="image/*" 
-                  className="hidden" 
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
                   onChange={(e) => {
-                    const file = e.target.files?.[0];
+                    const input = e.currentTarget;
+                    const file = input.files?.[0];
+                    input.value = ""; // allow re-selecting same file
                     if (!file) return;
+                    const MAX = 5 * 1024 * 1024;
+                    if (file.size > MAX) {
+                      alert("Image too large. Please pick something under 5 MB.");
+                      return;
+                    }
                     const reader = new FileReader();
+                    reader.onerror = () => alert("Couldn't read the image. Try a different file.");
                     reader.onload = (event) => {
-                      if (event.target?.result) setCustomBg(event.target.result as string);
+                      const result = event.target?.result;
+                      if (typeof result === "string") {
+                        Promise.resolve(setCustomBg(result)).catch(err => {
+                          console.error("setCustomBg failed:", err);
+                          alert("Couldn't save background. The image may be too large for storage.");
+                        });
+                      }
                     };
                     reader.readAsDataURL(file);
-                  }} 
+                  }}
                 />
               </label>
             </div>

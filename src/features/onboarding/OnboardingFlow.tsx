@@ -7,7 +7,7 @@ import { LANGUAGES, ALL_MODULES, DEFAULT_MODULES } from "@/types/settings";
 import {
   Sun, Moon, Monitor, ChevronRight, ChevronLeft, Bot, Wifi, WifiOff,
   Sparkles, Check, Globe, Zap, StickyNote, CheckSquare, Calendar, Timer,
-  Code2, HardDrive, Columns3, PenTool, Mic, Leaf, Coffee, Waves, Flower2,
+  Code2, HardDrive, Columns3, PenTool, Mic, Leaf, Coffee, Waves, Flower2, Plus,
 } from "lucide-react";
 import type { OllamaModel } from "@/types/ai";
 import { Logo } from "@/components/ui/Logo";
@@ -97,10 +97,17 @@ export function OnboardingFlow() {
               <motion.div key="theme" custom={direction} variants={variants}
                 initial="enter" animate="center" exit="exit" className="flex-1 flex flex-col">
                 <div className="flex items-center gap-4 mb-8">
-                  <div className="p-3 rounded-2xl bg-accent shadow-xl shadow-accent/20"><Logo size={40} /></div>
+                  <motion.div
+                    initial={{ rotate: -10, scale: 0.8 }}
+                    animate={{ rotate: 0, scale: 1 }}
+                    transition={{ type: "spring", stiffness: 200, damping: 12 }}
+                    className="p-3 rounded-2xl bg-accent shadow-xl shadow-accent/30">
+                    <Logo size={40} />
+                  </motion.div>
                   <div>
-                    <h1 className="text-[26px] font-extrabold text-text-primary tracking-tight">Experience Delay</h1>
-                    <p className="text-[14px] text-text-tertiary font-medium">Select your interface style to begin</p>
+                    <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-accent/70">Welcome to Delay</p>
+                    <h1 className="text-[26px] font-extrabold text-text-primary tracking-tight leading-tight mt-0.5">Pick a look you'll love</h1>
+                    <p className="text-[13px] text-text-tertiary font-medium">Six themes built for long sessions. Change anytime.</p>
                   </div>
                 </div>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-4 flex-1">
@@ -133,7 +140,10 @@ export function OnboardingFlow() {
                 initial="enter" animate="center" exit="exit" className="flex-1 flex flex-col">
                 <div className="flex items-center gap-3 mb-6">
                   <div className="p-2.5 rounded-xl bg-bg-hover text-accent"><Globe size={24} /></div>
-                  <h2 className="text-[22px] font-bold text-text-primary tracking-tight">Locale & Voice</h2>
+                  <div>
+                    <h2 className="text-[22px] font-bold text-text-primary tracking-tight">What's your language?</h2>
+                    <p className="text-[12px] text-text-tertiary">We'll match the UI and voice prompts.</p>
+                  </div>
                 </div>
                 <div className="grid grid-cols-1 gap-2 overflow-y-auto max-h-[320px] pr-2 custom-scrollbar">
                   {LANGUAGES.map((lang) => (
@@ -162,8 +172,8 @@ export function OnboardingFlow() {
                 <div className="flex items-center gap-3 mb-4">
                   <div className="p-2.5 rounded-xl bg-accent text-white shadow-lg shadow-accent/20"><Columns3 size={24} /></div>
                   <div>
-                    <h2 className="text-[22px] font-bold text-text-primary tracking-tight">Your Workspace</h2>
-                    <p className="text-[13px] text-text-tertiary">Choose the modules you need. You can change this anytime.</p>
+                    <h2 className="text-[22px] font-bold text-text-primary tracking-tight">Build your workspace</h2>
+                    <p className="text-[13px] text-text-tertiary">Pick what you'll actually use. Hide the rest — toggle anytime from the <Plus size={11} className="inline mb-0.5" /> menu.</p>
                   </div>
                 </div>
                 <div className="overflow-y-auto max-h-[360px] pr-2 custom-scrollbar space-y-4">
@@ -206,7 +216,10 @@ export function OnboardingFlow() {
                 initial="enter" animate="center" exit="exit" className="flex-1 flex flex-col">
                 <div className="flex items-center gap-3 mb-6">
                   <div className="p-2.5 rounded-xl bg-accent text-white shadow-lg shadow-accent/20"><Sparkles size={24} /></div>
-                  <h2 className="text-[22px] font-bold text-text-primary tracking-tight">Knowledge Engine</h2>
+                  <div>
+                    <h2 className="text-[22px] font-bold text-text-primary tracking-tight">Connect AI <span className="text-text-tertiary font-medium text-[13px] align-middle">(optional)</span></h2>
+                    <p className="text-[12px] text-text-tertiary">Pick a model now, or skip and configure later in Settings.</p>
+                  </div>
                 </div>
                 <div className={`p-5 rounded-[24px] mb-6 flex items-center gap-4 border transition-all
                     ${ollamaOnline ? "bg-success/5 border-success/20 text-success" : "bg-warning/5 border-warning/20 text-warning"}`}>

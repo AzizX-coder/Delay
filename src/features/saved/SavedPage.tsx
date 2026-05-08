@@ -122,18 +122,22 @@ export function SavedPage() {
                   <p className="text-[13px] text-text-primary whitespace-pre-wrap break-words leading-relaxed">{item.content}</p>
                 )}
 
-                {/* Link with preview */}
+                {/* Link with rich preview (favicon + domain + URL) */}
                 {item.type === "link" && (
                   <a href={item.content} target="_blank" rel="noopener noreferrer" className="block group/link">
-                    <div className="flex items-start gap-2 p-2 rounded-xl bg-bg-primary/50 border border-border/20 hover:border-accent/20 transition-colors">
-                      <div className="w-8 h-8 rounded-lg bg-accent/10 flex items-center justify-center shrink-0 mt-0.5">
-                        <Link2 size={14} className="text-accent" />
-                      </div>
+                    <div className="flex items-start gap-2.5 p-2.5 rounded-xl bg-bg-primary/50 border border-border/20 hover:border-accent/30 hover:bg-bg-primary/70 transition-all">
+                      <img
+                        src={`https://www.google.com/s2/favicons?domain=${getDomain(item.content)}&sz=64`}
+                        alt=""
+                        loading="lazy"
+                        onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                        className="w-9 h-9 rounded-lg bg-accent/10 shrink-0 mt-0.5 object-contain p-1.5 border border-border/20"
+                      />
                       <div className="flex-1 min-w-0">
-                        <p className="text-[12px] font-bold text-accent truncate group-hover/link:underline">{getDomain(item.content)}</p>
+                        <p className="text-[12px] font-extrabold text-accent truncate group-hover/link:underline">{getDomain(item.content)}</p>
                         <p className="text-[11px] text-text-tertiary truncate mt-0.5">{item.content}</p>
                       </div>
-                      <ExternalLink size={12} className="text-text-tertiary shrink-0 mt-1" />
+                      <ExternalLink size={12} className="text-text-tertiary shrink-0 mt-1.5" />
                     </div>
                   </a>
                 )}
@@ -159,13 +163,13 @@ export function SavedPage() {
                   </div>
                 )}
 
-                {/* Meta row */}
+                {/* Meta row — always visible on mobile, hover on desktop */}
                 <div className="flex items-center justify-between mt-2 gap-2">
                   <span className="text-[9px] text-text-tertiary">{formatDate(item.created_at)}</span>
-                  <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button onClick={() => setShowReactions(showReactions === item.id ? null : item.id)} className="p-1 rounded text-text-tertiary hover:text-accent cursor-pointer"><SmilePlus size={11} /></button>
-                    <button onClick={() => togglePin(item.id)} className="p-1 rounded text-text-tertiary hover:text-accent cursor-pointer">{item.pinned ? <PinOff size={11} /> : <Pin size={11} />}</button>
-                    <button onClick={() => removeItem(item.id)} className="p-1 rounded text-text-tertiary hover:text-danger cursor-pointer"><Trash2 size={11} /></button>
+                  <div className="flex items-center gap-0.5 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+                    <button onClick={() => setShowReactions(showReactions === item.id ? null : item.id)} className="p-1.5 rounded-lg text-text-tertiary hover:text-accent hover:bg-bg-hover cursor-pointer" aria-label="React"><SmilePlus size={12} /></button>
+                    <button onClick={() => togglePin(item.id)} className="p-1.5 rounded-lg text-text-tertiary hover:text-accent hover:bg-bg-hover cursor-pointer" aria-label={item.pinned ? "Unpin" : "Pin"}>{item.pinned ? <PinOff size={12} /> : <Pin size={12} />}</button>
+                    <button onClick={() => removeItem(item.id)} className="p-1.5 rounded-lg text-text-tertiary hover:text-danger hover:bg-danger/10 cursor-pointer" aria-label="Delete"><Trash2 size={12} /></button>
                   </div>
                 </div>
 
