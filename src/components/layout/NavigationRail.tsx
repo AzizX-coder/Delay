@@ -2,16 +2,35 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
 import {
   StickyNote, CheckSquare, Calendar, Sparkles, Timer, Code2,
-  HardDrive, Settings, Columns3, PenTool, Mic, Plus, X, Archive, Bookmark, BarChart3, Clock,
+  HardDrive, Settings, Columns3, PenTool, Mic, Plus, X, Archive, Bookmark, BarChart3, Clock, GitBranch,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useSettingsStore } from "@/stores/settingsStore";
 import { useTimerStore } from "@/stores/timerStore";
 import { ALL_MODULES } from "@/types/settings";
+import { DelayIcon } from "@/components/ui/DelayIcon";
 
 const ICON_MAP: Record<string, any> = {
   StickyNote, CheckSquare, Calendar, Timer, Sparkles, Code2,
-  HardDrive, Columns3, PenTool, Mic, Archive, Bookmark, BarChart3,
+  HardDrive, Columns3, PenTool, Mic, Archive, Bookmark, BarChart3, GitBranch,
+};
+
+// Module ID → DelayIcon name. When present, render the branded illustration instead of lucide.
+const MODULE_ICON_MAP: Record<string, string> = {
+  notes: "notes",
+  tasks: "tasks",
+  calendar: "calendar",
+  timer: "timer",
+  saved: "saved",
+  kanban: "kanban",
+  whiteboard: "whiteboard",
+  "code-studio": "code",
+  bucket: "vault",
+  "disk-flows": "disk",
+  "voice-studio": "voice",
+  status: "status",
+  ai: "ai",
+  flows: "flows",
 };
 
 function LiveClock() {
@@ -90,13 +109,22 @@ export function NavigationRail() {
     const path = `/${item.id}`;
     const isActive = location.pathname.startsWith(path);
     const Icon = ICON_MAP[item.icon] || Sparkles;
+    const delayIconName = MODULE_ICON_MAP[item.id];
     const isHovered = hoveredPath === path;
+
+    const renderIcon = (sz: number) =>
+      delayIconName ? (
+        <DelayIcon name={delayIconName} size={sz} className={isActive ? "" : "opacity-90"} />
+      ) : (
+        <Icon size={sz} strokeWidth={isActive ? 2.2 : 1.7}
+          className={`transition-all duration-200 ${isActive ? "text-accent" : "text-text-tertiary group-hover:text-text-primary"}`} />
+      );
 
     if (isTelegram) {
       return (
         <button key={item.id} onClick={() => navigate(path)}
           className={`${itemClass} ${isActive ? "bg-accent/10 text-accent" : "text-text-secondary hover:bg-bg-hover"}`}>
-          <Icon size={18} strokeWidth={isActive ? 2.2 : 1.7} />
+          {renderIcon(20)}
           <span className="text-[13px] font-semibold flex-1">{item.label}</span>
           {item.id === "timer" && timerRunning && (
             <span className="text-[10px] font-mono font-bold tabular-nums animate-pulse text-accent">{timerDisplay}</span>
@@ -110,15 +138,14 @@ export function NavigationRail() {
         onMouseEnter={() => setHoveredPath(path)} onMouseLeave={() => setHoveredPath(null)}
         className={itemClass} title={item.label}>
         {isActive && !isCompact && (
-          <motion.div layoutId="nav-pill" className="absolute inset-0 rounded-xl bg-accent/12"
+          <motion.div layoutId="nav-pill" className="absolute inset-0 rounded-xl bg-gradient-to-br from-accent/15 to-accent/5 ring-1 ring-accent/20 shadow-sm"
             transition={{ type: "spring", stiffness: 400, damping: 30 }} />
         )}
         {item.id === "timer" && timerRunning ? (
           <span className={`relative z-10 text-[10px] font-bold font-mono tabular-nums animate-pulse ${isActive ? "text-accent" : "text-text-secondary"}`}>{timerDisplay}</span>
         ) : (
           <>
-            <Icon size={isCompact ? 19 : 21} strokeWidth={isActive ? 2.2 : 1.7}
-              className={`relative z-10 transition-all duration-200 ${isActive ? "text-accent" : "text-text-tertiary group-hover:text-text-primary"}`} />
+            <span className="relative z-10">{renderIcon(isCompact ? 22 : 24)}</span>
             {!isCompact && (
               <span className={`relative z-10 text-[9.5px] md:text-[8.5px] mt-0.5 font-semibold transition-all duration-200 ${isActive ? "text-accent" : "text-text-tertiary group-hover:text-text-secondary"}`}>
                 {item.label}
@@ -133,22 +160,24 @@ export function NavigationRail() {
   };
 
   const isHorizontal = nav_position === "bottom";
-  const navWidth = isHorizontal ? "w-full" : isTelegram ? "md:w-[208px]" : isCompact ? "md:w-[56px]" : "md:w-[68px]";
-  const navHeight = isHorizontal ? "h-[64px] md:h-[68px]" : "md:h-full h-[64px]";
-  const flexDir = isHorizontal ? "flex-row" : "md:flex-col flex-row";
-  const borderClass = nav_position === "right"
-    ? "md:border-l border-t md:border-t-0"
-    : isHorizontal
-    ? "border-t md:border-t border-b-0"
-    : "md:border-r border-t md:border-t-0";
+  // Outer reserves layout space; inner panel is the visible "floating glass" sidebar
+  const outerWidth = isHorizontal ? "w-full" : isTelegram ? "md:w-[224px]" : isCompact ? "md:w-[68px]" : "md:w-[80px]";
+  const outerHeight = isHorizontal ? "h-[72px] md:h-[80px]" : "md:h-full h-[72px]";
+  const outerFlex = isHorizontal ? "items-center justify-center" : "md:flex-col items-stretch md:items-center justify-center";
+
+  // Floating panel — rounded, glass, max-height for vertical desktop
+  const panelBase = "flex gap-0.5 bg-bg-sidebar/70 backdrop-blur-2xl border border-border/30 shadow-[0_10px_40px_-12px_rgba(0,0,0,0.25)] rounded-[24px] no-scrollbar";
+  const panelLayout = isHorizontal
+    ? `${panelBase} flex-row items-center px-2 py-1.5 mx-3 mb-2 mt-1 max-w-[min(720px,calc(100vw-24px))] overflow-x-auto`
+    : `${panelBase} flex-row md:flex-col items-center w-full md:w-auto md:my-3 ${nav_position === "right" ? "md:mr-3" : "md:ml-3"} mx-2 mb-2 mt-1 md:mt-0 md:max-h-[min(840px,calc(100vh-90px))] ${isTelegram ? "md:px-2 md:py-3 px-2 py-1.5" : "md:px-2 md:py-3 px-1 py-1.5"} overflow-x-auto md:overflow-y-auto md:overflow-x-visible`;
 
   return (
-    <nav className={`flex ${flexDir} items-center ${navWidth} ${navHeight} shrink-0 ${isHorizontal ? "px-2 py-1" : "md:py-2 py-1"} ${isTelegram && !isHorizontal ? "md:px-2 px-2" : "px-1 md:px-0"} gap-0.5
-      bg-bg-sidebar ${borderClass} border-border-light glass relative z-50 ${isHorizontal ? "overflow-x-auto" : "overflow-x-auto md:overflow-x-visible md:overflow-y-auto"} no-scrollbar`}>
+    <nav className={`flex ${outerFlex} ${outerWidth} ${outerHeight} shrink-0 relative z-50`}>
+      <div className={panelLayout}>
 
       {/* Clock widget (vertical sidebar only — not when bottom-nav) */}
       {show_clock && !isHorizontal && (
-        <div className="hidden md:flex w-full justify-center border-b border-border/20 mb-1">
+        <div className="hidden md:flex w-full justify-center border-b border-border/20 mb-1.5 pb-1.5">
           <LiveClock />
         </div>
       )}
@@ -187,6 +216,8 @@ export function NavigationRail() {
         <Plus size={isTelegram ? 16 : 18} strokeWidth={2.5} />
         {isTelegram && <span className="text-[12px] font-bold">Modules</span>}
       </button>
+
+      </div>{/* /panel */}
 
       {/* Module Manager — centered modal works on any nav position */}
       <AnimatePresence>
@@ -244,13 +275,14 @@ function ModuleManagerModal({ onClose, enabled_modules, toggleModule, navPositio
         <div className="overflow-y-auto p-2 max-h-[440px]">
           {ALL_MODULES.map(m => {
             const Icon = ICON_MAP[m.icon] || Sparkles;
+            const delayIconName = MODULE_ICON_MAP[m.id];
             const enabled = enabled_modules.includes(m.id);
             return (
               <button key={m.id} onClick={() => toggleModule(m.id)}
                 className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-all cursor-pointer
                   ${enabled ? "bg-accent/8" : "hover:bg-bg-hover"}`}>
-                <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${enabled ? "bg-accent text-white shadow-sm" : "bg-bg-hover text-text-tertiary"}`}>
-                  <Icon size={16} strokeWidth={enabled ? 2.4 : 1.8} />
+                <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${enabled ? "bg-gradient-to-br from-accent/30 to-accent/10 ring-1 ring-accent/30" : "bg-bg-hover"}`}>
+                  {delayIconName ? <DelayIcon name={delayIconName} size={18} /> : <Icon size={16} strokeWidth={enabled ? 2.4 : 1.8} className={enabled ? "text-accent" : "text-text-tertiary"} />}
                 </div>
                 <div className="flex-1 text-left">
                   <p className={`text-[13px] font-bold ${enabled ? "text-text-primary" : "text-text-secondary"}`}>{m.label}</p>

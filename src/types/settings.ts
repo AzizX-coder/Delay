@@ -1,5 +1,18 @@
 export type NavPosition = "left" | "right" | "bottom";
 export type NavStyle = "pill" | "compact" | "telegram";
+export type Density = "compact" | "comfortable" | "spacious";
+export type FontFamily = "sans" | "serif" | "mono" | "rounded";
+
+export const ACCENT_PRESETS = [
+  { id: "indigo",  name: "Indigo",  hex: "#6366F1" },
+  { id: "violet",  name: "Violet",  hex: "#8B5CF6" },
+  { id: "rose",    name: "Rose",    hex: "#EC4899" },
+  { id: "ruby",    name: "Ruby",    hex: "#EF4444" },
+  { id: "amber",   name: "Amber",   hex: "#F59E0B" },
+  { id: "emerald", name: "Emerald", hex: "#10B981" },
+  { id: "cyan",    name: "Cyan",    hex: "#06B6D4" },
+  { id: "slate",   name: "Slate",   hex: "#64748B" },
+] as const;
 
 export interface AppSettings {
   theme: "light" | "dark" | "system" | "forest" | "mocha" | "ocean" | "rose";
@@ -20,6 +33,12 @@ export interface AppSettings {
   nav_position: NavPosition;
   nav_style: NavStyle;
   show_clock: boolean;
+  workspace_name: string;
+  accent_color: string;       // hex, overrides --accent
+  density: Density;
+  font_family: FontFamily;
+  reduce_motion: boolean;
+  rounded_corners: number;    // 0-24, base radius
 }
 
 export const ALL_MODULES = [
@@ -36,10 +55,11 @@ export const ALL_MODULES = [
   { id: "voice-studio", label: "Voice",       icon: "Mic",         group: "media",     desc: "Audio recording & processing" },
   { id: "status",       label: "Status",      icon: "BarChart3",   group: "system",    desc: "Activity graphs & analytics" },
   { id: "ai",           label: "Copilot",     icon: "Sparkles",    group: "system",    desc: "AI-powered assistant" },
+  { id: "flows",        label: "Flows",       icon: "GitBranch",   group: "workspace", desc: "Projects linking tasks, notes & events" },
 ] as const;
 
 export const DEFAULT_MODULES = [
-  "notes", "tasks", "calendar", "timer", "saved", "bucket", "status", "ai", "code-studio", "kanban", "whiteboard"
+  "notes", "tasks", "calendar", "timer", "saved", "flows", "bucket", "status", "ai", "code-studio", "kanban", "whiteboard"
 ];
 
 export const DEFAULT_SETTINGS: AppSettings = {
@@ -61,6 +81,12 @@ export const DEFAULT_SETTINGS: AppSettings = {
   nav_position: "left",
   nav_style: "pill",
   show_clock: true,
+  workspace_name: "My workspace",
+  accent_color: "#6366F1",
+  density: "comfortable",
+  font_family: "sans",
+  reduce_motion: false,
+  rounded_corners: 16,
 };
 
 export const LANGUAGES = [

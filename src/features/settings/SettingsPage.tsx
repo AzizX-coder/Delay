@@ -35,20 +35,22 @@ import {
   PanelBottom,
 } from "lucide-react";
 import { db } from "@/lib/database";
-import { LANGUAGES } from "@/types/settings";
+import { LANGUAGES, ACCENT_PRESETS } from "@/types/settings";
 import type { OllamaModel } from "@/types/ai";
 import { Logo } from "@/components/ui/Logo";
 import { useT } from "@/lib/i18n";
 
 export function SettingsPage() {
   const { theme, setTheme, customBgData, setCustomBg } = useThemeStore();
-  const { 
+  const {
     language, ai_provider, ai_model, ai_enabled, security_pin,
     nav_position, nav_style, show_clock,
-    api_key_openrouter, api_key_groq, api_key_openai, 
-    api_key_anthropic, api_key_deepseek, api_key_gemini, 
-    setSetting 
+    workspace_name, accent_color, density, font_family, reduce_motion, rounded_corners,
+    api_key_openrouter, api_key_groq, api_key_openai,
+    api_key_anthropic, api_key_deepseek, api_key_gemini,
+    setSetting
   } = useSettingsStore();
+  const [settingsQuery, setSettingsQuery] = useState("");
   const { setModel } = useAIStore();
   const {
     status,
@@ -117,7 +119,105 @@ export function SettingsPage() {
           {t("settings.subtitle")}
         </p>
 
-        <Section title={t("settings.appearance")} icon={<Sun size={18} />}>
+        {/* Search */}
+        <div className="mb-6 flex items-center gap-2 px-3 py-2 rounded-xl bg-bg-secondary/40 border border-border/30">
+          <span className="text-text-tertiary text-[12px] font-bold">⌕</span>
+          <input
+            value={settingsQuery}
+            onChange={(e) => setSettingsQuery(e.target.value)}
+            placeholder="Search settings..."
+            className="flex-1 bg-transparent outline-none text-[13px] text-text-primary placeholder:text-text-tertiary"
+          />
+        </div>
+
+        <Section title="Workspace" icon={<Layout size={18} />} hidden={settingsQuery && !"workspace name density font motion accent radius corners".includes(settingsQuery.toLowerCase())}>
+          <div className="space-y-4">
+            <div>
+              <p className="text-[12px] font-bold text-text-secondary mb-1.5">Workspace name</p>
+              <input value={workspace_name} onChange={(e) => setSetting("workspace_name", e.target.value)}
+                placeholder="My workspace"
+                className="w-full px-3 py-2 rounded-lg bg-bg-secondary/60 border border-border/30 outline-none focus:border-accent/40 text-[13px] text-text-primary" />
+            </div>
+
+            {/* Accent color */}
+            <div>
+              <p className="text-[12px] font-bold text-text-secondary mb-2">Accent color</p>
+              <div className="flex items-center gap-2 flex-wrap">
+                {ACCENT_PRESETS.map(p => (
+                  <button key={p.id} onClick={() => setSetting("accent_color", p.hex)}
+                    className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg border transition-all cursor-pointer ${accent_color === p.hex ? "border-text-primary ring-2 ring-text-primary/20" : "border-border/30 hover:border-border/60"}`}>
+                    <span className="w-4 h-4 rounded-full shrink-0" style={{ background: p.hex }} />
+                    <span className="text-[11.5px] font-bold text-text-primary">{p.name}</span>
+                  </button>
+                ))}
+                <label className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg border border-border/30 hover:border-border/60 cursor-pointer transition-all">
+                  <input type="color" value={accent_color} onChange={e => setSetting("accent_color", e.target.value)}
+                    className="w-4 h-4 rounded-full overflow-hidden cursor-pointer p-0 border-0" />
+                  <span className="text-[11.5px] font-bold text-text-primary">Custom</span>
+                </label>
+              </div>
+            </div>
+
+            {/* Density */}
+            <div>
+              <p className="text-[12px] font-bold text-text-secondary mb-2">Density</p>
+              <div className="flex items-center gap-2">
+                {(["compact", "comfortable", "spacious"] as const).map(d => (
+                  <button key={d} onClick={() => setSetting("density", d)}
+                    className={`flex-1 px-3 py-2 rounded-lg text-[12px] font-bold transition-all cursor-pointer capitalize ${density === d ? "bg-accent/12 text-accent ring-1 ring-accent/30" : "bg-bg-secondary/40 text-text-secondary hover:bg-bg-hover"}`}>{d}</button>
+                ))}
+              </div>
+            </div>
+
+            {/* Font family */}
+            <div>
+              <p className="text-[12px] font-bold text-text-secondary mb-2">Font family</p>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                {([
+                  { id: "sans", label: "Sans", sample: "Aa" },
+                  { id: "serif", label: "Serif", sample: "Aa" },
+                  { id: "mono", label: "Mono", sample: "Aa" },
+                  { id: "rounded", label: "Rounded", sample: "Aa" },
+                ] as const).map(opt => (
+                  <button key={opt.id} onClick={() => setSetting("font_family", opt.id)}
+                    className={`px-3 py-2.5 rounded-lg flex items-center justify-between transition-all cursor-pointer ${font_family === opt.id ? "bg-accent/12 ring-1 ring-accent/30" : "bg-bg-secondary/40 hover:bg-bg-hover"}`}>
+                    <span className="text-[12px] font-bold text-text-primary">{opt.label}</span>
+                    <span className={`text-[15px] ${font_family === opt.id ? "text-accent" : "text-text-tertiary"}`}
+                      style={{ fontFamily:
+                        opt.id === "serif" ? "ui-serif, Georgia, serif" :
+                        opt.id === "mono" ? "ui-monospace, monospace" :
+                        opt.id === "rounded" ? "ui-rounded, 'SF Pro Rounded', system-ui" :
+                        "ui-sans-serif, system-ui" }}>
+                      {opt.sample}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Rounded corners */}
+            <div>
+              <p className="text-[12px] font-bold text-text-secondary mb-2">Rounded corners <span className="text-text-tertiary font-mono ml-1">{rounded_corners}px</span></p>
+              <input type="range" min={0} max={24} value={rounded_corners}
+                onChange={(e) => setSetting("rounded_corners", parseInt(e.target.value, 10))}
+                className="w-full accent-[var(--color-accent)]" />
+            </div>
+
+            {/* Reduce motion */}
+            <label className="flex items-center justify-between px-3 py-2.5 rounded-lg bg-bg-secondary/40 cursor-pointer">
+              <div>
+                <p className="text-[13px] font-bold text-text-primary">Reduce motion</p>
+                <p className="text-[11px] text-text-tertiary">Minimize animations and transitions</p>
+              </div>
+              <button onClick={() => setSetting("reduce_motion", !reduce_motion)}
+                className={`w-10 h-5.5 rounded-full transition-all relative ${reduce_motion ? "bg-accent" : "bg-border/40"}`}>
+                <motion.div animate={{ x: reduce_motion ? 18 : 2 }} className="absolute top-0.5 w-4 h-4 rounded-full bg-white shadow-sm" />
+              </button>
+            </label>
+          </div>
+        </Section>
+
+        <Section title={t("settings.appearance")} icon={<Sun size={18} />} hidden={settingsQuery && !"appearance theme dark light forest mocha ocean rose system background image".includes(settingsQuery.toLowerCase())}>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5">
             {(
               [
@@ -712,11 +812,14 @@ function Section({
   title,
   icon,
   children,
+  hidden,
 }: {
   title: string;
   icon: React.ReactNode;
   children: React.ReactNode;
+  hidden?: boolean | "" | string | null;
 }) {
+  if (hidden) return null;
   return (
     <div className="mb-6">
       <div className="flex items-center gap-2 mb-3 px-1">

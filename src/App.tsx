@@ -23,6 +23,7 @@ import { VoiceStudioPage } from "@/features/voice-studio/VoiceStudioPage";
 import { BucketPage } from "@/features/bucket/BucketPage";
 import { SavedPage } from "@/features/saved/SavedPage";
 import { StatusPage } from "@/features/status/StatusPage";
+import { FlowsPage } from "@/features/flows/FlowsPage";
 import { AppLock } from "@/components/ui/AppLock";
 import { Logo } from "@/components/ui/Logo";
 import { motion } from "motion/react";
@@ -50,6 +51,28 @@ export default function App() {
     document.documentElement.lang = language;
     document.documentElement.dir = language === "ar" ? "rtl" : "ltr";
   }, [language]);
+
+  // Apply customization CSS vars (accent, density, font, motion, radius)
+  const { accent_color, density, font_family, reduce_motion, rounded_corners } = useSettingsStore();
+  useEffect(() => {
+    const root = document.documentElement;
+    if (accent_color) root.style.setProperty("--color-accent", accent_color);
+    const densityScale = density === "compact" ? "0.92" : density === "spacious" ? "1.08" : "1";
+    root.style.setProperty("--density-scale", densityScale);
+    const fontStack: Record<string, string> = {
+      sans: "ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
+      serif: "ui-serif, Georgia, 'Times New Roman', serif",
+      mono: "ui-monospace, 'JetBrains Mono', SFMono-Regular, Menlo, monospace",
+      rounded: "ui-rounded, 'SF Pro Rounded', 'Hiragino Maru Gothic Pro', system-ui, sans-serif",
+    };
+    root.style.setProperty("--font-app", fontStack[font_family] || fontStack.sans);
+    document.body.style.fontFamily = "var(--font-app)";
+    if (typeof rounded_corners === "number") {
+      root.style.setProperty("--radius-base", `${rounded_corners}px`);
+    }
+    if (reduce_motion) root.classList.add("reduce-motion");
+    else root.classList.remove("reduce-motion");
+  }, [accent_color, density, font_family, reduce_motion, rounded_corners]);
 
   useEffect(() => {
     if (security_pin) setIsLocked(true);
@@ -85,6 +108,7 @@ export default function App() {
           <Route path="bucket" element={<BucketPage />} />
           <Route path="saved" element={<SavedPage />} />
           <Route path="status" element={<StatusPage />} />
+          <Route path="flows" element={<FlowsPage />} />
           <Route path="settings" element={<SettingsPage />} />
         </Route>
       </Routes>

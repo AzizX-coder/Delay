@@ -26,6 +26,9 @@
   --color-success: #34C759;
   --color-warning: #FF9500;
   --color-danger: #FF3B30;
+  --density-scale: 1;
+  --radius-base: 16px;
+  --font-app: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 
   /* ─── Borders ─── */
   --color-border: rgba(0, 0, 0, 0.10);
@@ -599,3 +602,14 @@ button, a, [role="button"] {
 .timer-ring circle {
   transition: stroke-dashoffset 1s linear;
 }
+
+/* Reduce-motion override — applied when user toggles "Reduce motion" in settings */
+.reduce-motion *,
+.reduce-motion *::before,
+.reduce-motion *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
+}
+

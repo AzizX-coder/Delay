@@ -33,6 +33,11 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
           settings.security_pin = row.value === "null" ? null : row.value;
         } else if (row.key === "show_clock") {
           settings.show_clock = row.value === "true";
+        } else if (row.key === "reduce_motion") {
+          settings.reduce_motion = row.value === "true";
+        } else if (row.key === "rounded_corners") {
+          const n = parseInt(row.value, 10);
+          if (!isNaN(n)) settings.rounded_corners = n;
         } else if (row.key === "enabled_modules") {
           try { settings.enabled_modules = JSON.parse(row.value); } catch {}
         } else {
