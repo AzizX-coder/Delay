@@ -81,8 +81,8 @@
       "icon": "public/logo.png",
       "hardenedRuntime": true,
       "gatekeeperAssess": false,
-      "entitlementsFile": "electron/entitlements.mac.plist",
-      "entitlementsInheritFile": "electron/entitlements.mac.plist",
+      "entitlements": "electron/entitlements.mac.plist",
+      "entitlementsInherit": "electron/entitlements.mac.plist",
       "artifactName": "Delay-${version}-${arch}.${ext}"
     },
     "linux": {
@@ -94,6 +94,7 @@
     }
   },
   "dependencies": {
+    "@capacitor/core": "^7.2.0",
     "@emoji-mart/data": "^1.2.1",
     "@emoji-mart/react": "^1.1.1",
     "@monaco-editor/react": "^4.7.0",
@@ -138,6 +139,8 @@
     "zustand": "^5.0.12"
   },
   "devDependencies": {
+    "@capacitor/android": "^7.2.0",
+    "@capacitor/cli": "^7.2.0",
     "@tailwindcss/vite": "^4.2.2",
     "@types/canvas-confetti": "^1.9.0",
     "@types/react": "^19.2.14",

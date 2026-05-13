@@ -137,9 +137,68 @@ jobs:
             release/*.AppImage
             release/SHA256SUMS-linux.txt
 
+  build-android:
+    name: Android APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Setup JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Dependencies
+        run: npm install --legacy-peer-deps
+
+      - name: Build web app
+        run: npx vite build
+
+      - name: Add & sync Capacitor Android platform
+        run: |
+          npx cap add android
+          npx cap sync android
+
+      - name: Build APK
+        working-directory: android
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleRelease
+
+      - name: Rename APK
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          mv android/app/build/outputs/apk/release/app-release-unsigned.apk \
+             android/app/build/outputs/apk/release/Delay-${VERSION}-android.apk
+
+      - name: Generate SHA-256 checksum
+        run: |
+          cd android/app/build/outputs/apk/release
+          sha256sum Delay-*-android.apk > SHA256SUMS-android.txt
+          cat SHA256SUMS-android.txt
+
+      - name: Upload Android artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-release
+          path: |
+            android/app/build/outputs/apk/release/Delay-*-android.apk
+            android/app/build/outputs/apk/release/SHA256SUMS-android.txt
+
   create-release:
     name: Create GitHub Release
-    needs: [build-windows, build-mac, build-linux]
+    needs: [build-windows, build-mac, build-linux, build-android]
     runs-on: ubuntu-latest
 
     steps:
@@ -162,6 +221,8 @@ jobs:
             artifacts/mac-release/SHA256SUMS-mac.txt
             artifacts/linux-release/*.AppImage
             artifacts/linux-release/SHA256SUMS-linux.txt
+            artifacts/android-release/*.apk
+            artifacts/android-release/SHA256SUMS-android.txt
           body: |
             ## Delay ${{ inputs.version || github.ref_name }} — SaaS Edition
 
@@ -176,7 +237,7 @@ jobs:
             - File preview in Vault (image, video, audio, PDF)
             - Voice recordings persist across reloads
             - Smooth page transitions
-            - Mac (DMG) + Linux (AppImage) + Windows (NSIS) builds
+            - Mac (DMG) + Linux (AppImage) + Windows (NSIS) + Android (APK) builds
 
             ### Download
 
@@ -187,8 +248,10 @@ jobs:
             | macOS Apple Silicon | `Delay-*-arm64.dmg` |
             | macOS Intel | `Delay-*-x64.dmg` |
             | Linux | `Delay-*.AppImage` (chmod +x first) |
+            | Android | `Delay-*-android.apk` (enable Unknown Sources) |
 
             > **Windows SmartScreen warning?** Click **More info → Run anyway**.
+            > **Android install:** Settings → Security → Unknown Sources → enable, then open the APK.
 
             ### Auto-update
-            Installed copies check for updates automatically.
+            Desktop copies (Windows/macOS/Linux) check for updates automatically.
