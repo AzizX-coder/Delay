@@ -14,7 +14,6 @@ import { CalendarPage } from "@/features/calendar/CalendarPage";
 import { AIChatPage } from "@/features/ai/AIChatPage";
 import { TimerPage } from "@/features/timer/TimerPage";
 import { CodeStudioPage } from "@/features/code-studio/CodeStudioPage";
-
 import { SettingsPage } from "@/features/settings/SettingsPage";
 import { OnboardingFlow } from "@/features/onboarding/OnboardingFlow";
 import { KanbanPage } from "@/features/kanban/KanbanPage";
@@ -29,6 +28,15 @@ import { Logo } from "@/components/ui/Logo";
 import { CommandPalette } from "@/components/ui/CommandPalette";
 import { QuickCaptureModal } from "@/components/ui/QuickCaptureModal";
 import { motion } from "motion/react";
+import { useAuth } from "@/hooks/useAuth";
+import { useProfile } from "@/hooks/useProfile";
+import { useGamificationStore } from "@/stores/gamificationStore";
+import { AuthPage } from "@/features/auth/AuthPage";
+import { isSupabaseConfigured } from "@/lib/supabase";
+import { PricingPage } from "@/features/pricing/PricingPage";
+import { PublicNotePage } from "@/features/share/PublicNotePage";
+
+const OFFLINE_KEY = "delay_offline_mode";
 
 export default function App() {
   const { initTheme } = useThemeStore();
@@ -38,21 +46,67 @@ export default function App() {
   const [isLocked, setIsLocked] = useState(false);
   const [cmdkOpen, setCmdkOpen] = useState(false);
   const [quickCaptureOpen, setQuickCaptureOpen] = useState(false);
+  const [skippedAuth, setSkippedAuth] = useState(
+    () => sessionStorage.getItem(OFFLINE_KEY) === "1"
+  );
 
-  // Cmd+K shortcut
+  const { user, loading: authLoading } = useAuth();
+  const { profile } = useProfile();
+  const { setXP, setStreak } = useGamificationStore();
+
+  // Hydrate gamification from cloud profile
+  useEffect(() => {
+    if (profile) {
+      if (typeof profile.xp === "number") setXP(profile.xp);
+      if (typeof profile.streak_days === "number") {
+        setStreak(profile.streak_days, profile.streak_last_date ?? null);
+      }
+    }
+  }, [profile?.id]);
+
+  // Wire sync + online flush on login
+  useEffect(() => {
+    if (!user) return;
+    // Set global userId for sync (used by stores)
+    (window as any).__delayUserId = user.id;
+
+    const flush = async () => {
+      try {
+        const { flushQueue } = await import("@/lib/sync");
+        flushQueue(user.id);
+      } catch {}
+    };
+    const pull = async () => {
+      try {
+        const { pullFromSupabase } = await import("@/lib/sync");
+        const lastSync = parseInt(localStorage.getItem("delay_last_sync") ?? "0", 10);
+        await pullFromSupabase(user.id, lastSync);
+        localStorage.setItem("delay_last_sync", String(Math.floor(Date.now() / 1000)));
+      } catch {}
+    };
+
+    pull();
+    window.addEventListener("online", flush);
+    return () => {
+      window.removeEventListener("online", flush);
+      (window as any).__delayUserId = null;
+    };
+  }, [user?.id]);
+
+  // Cmd+K / Ctrl+Shift+S shortcuts
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
         e.preventDefault();
-        setCmdkOpen(v => !v);
+        setCmdkOpen((v) => !v);
       }
-      if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key.toLowerCase() === 's') {
+      if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key.toLowerCase() === "s") {
         e.preventDefault();
-        setQuickCaptureOpen(v => !v);
+        setQuickCaptureOpen((v) => !v);
       }
     };
-    window.addEventListener('keydown', handler);
-    return () => window.removeEventListener('keydown', handler);
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
   }, []);
 
   useEffect(() => {
@@ -72,7 +126,6 @@ export default function App() {
     document.documentElement.dir = language === "ar" ? "rtl" : "ltr";
   }, [language]);
 
-  // Apply customization CSS vars (accent, density, font, motion, radius)
   const { accent_color, density, font_family, reduce_motion, rounded_corners } = useSettingsStore();
   useEffect(() => {
     const root = document.documentElement;
@@ -110,11 +163,30 @@ export default function App() {
     return <OnboardingFlow />;
   }
 
+  // Auth gate — only when Supabase is configured
+  if (isSupabaseConfigured) {
+    if (authLoading) return <SplashScreen />;
+    if (!user && !skippedAuth) {
+      return (
+        <AuthPage
+          onSkip={() => {
+            sessionStorage.setItem(OFFLINE_KEY, "1");
+            setSkippedAuth(true);
+          }}
+        />
+      );
+    }
+  }
+
   return (
     <HashRouter>
       <CommandPalette open={cmdkOpen} onClose={() => setCmdkOpen(false)} />
       <QuickCaptureModal open={quickCaptureOpen} onClose={() => setQuickCaptureOpen(false)} />
       <Routes>
+        {/* Public share routes — no auth required */}
+        <Route path="share/note/:slug" element={<PublicNotePage />} />
+
+        {/* Main app */}
         <Route path="/" element={<AppLayout />}>
           <Route index element={<Navigate to="/notes" replace />} />
           <Route path="notes" element={<NotesPage />} />
@@ -123,7 +195,6 @@ export default function App() {
           <Route path="timer" element={<TimerPage />} />
           <Route path="ai" element={<AIChatPage />} />
           <Route path="code-studio" element={<CodeStudioPage />} />
-
           <Route path="kanban" element={<KanbanPage />} />
           <Route path="whiteboard" element={<WhiteboardPage />} />
           <Route path="voice-studio" element={<VoiceStudioPage />} />
@@ -132,6 +203,7 @@ export default function App() {
           <Route path="status" element={<StatusPage />} />
           <Route path="flows" element={<FlowsPage />} />
           <Route path="settings" element={<SettingsPage />} />
+          <Route path="pricing" element={<PricingPage />} />
         </Route>
       </Routes>
     </HashRouter>
@@ -159,4 +231,3 @@ function SplashScreen() {
     </div>
   );
 }
-

@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { db, generateId, now } from "@/lib/database";
 import type { Note } from "@/types/note";
+import { enqueueSync } from "@/lib/sync";
 
 interface NotesState {
   notes: Note[];
@@ -67,6 +68,7 @@ export const useNotesStore = create<NotesState>((set, get) => ({
 
     try {
       await db.notes.add(note);
+      enqueueSync("notes", id, "upsert", note);
       import("./gamificationStore").then(m => {
         m.useGamificationStore.getState().addXP(5, "Note created");
       });
@@ -90,6 +92,8 @@ export const useNotesStore = create<NotesState>((set, get) => ({
 
     try {
       await db.notes.update(id, { ...data, updated_at: timestamp });
+      const note = get().notes.find((n) => n.id === id);
+      if (note) enqueueSync("notes", id, "upsert", { ...note, ...data, updated_at: timestamp });
     } catch {
       // silent
     }
@@ -110,7 +114,10 @@ export const useNotesStore = create<NotesState>((set, get) => ({
     });
 
     try {
-      await db.notes.update(id, { deleted_at: now() });
+      const deletedAt = now();
+      await db.notes.update(id, { deleted_at: deletedAt });
+      const note = get().notes.find((n) => n.id === id);
+      if (note) enqueueSync("notes", id, "upsert", { ...note, deleted_at: deletedAt });
     } catch {
       // silent
     }

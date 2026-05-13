@@ -4,9 +4,61 @@ import { motion, AnimatePresence } from "motion/react";
 import {
   FolderPlus, Upload, Trash2, FileText, Image as ImageIcon,
   Archive, Download, Search, X, Folder, ChevronLeft, MoreVertical,
-  Edit3, Film, Music, File, Share2, Shield,
+  Edit3, Film, Music, File, Share2, Shield, Eye,
 } from "lucide-react";
 import { EmptyState } from "@/shared/components/EmptyState";
+
+interface BucketFile { id: string; name: string; fileData: string; fileType: string; size: number; created_at: number; folderId: string | null; }
+
+function FilePreviewModal({ file, onClose }: { file: BucketFile; onClose: () => void }) {
+  const isImage = file.fileType.startsWith("image/");
+  const isVideo = file.fileType.startsWith("video/");
+  const isAudio = file.fileType.startsWith("audio/");
+  const isPDF = file.fileType.includes("pdf");
+  const isText = file.fileType.startsWith("text/");
+
+  return (
+    <AnimatePresence>
+      <motion.div
+        initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+        className="fixed inset-0 z-[200] bg-black/70 backdrop-blur-sm flex flex-col items-center justify-center p-4"
+        onClick={onClose}
+      >
+        <motion.div
+          initial={{ scale: 0.94, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.94, opacity: 0 }}
+          transition={{ type: "spring", stiffness: 380, damping: 28 }}
+          className="relative max-w-4xl w-full max-h-[85vh] bg-bg-elevated rounded-3xl overflow-hidden shadow-2xl border border-border/40"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* Header */}
+          <div className="flex items-center justify-between px-4 py-3 border-b border-border/20 bg-bg-secondary/30">
+            <p className="text-[13px] font-bold text-text-primary truncate">{file.name}</p>
+            <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-xl text-text-tertiary hover:text-text-primary hover:bg-bg-hover cursor-pointer"><X size={16} /></button>
+          </div>
+          {/* Content */}
+          <div className="flex items-center justify-center overflow-auto" style={{ maxHeight: "calc(85vh - 56px)" }}>
+            {isImage && <img src={file.fileData} alt={file.name} className="max-w-full max-h-full object-contain" />}
+            {isVideo && <video src={file.fileData} controls className="max-w-full max-h-full" />}
+            {isAudio && <div className="p-8"><audio src={file.fileData} controls className="w-[320px]" /></div>}
+            {isPDF && <embed src={file.fileData} type="application/pdf" className="w-full" style={{ height: "70vh" }} />}
+            {isText && (
+              <pre className="p-6 text-[12px] text-text-secondary font-mono overflow-auto w-full max-h-[70vh] whitespace-pre-wrap">
+                {atob(file.fileData.split(",")[1] ?? "")}
+              </pre>
+            )}
+            {!isImage && !isVideo && !isAudio && !isPDF && !isText && (
+              <div className="p-12 text-center">
+                <File size={48} className="text-text-tertiary mx-auto mb-3" />
+                <p className="text-text-secondary text-[14px] font-medium">{file.name}</p>
+                <p className="text-text-tertiary text-[12px] mt-1">Preview not available for this file type.</p>
+              </div>
+            )}
+          </div>
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
+  );
+}
 
 const formatSize = (bytes: number) => {
   if (bytes < 1024) return bytes + " B";
@@ -30,6 +82,7 @@ export function BucketPage() {
   const [newFolderName, setNewFolderName] = useState("");
   const [editingFolderId, setEditingFolderId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
+  const [previewFile, setPreviewFile] = useState<BucketFile | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => { loadVault(); }, []);
@@ -188,7 +241,8 @@ export function BucketPage() {
                 <div className="space-y-1.5">
                   {filtered.map(file => (
                     <motion.div key={file.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-                      className="group flex items-center gap-3 p-3 rounded-xl border border-border/20 bg-bg-secondary/30 hover:border-border/40 transition-all">
+                      className="group flex items-center gap-3 p-3 rounded-xl border border-border/20 bg-bg-secondary/30 hover:border-border/40 transition-all cursor-pointer"
+                      onClick={() => setPreviewFile(file as BucketFile)}>
                       {/* Thumbnail or icon */}
                       <div className="w-10 h-10 rounded-lg bg-bg-hover flex items-center justify-center shrink-0 overflow-hidden">
                         {file.fileType.startsWith("image/") ? (
@@ -206,7 +260,8 @@ export function BucketPage() {
                           <button onClick={() => shareFile(file)} className="p-1.5 rounded-lg text-text-tertiary hover:text-accent cursor-pointer" title="Share"><Share2 size={13} /></button>
                         )}
                         <button onClick={() => downloadFile(file)} className="p-1.5 rounded-lg text-text-tertiary hover:text-accent cursor-pointer" title="Download"><Download size={13} /></button>
-                        <button onClick={() => removeFile(file.id)} className="p-1.5 rounded-lg text-text-tertiary hover:text-danger cursor-pointer" title="Delete"><Trash2 size={13} /></button>
+                        <button onClick={(e) => { e.stopPropagation(); removeFile(file.id); }} className="p-1.5 rounded-lg text-text-tertiary hover:text-danger cursor-pointer" title="Delete"><Trash2 size={13} /></button>
+                        <button onClick={(e) => { e.stopPropagation(); setPreviewFile(file as BucketFile); }} className="p-1.5 rounded-lg text-text-tertiary hover:text-accent cursor-pointer" title="Preview"><Eye size={13} /></button>
                       </div>
                     </motion.div>
                   ))}
@@ -216,6 +271,8 @@ export function BucketPage() {
           </>
         )}
       </div>
+
+      {previewFile && <FilePreviewModal file={previewFile} onClose={() => setPreviewFile(null)} />}
     </div>
   );
 }

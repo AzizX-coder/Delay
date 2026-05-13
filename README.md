@@ -2,121 +2,180 @@
 
 <img src="public/logo.png" alt="Delay" width="112" height="112" style="border-radius: 24px" />
 
-# Delay
+# Delay — Your Second Brain for Deep Work
 
-**The cross-platform Agentic OS for productivity.**
+[![Web App](https://img.shields.io/badge/Web%20App-delay.app-6366F1?style=flat-square&logo=vercel)](https://delay.app)
+[![Windows](https://img.shields.io/badge/Windows-x64%20%7C%20arm64-0078D4?style=flat-square&logo=windows)](https://github.com/AzizX-coder/Delay/releases/latest)
+[![Mac](https://img.shields.io/badge/macOS-Apple%20Silicon%20%7C%20Intel-000000?style=flat-square&logo=apple)](https://github.com/AzizX-coder/Delay/releases/latest)
+[![Linux](https://img.shields.io/badge/Linux-AppImage-FCC624?style=flat-square&logo=linux&logoColor=black)](https://github.com/AzizX-coder/Delay/releases/latest)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue?style=flat-square)](LICENSE)
 
-Made with ❤️ by **AlpSoft Team**
-
-Notes · Tasks · Calendar · Timer · Code Studio · Whiteboard · AI Agent
-
-[![Download for Windows](https://img.shields.io/badge/Download-Windows_Installer-007AFF?style=for-the-badge&logo=windows&logoColor=white)](https://github.com/AzizX-coder/Delay/releases/latest)
-&nbsp;
-[![License](https://img.shields.io/badge/License-Apache_2.0-5856D6?style=for-the-badge)](LICENSE)
-
-[Landing Page](https://azizx-coder.github.io/Delay/) · [Releases](https://github.com/AzizX-coder/Delay/releases) · [Report a bug](https://github.com/AzizX-coder/Delay/issues)
-
----
-
-### Support Our Work!
-
-If you find Delay helpful and want to support the AlpSoft team, consider buying us a coffee! Your support helps us keep the app 100% free and open-source.
-
-<a href="https://www.buymeacoffee.com/alpsoft" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" style="height: 60px !important;width: 217px !important;" ></a>
+**Delay** is a cross-platform productivity OS — one app for notes, tasks, calendar, focus timer, kanban, AI assistant, code studio, whiteboard, voice studio, and more. Beautiful, fast, and offline-first.
 
 </div>
 
 ---
 
-## ✨ What is Delay?
+## What's New in v3.1.0
 
-Delay is a **super free cross-platform Agentic OS** that combines **10 modular workspaces** — notes, tasks, calendar, timer, kanban, whiteboard, code studio, voice studio, bucket, and capture — all unified behind an **autonomous AI Agent**. It is available on Desktop, Web, and Mobile (PWA).
-
-Everything can live locally on your device or sync via the cloud, giving you ultimate flexibility and security.
-
-## 📸 Screenshots & Documentation
-
-<div align="center">
-  <img src="public/dashboard.png" alt="Delay Dashboard" width="800" style="border-radius: 12px; margin-bottom: 20px" />
-  <img src="public/notes.png" alt="Delay Notes" width="800" style="border-radius: 12px" />
-</div>
-
-### 1. 🤖 AI Agent (Ollama + Cloud)
-A unified autonomous agent with file control, terminal execution, and 20+ tools. You can choose to run local models with Ollama for extreme privacy, or connect to OpenRouter/Cloud APIs for advanced LLM capabilities.
-
-### 2. 📝 Notes & Capture
-- **Notes**: TipTap docs with 13 slash commands. Export to Markdown, HTML, and TXT. Features 10 built-in templates (Weekly Review, Bug Report, etc.) and voice dictation.
-- **Capture (Global)**: Hit `Ctrl+Shift+S` anywhere to quickly capture an idea, task, or note to your inbox.
-
-### 3. ✅ Tasks & Kanban
-- **Tasks**: Priority flags, due dates, Inbox/Today/Upcoming smart views, and custom lists. Tasks grant XP points for completion.
-- **Kanban**: Full drag-and-drop boards, custom columns, color labels, and activity logs.
-
-### 4. 📅 Calendar & Timer
-- **Calendar**: Unified events and tasks across Month, Week, and Day views.
-- **Timer + Goals**: Pomodoro timer with purpose-driven goals, focus scheduling, and multi-day tracking.
-
-### 5. 🎨 Whiteboard
-A fully interactive, infinite canvas powered by `tldraw`. Create sticky notes, shapes, use pens, pan/zoom, and organize visually.
-
-### 6. 💻 Code Studio
-A VS Code-like IDE workspace featuring Monaco Editor, a file tree, built-in terminal, and an AI coding agent directly in the browser/app.
-
-### 7. 🔒 Bucket
-Secure local file storage. Keep your documents, images, and important files organized inside secure folders on your device.
-
-### 8. 🎮 Gamification
-Turn productivity into a game! Earn XP for completing tasks, writing notes, and finishing focus sessions.
+- **Cloud Sync** — Notes, tasks, and events sync across all devices via Supabase (real-time, offline queue)
+- **Auth Gate** — Sign in with Google, GitHub, or email; skip to offline mode anytime
+- **Profile & Plan Badge** — Avatar, plan tier (Free/Pro/Max), XP level in sidebar
+- **Public Note Sharing** — Share any note via a permanent public link — Pro feature
+- **Pricing Page** — Free / Pro ($8/mo) / Max ($18/mo) with Stripe-ready checkout
+- **Paywall Modals** — Graceful upgrade prompts when hitting free tier limits
+- **File Preview in Vault** — Click any file to preview images, video, audio, PDF inline
+- **Voice Recordings Persisted** — Recordings survive page reloads (IndexedDB)
+- **AI Weekly Insight** — Personalized Monday productivity summary (requires OpenRouter key)
+- **Page Transitions** — Smooth opacity + slide animations between all modules
+- **Mac + Linux Builds** — DMG (x64/arm64), AppImage — alongside Windows NSIS
 
 ---
 
-## 📥 Download & Installation
+## Download
 
-Grab the latest **Delay-Setup-3.0.0.exe** from the [Releases](https://github.com/AzizX-coder/Delay/releases/latest) page, or visit the [landing page](https://azizx-coder.github.io/Delay/).
+| Platform | Download | Notes |
+|----------|----------|-------|
+| Windows x64 | `Delay-Setup-3.1.0-x64.exe` | NSIS installer |
+| Windows ARM64 | `Delay-Setup-3.1.0-arm64.exe` | Surface Pro X, Copilot+ PCs |
+| macOS Apple Silicon | `Delay-3.1.0-arm64.dmg` | M1/M2/M3/M4 |
+| macOS Intel | `Delay-3.1.0-x64.dmg` | Intel Mac |
+| Linux | `Delay-3.1.0-x64.AppImage` | All distros (chmod +x first) |
+| Web | [delay.app](https://delay.app) | Installable PWA |
 
-**Requirements:** Windows 10 or 11 (x64), macOS, Linux, or modern Web Browser.
-Optional: [Ollama](https://ollama.com/) for local AI features.
+→ **[All releases](https://github.com/AzizX-coder/Delay/releases/latest)**
 
-### 🛡️ Windows SmartScreen — "Windows protected your PC"
+---
 
-Delay is built by an independent developer and is **not yet code-signed with a paid EV certificate**. On first launch, Windows may show a blue SmartScreen banner. 
+## Features
 
-**To install safely:**
+| Module | What it does |
+|--------|-------------|
+| **Notes** | Rich TipTap editor — markdown, tables, tasks, slash commands, voice dictation, AI write |
+| **Tasks** | Inbox / Today / Upcoming / Completed views, priorities, due dates |
+| **Calendar** | Month / Week / Day views, all-day events, color categories, recurrence |
+| **Timer** | Pomodoro (25/5/15) + custom durations, session history, XP rewards |
+| **AI Chat** | Chat & Agent modes — Ollama (local) or OpenRouter (cloud), 15 built-in tools |
+| **Code Studio** | Monaco editor + terminal (Electron), AI coding agent |
+| **Kanban** | Drag-drop boards, column management, card detail drawer with priorities |
+| **Whiteboard** | Infinite tldraw canvas — shapes, connectors, freehand |
+| **Voice Studio** | Record with live waveform, Web Audio API, persistent playback |
+| **Vault** | Local file storage with folders, file preview modal, drag-drop upload |
+| **Capture** | Quick-capture (Ctrl+Shift+S), link saves, global clipboard |
+| **Flows** | Link tasks, notes, events, links into project containers |
+| **Status** | Activity heatmap, focus charts, XP streaks, AI weekly insight |
 
-1. Download the latest `.exe` from [Releases](https://github.com/AzizX-coder/Delay/releases/latest).
-2. Double-click the installer. If SmartScreen appears, click **More info → Run anyway**.
-3. Follow the NSIS installer.
+---
 
-## 🔒 Security
-Delay implements device safety measures:
-- The Electron App runs in a strict **Sandbox** (`sandbox: true`).
-- A secure **Content-Security-Policy (CSP)** is enforced.
-- Context Isolation is enabled with node integration disabled on the frontend.
-
-## 🛠️ Tech Stack
+## Tech Stack
 
 | Layer | Technology |
 |-------|-----------|
-| Shell | Electron 41 |
-| Web/PWA | React 19 · TypeScript · Vite 8 · Vite PWA Plugin |
-| Styling | Tailwind CSS v4 · custom Liquid UI variables |
-| State | Zustand |
-| Storage | Supabase (Cloud) + Dexie.js (Local) |
-| Editor | TipTap · Monaco Editor · Tldraw |
-| Animation | Motion (Framer Motion) |
-| Packaging | electron-builder · GitHub Actions |
+| Framework | React 19, TypeScript, Vite 8 |
+| Desktop | Electron 41 |
+| State | Zustand 5 |
+| Local DB | Dexie 4 (IndexedDB) |
+| Cloud | Supabase (Auth + Postgres + Storage + Realtime) |
+| Payments | Stripe (checkout, webhooks, customer portal) |
+| Editor | TipTap 3, Monaco 4 |
+| Canvas | tldraw 4 |
+| Animations | Motion (Framer Motion) |
+| Charts | Recharts 2 |
+| Styling | Tailwind CSS 4 |
+| PWA | Vite PWA + Workbox |
+| i18n | 7 languages: en, es, fr, de, ru, ar, uz |
+| Themes | 10 built-in + custom background |
 
-## 🚀 Build from source
+---
+
+## Build from Source
+
+### Prerequisites
+
+```bash
+node >= 20
+npm >= 10
+```
+
+### Setup
 
 ```bash
 git clone https://github.com/AzizX-coder/Delay.git
 cd Delay
 npm install
-npm run dev                   # Web development
-npm run electron:dev          # Desktop development
-npm run electron:build        # Windows installer → release/
 ```
 
-## 📄 License
+### Environment Variables (all optional — app works fully offline without them)
 
-Apache-2.0 © [AzizX-coder](https://github.com/AzizX-coder) and the AlpSoft Team
+```env
+VITE_SUPABASE_URL=https://your-project.supabase.co
+VITE_SUPABASE_ANON_KEY=your-anon-key
+VITE_TLDRAW_LICENSE_KEY=your-tldraw-key
+VITE_OPENROUTER_API_KEY=your-openrouter-key
+VITE_STRIPE_PUBLISHABLE_KEY=pk_live_xxx
+```
+
+### Dev
+
+```bash
+npm run web:dev          # Web dev server (port 5173)
+npm run electron:dev     # Electron + hot reload
+```
+
+### Build
+
+```bash
+npm run web:build            # PWA → dist/
+npm run electron:build:win   # Windows NSIS (x64 + arm64)
+npm run electron:build:mac   # macOS DMG + ZIP (x64 + arm64)
+npm run electron:build:linux # Linux AppImage (x64)
+npm run electron:build       # Current platform
+```
+
+---
+
+## Cloud Setup (Supabase)
+
+1. Create a project at [supabase.com](https://supabase.com)
+2. Add URL + anon key to `.env`
+3. Apply migrations:
+
+```bash
+npm i -g supabase
+supabase login
+supabase link --project-ref YOUR_PROJECT_REF
+supabase db push
+```
+
+4. (Optional) Deploy Stripe Edge Functions:
+
+```bash
+supabase functions deploy create-checkout
+supabase functions deploy stripe-webhook
+supabase secrets set STRIPE_SECRET_KEY=sk_live_xxx
+supabase secrets set STRIPE_WEBHOOK_SECRET=whsec_xxx
+```
+
+---
+
+## Plans
+
+| Feature | Free | Pro ($8/mo) | Max ($18/mo) |
+|---------|------|-------------|--------------|
+| Notes | 50 | Unlimited | Unlimited |
+| Kanban boards | 3 | Unlimited | Unlimited |
+| Cloud sync | — | ✓ | ✓ |
+| Public sharing | — | ✓ | ✓ |
+| Cloud Vault | — | 5 GB | 20 GB |
+| AI credits | 20/mo | 500/mo | Unlimited |
+| Priority support | — | ✓ | ✓ |
+
+---
+
+## License
+
+Apache 2.0 — see [LICENSE](LICENSE)
+
+---
+
+<div align="center">Made with ❤️ by <a href="https://github.com/AzizX-coder">AzizX-coder</a></div>

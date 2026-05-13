@@ -3,8 +3,11 @@ import { db } from "@/lib/database";
 import { motion } from "motion/react";
 import {
   BarChart3, TrendingUp, Clock, CheckCircle2, StickyNote,
-  Calendar, Flame, Sparkles, Activity, Target, Zap, FileText,
+  Calendar, Flame, Sparkles, Activity, Target, Zap, FileText, Loader2,
 } from "lucide-react";
+import { useProfile } from "@/hooks/useProfile";
+import { useSettingsStore } from "@/stores/settingsStore";
+import { callOpenRouter } from "@/lib/openrouter";
 
 interface DayStat {
   date: string;      // YYYY-MM-DD
@@ -25,10 +28,43 @@ export function StatusPage() {
   const [streak, setStreak] = useState(0);
   const [loading, setLoading] = useState(true);
   const [range, setRange] = useState<"7d" | "30d" | "all">("7d");
+  const [insight, setInsight] = useState<string | null>(null);
+  const [insightLoading, setInsightLoading] = useState(false);
+  const { profile, updateProfile } = useProfile();
+  const { api_key_openrouter: openrouter_api_key } = useSettingsStore();
 
   useEffect(() => {
     loadStats();
   }, []);
+
+  // Load cached insight or generate on Mondays
+  useEffect(() => {
+    if (!profile) return;
+    const today = new Date().toISOString().slice(0, 10);
+    const isMonday = new Date().getDay() === 1;
+    if (profile.weekly_insight && profile.weekly_insight_date === today) {
+      setInsight(profile.weekly_insight);
+      return;
+    }
+    if (isMonday && openrouter_api_key && !insightLoading) {
+      generateInsight();
+    } else if (profile.weekly_insight) {
+      setInsight(profile.weekly_insight);
+    }
+  }, [profile?.id]);
+
+  const generateInsight = async () => {
+    if (!openrouter_api_key) return;
+    setInsightLoading(true);
+    try {
+      const today = new Date().toISOString().slice(0, 10);
+      const prompt = `You are an AI productivity coach. Based on these weekly stats, give a 2-sentence motivating insight:\n- ${totalFocusMin} focus minutes\n- ${completedTasks} tasks completed\n- ${totalNotes} notes created\n- ${streak} day streak\nBe specific, positive, and actionable. Max 50 words.`;
+      const text = await callOpenRouter([{ role: "user", content: prompt }], openrouter_api_key);
+      setInsight(text);
+      updateProfile?.({ weekly_insight: text, weekly_insight_date: today });
+    } catch {}
+    setInsightLoading(false);
+  };
 
   const loadStats = async () => {
     try {
@@ -127,6 +163,27 @@ export function StatusPage() {
             </div>
           </div>
         </motion.div>
+
+        {/* AI Weekly Insight */}
+        {(insight || insightLoading) && (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-6 p-4 rounded-2xl bg-gradient-to-r from-accent/8 to-accent/4 border border-accent/20 flex items-start gap-3"
+          >
+            <div className="w-8 h-8 rounded-xl bg-accent/15 flex items-center justify-center shrink-0 mt-0.5">
+              {insightLoading ? <Loader2 size={15} className="text-accent animate-spin" /> : <Sparkles size={15} className="text-accent" />}
+            </div>
+            <div>
+              <p className="text-[10px] font-bold text-accent uppercase tracking-wider mb-1">AI Weekly Insight</p>
+              {insightLoading ? (
+                <p className="text-[13px] text-text-tertiary">Generating your weekly insight...</p>
+              ) : (
+                <p className="text-[13px] text-text-secondary leading-relaxed">{insight}</p>
+              )}
+            </div>
+          </motion.div>
+        )}
 
         {/* KPI Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">

@@ -28,9 +28,12 @@ import {
   Heading1, Heading2, Heading3, List, ListOrdered, ListChecks,
   Quote, Code2, Highlighter, Smile, Mic, AlignLeft, AlignCenter,
   AlignRight, Minus, Table as TableIcon, Sparkles, Download,
-  FileText, FileCode, Type, Send, Loader2,
+  FileText, FileCode, Type, Send, Loader2, Share2, Copy, Check, Globe, EyeOff,
 } from "lucide-react";
 import { VoiceBadge } from "@/components/ui/VoiceBadge";
+import { UpgradeModal } from "@/components/ui/UpgradeModal";
+import { usePlanLimits } from "@/hooks/usePlanLimits";
+import { nanoid } from "nanoid";
 
 interface NoteEditorProps { noteId: string; }
 
@@ -67,6 +70,10 @@ export function NoteEditor({ noteId }: NoteEditorProps) {
   const [slashMenu, setSlashMenu] = useState<{ x: number; y: number } | null>(null);
   const [slashFilter, setSlashFilter] = useState("");
   const [showExportMenu, setShowExportMenu] = useState(false);
+  const [showSharePopover, setShowSharePopover] = useState(false);
+  const [shareCopied, setShareCopied] = useState(false);
+  const [showUpgrade, setShowUpgrade] = useState(false);
+  const { isProOrAbove } = usePlanLimits();
   const [showAIPanel, setShowAIPanel] = useState(false);
   const [aiPromptInput, setAiPromptInput] = useState("");
   const [aiGenerating, setAiGenerating] = useState(false);
@@ -251,6 +258,29 @@ export function NoteEditor({ noteId }: NoteEditorProps) {
     downloadFile(editor.getHTML(), `${note?.title || "note"}.html`, "text/html");
     setShowExportMenu(false);
   };
+  const enableShare = async () => {
+    if (!isProOrAbove) { setShowUpgrade(true); return; }
+    const slug = nanoid(10);
+    await updateNote(noteId, { is_public: 1, public_slug: slug });
+    setShowSharePopover(true);
+  };
+
+  const disableShare = async () => {
+    await updateNote(noteId, { is_public: 0, public_slug: null });
+    setShowSharePopover(false);
+  };
+
+  const shareUrl = note?.public_slug
+    ? `${window.location.origin}${window.location.pathname}#/share/note/${note.public_slug}`
+    : "";
+
+  const copyShareLink = () => {
+    navigator.clipboard.writeText(shareUrl).then(() => {
+      setShareCopied(true);
+      setTimeout(() => setShareCopied(false), 2000);
+    });
+  };
+
   const exportText = () => {
     if (!editor) return;
     downloadFile(editor.getText(), `${note?.title || "note"}.txt`, "text/plain");
@@ -322,6 +352,52 @@ export function NoteEditor({ noteId }: NoteEditorProps) {
           </AnimatePresence>
         </div>
 
+        {/* Share button */}
+        <div className="relative ml-auto">
+          <Cluster>
+            <TB
+              active={!!note?.is_public}
+              onClick={() => note?.is_public ? setShowSharePopover(v => !v) : enableShare()}
+              icon={<Share2 size={15} />}
+              tooltip={note?.is_public ? "Shared — manage" : "Share note"}
+            />
+          </Cluster>
+          <AnimatePresence>
+            {showSharePopover && note?.is_public && (
+              <>
+                <div className="fixed inset-0 z-40" onClick={() => setShowSharePopover(false)} />
+                <motion.div
+                  initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }}
+                  className="absolute top-full right-0 mt-2 z-50 w-[280px] bg-bg-elevated border border-border-light rounded-2xl shadow-2xl p-3"
+                >
+                  <p className="text-[11px] font-bold text-text-tertiary uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                    <Globe size={11} /> Public Link
+                  </p>
+                  <div className="flex items-center gap-1.5 mb-3">
+                    <input
+                      readOnly value={shareUrl}
+                      className="flex-1 text-[11px] text-text-secondary bg-bg-primary px-2.5 py-1.5 rounded-lg border border-border/30 outline-none truncate"
+                    />
+                    <button
+                      onClick={copyShareLink}
+                      className="px-2.5 py-1.5 rounded-lg bg-accent text-white text-[11px] font-bold cursor-pointer hover:bg-accent/90 transition-all flex items-center gap-1"
+                    >
+                      {shareCopied ? <Check size={12} /> : <Copy size={12} />}
+                      {shareCopied ? "Copied" : "Copy"}
+                    </button>
+                  </div>
+                  <button
+                    onClick={disableShare}
+                    className="w-full flex items-center gap-2 px-2.5 py-2 rounded-xl text-[11px] font-medium text-danger hover:bg-danger/10 transition-colors cursor-pointer text-left"
+                  >
+                    <EyeOff size={12} /> Revoke public link
+                  </button>
+                </motion.div>
+              </>
+            )}
+          </AnimatePresence>
+        </div>
+
         {showEmojiPicker && (
           <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 z-50">
             <div className="fixed inset-0" onClick={() => setShowEmojiPicker(false)} />
@@ -332,6 +408,7 @@ export function NoteEditor({ noteId }: NoteEditorProps) {
           </div>
         )}
       </div>
+      <UpgradeModal open={showUpgrade} onClose={() => setShowUpgrade(false)} feature="Public Sharing" reason="Share notes publicly with a link — available on Pro and Max plans." />
 
       {/* ── Editor area ── */}
       <div className="flex-1 relative overflow-y-auto bg-bg-primary">

@@ -27,7 +27,24 @@ export interface TimerSession {
   ended_at: number;
 }
 
+export interface SyncQueueItem {
+  id: number;
+  table_name: string;
+  record_id: string;
+  operation: "upsert" | "delete";
+  payload: string; // JSON
+  created_at: number;
+  attempts: number;
+}
 
+export interface VoiceRecording {
+  id: string;
+  name: string;
+  data: string;   // base64 data URL
+  mime: string;   // audio/webm etc.
+  duration: number; // seconds
+  created_at: number;
+}
 
 export const db = new Dexie("DelayDB") as Dexie & {
   settings: EntityTable<SettingRow, "key">;
@@ -40,8 +57,11 @@ export const db = new Dexie("DelayDB") as Dexie & {
   memories: EntityTable<{ id: string; content: string; created_at: number }, "id">;
   codeSnippets: EntityTable<CodeSnippet, "id">;
   timerSessions: EntityTable<TimerSession, "id">;
+  sync_queue: EntityTable<SyncQueueItem, "id">;
+  voice_recordings: EntityTable<VoiceRecording, "id">;
 };
 
+// v3 → preserved for migration continuity
 db.version(3).stores({
   settings: "key",
   notes: "id, pinned, updated_at, deleted_at",
@@ -53,6 +73,22 @@ db.version(3).stores({
   memories: "id, created_at",
   codeSnippets: "id, updated_at",
   timerSessions: "id, started_at",
+});
+
+// v4 — adds sync_queue, voice_recordings, and is_public/public_slug on notes
+db.version(4).stores({
+  settings: "key",
+  notes: "id, pinned, updated_at, deleted_at, is_public, public_slug",
+  tasks: "id, list_id, completed, due_date, sort_order, deleted_at",
+  taskLists: "id, sort_order",
+  events: "id, start_time, end_time, deleted_at",
+  aiConversations: "id, updated_at",
+  aiMessages: "id, conversation_id, created_at",
+  memories: "id, created_at",
+  codeSnippets: "id, updated_at",
+  timerSessions: "id, started_at",
+  sync_queue: "++id, table_name, created_at",
+  voice_recordings: "id, created_at",
 });
 
 // Seed default task list

@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { db, generateId, now } from "@/lib/database";
 import type { Task, TaskList } from "@/types/task";
+import { enqueueSync } from "@/lib/sync";
 
 type TaskView = "inbox" | "today" | "upcoming" | "completed" | string;
 
@@ -67,6 +68,7 @@ export const useTasksStore = create<TasksState>((set, get) => ({
     set((state) => ({ tasks: [task, ...state.tasks] }));
     try {
       await db.tasks.add(task);
+      enqueueSync("tasks", id, "upsert", task);
     } catch {
       set((state) => ({ tasks: state.tasks.filter((t) => t.id !== id) }));
     }
@@ -82,6 +84,8 @@ export const useTasksStore = create<TasksState>((set, get) => ({
     }));
     try {
       await db.tasks.update(id, { ...data, updated_at: timestamp });
+      const task = get().tasks.find((t) => t.id === id);
+      if (task) enqueueSync("tasks", id, "upsert", { ...task, ...data, updated_at: timestamp });
     } catch {
       // silent
     }
@@ -95,7 +99,17 @@ export const useTasksStore = create<TasksState>((set, get) => ({
     
     if (completing) {
       import("./gamificationStore").then(m => {
-        m.useGamificationStore.getState().addXP(10, "Task completed");
+        const gs = m.useGamificationStore.getState();
+        gs.addXP(10, "Task completed");
+        // Bonus if all today's tasks are now done
+        const todayStart = Math.floor(new Date().setHours(0, 0, 0, 0) / 1000);
+        const todayEnd = todayStart + 86400;
+        const todayTasks = get().tasks.filter(
+          (t) => !t.deleted_at && t.due_date && t.due_date >= todayStart && t.due_date < todayEnd
+        );
+        if (todayTasks.length > 0 && todayTasks.every((t) => t.id === id ? true : !!t.completed)) {
+          gs.addXP(50, "All today's tasks done!");
+        }
       });
     }
   },
@@ -103,7 +117,10 @@ export const useTasksStore = create<TasksState>((set, get) => ({
   deleteTask: async (id) => {
     set((state) => ({ tasks: state.tasks.filter((t) => t.id !== id) }));
     try {
-      await db.tasks.update(id, { deleted_at: now() });
+      const deletedAt = now();
+      await db.tasks.update(id, { deleted_at: deletedAt });
+      const task = get().tasks.find((t) => t.id === id);
+      if (task) enqueueSync("tasks", id, "upsert", { ...task, deleted_at: deletedAt });
     } catch {
       // silent
     }

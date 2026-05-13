@@ -1,4 +1,6 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
+import { db } from "@/lib/database";
+import type { VoiceRecording } from "@/lib/database";
 import { motion, AnimatePresence } from "motion/react";
 import {
   Mic, Square, Play, Pause, Trash2, Download, Clock, Volume2,
@@ -16,6 +18,24 @@ const uid = () => crypto.randomUUID();
 export function VoiceStudioPage() {
   const [recordings, setRecordings] = useState<Recording[]>([]);
   const [isRecording, setIsRecording] = useState(false);
+
+  // Load persisted recordings on mount
+  useEffect(() => {
+    db.voice_recordings.orderBy("created_at").reverse().toArray().then((rows) => {
+      const loaded: Recording[] = rows.map((r) => ({
+        id: r.id,
+        name: r.name,
+        blob: new Blob([]),
+        url: r.data,
+        duration: r.duration,
+        date: r.created_at,
+        gain: 1,
+        speed: 1,
+        noiseGate: 0,
+      }));
+      setRecordings(loaded);
+    }).catch(() => {});
+  }, []);
   const [elapsed, setElapsed] = useState(0);
   const [playingId, setPlayingId] = useState<string | null>(null);
   const [waveform, setWaveform] = useState<number[]>(Array(50).fill(5));
@@ -40,11 +60,18 @@ export function VoiceStudioPage() {
       recorder.onstop = () => {
         const blob = new Blob(chunks.current, { type: "audio/webm" });
         const url = URL.createObjectURL(blob);
-        setRecordings(prev => [
-          { id: uid(), name: `Recording ${prev.length + 1}`, blob, url, duration: elapsed, date: Date.now(), gain: 1, speed: 1, noiseGate: 0 },
-          ...prev
-        ]);
+        const id = uid();
+        const name = `Recording ${Math.floor(Date.now() / 1000)}`;
+        const rec: Recording = { id, name, blob, url, duration: elapsed, date: Date.now(), gain: 1, speed: 1, noiseGate: 0 };
+        setRecordings(prev => [rec, ...prev]);
         stream.getTracks().forEach(t => t.stop());
+        // Persist to Dexie as base64
+        const reader = new FileReader();
+        reader.onload = () => {
+          const data = reader.result as string;
+          db.voice_recordings.add({ id, name, data, mime: "audio/webm", duration: elapsed, created_at: Date.now() }).catch(() => {});
+        };
+        reader.readAsDataURL(blob);
       };
 
       const audioCtx = new AudioContext();
