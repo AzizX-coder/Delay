@@ -18,8 +18,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Deploy to GitHub Pages
+      - name: Deploy Landing to gh-pages /landing
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./landing
+          publish_branch: gh-pages
+          destination_dir: landing
+          keep_files: true
