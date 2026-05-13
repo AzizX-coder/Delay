@@ -7,6 +7,12 @@ on:
   push:
     tags:
       - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (e.g. v3.1.0)'
+        required: true
+        default: 'v3.1.0'
 
 jobs:
   build-windows:
@@ -30,7 +36,7 @@ jobs:
           $env:CSC_IDENTITY_AUTO_DISCOVERY = "false"
           $env:WIN_CSC_LINK = ""
           npm run make-icon
-          npm run build
+          npx vite build
           npx electron-builder --win --config.directories.output=release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -73,7 +79,7 @@ jobs:
       - name: Build macOS DMG + ZIP
         run: |
           npm run make-icon || true
-          npm run build
+          npx vite build
           npx electron-builder --mac --config.directories.output=release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -112,7 +118,7 @@ jobs:
 
       - name: Build Linux AppImage
         run: |
-          npm run build
+          npx vite build
           npx electron-builder --linux --config.directories.output=release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -135,7 +141,6 @@ jobs:
     name: Create GitHub Release
     needs: [build-windows, build-mac, build-linux]
     runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/')
 
     steps:
       - name: Download all artifacts
@@ -146,6 +151,8 @@ jobs:
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ inputs.version || github.ref_name }}
+          name: ${{ inputs.version || github.ref_name }} — SaaS Edition
           files: |
             artifacts/windows-release/*.exe
             artifacts/windows-release/latest.yml
@@ -156,9 +163,20 @@ jobs:
             artifacts/linux-release/*.AppImage
             artifacts/linux-release/SHA256SUMS-linux.txt
           body: |
-            ## Delay ${{ github.ref_name }}
+            ## Delay ${{ inputs.version || github.ref_name }} — SaaS Edition
 
-            Your second brain for deep work — Notes, Tasks, Calendar, AI, and more.
+            Your second brain for deep work — Notes, Tasks, Calendar, AI, Cloud Sync, and more.
+
+            ### What's New
+            - Auth gate (Google / GitHub / email sign-in, or skip to offline)
+            - Cloud sync across devices via Supabase
+            - Public note sharing with permanent links (Pro)
+            - Pricing tiers: Free / Pro ($8/mo) / Max ($18/mo)
+            - AI weekly insight on Status page
+            - File preview in Vault (image, video, audio, PDF)
+            - Voice recordings persist across reloads
+            - Smooth page transitions
+            - Mac (DMG) + Linux (AppImage) + Windows (NSIS) builds
 
             ### Download
 
@@ -171,7 +189,6 @@ jobs:
             | Linux | `Delay-*.AppImage` (chmod +x first) |
 
             > **Windows SmartScreen warning?** Click **More info → Run anyway**.
-            > Verify integrity against `SHA256SUMS-*.txt`.
 
             ### Auto-update
-            Installed copies update themselves in the background.
+            Installed copies check for updates automatically.
