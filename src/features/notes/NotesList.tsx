@@ -12,7 +12,7 @@ import {
 import { formatDistanceToNow } from "date-fns";
 import { useRef, useState, useEffect } from "react";
 import { NOTE_COLORS } from "@/types/note";
-import { EmptyState } from "@/components/ui/EmptyState";
+import { EmptyState } from "@/shared/components/EmptyState";
 import { NOTE_TEMPLATES } from "@/lib/noteTemplates";
 import { DelayIcon } from "@/components/ui/DelayIcon";
 
@@ -155,12 +155,11 @@ export function NotesList() {
       <div className="flex-1 overflow-y-auto px-2 pb-2">
         <AnimatePresence mode="popLayout">
           {notes.length === 0 ? (
-            <EmptyState
-              size="sm"
-              icon={<StickyNote size={22} strokeWidth={1.5} />}
-              title="No notes yet"
-              description="Tap + to create your first note."
-            />
+              <EmptyState
+                type="notes"
+                title="No notes yet"
+                description="Tap + to create your first note."
+              />
           ) : (
             notes.map((note) => (
               <motion.div

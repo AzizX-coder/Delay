@@ -128,13 +128,20 @@ export const useTimerStore = create<TimerState>((set, get) => ({
       };
       db.timerSessions.add(session).catch(() => {});
 
-      set((state) => ({
-        remaining: 0,
-        isRunning: false,
-        sessions: [session, ...state.sessions],
-        totalFocusSessions:
-          mode === "focus" ? state.totalFocusSessions + 1 : state.totalFocusSessions,
-      }));
+      set((state) => {
+        if (mode === "focus") {
+          import("./gamificationStore").then(m => {
+            m.useGamificationStore.getState().addXP(25, "Focus session completed");
+          });
+        }
+        return {
+          remaining: 0,
+          isRunning: false,
+          sessions: [session, ...state.sessions],
+          totalFocusSessions:
+            mode === "focus" ? state.totalFocusSessions + 1 : state.totalFocusSessions,
+        };
+      });
     } else {
       set({ remaining: remaining - 1 });
     }

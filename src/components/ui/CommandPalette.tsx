@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import Fuse from "fuse.js";
 import { db } from "@/lib/database";
+import { useSettingsStore } from "@/stores/settingsStore";
 
 interface SearchItem {
   id: string;
@@ -57,6 +58,15 @@ export function CommandPalette({ open, onClose }: Props) {
   const [selected, setSelected] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
+  const { ai_enabled, enabled_modules } = useSettingsStore();
+
+  const activeModules = useMemo(() => 
+    MODULES.filter(m => {
+      if (!enabled_modules.includes(m.id)) return false;
+      if (m.id === "ai" && !ai_enabled) return false;
+      return true;
+    }),
+  [enabled_modules, ai_enabled]);
 
   useEffect(() => {
     if (open) {
@@ -93,10 +103,10 @@ export function CommandPalette({ open, onClose }: Props) {
     minMatchCharLength: 1,
   }), [items]);
 
-  const moduleFuse = useMemo(() => new Fuse(MODULES, {
+  const moduleFuse = useMemo(() => new Fuse(activeModules, {
     keys: ["label", "id"],
     threshold: 0.3,
-  }), []);
+  }), [activeModules]);
 
   const results = useMemo(() => {
     if (!query.trim()) {
@@ -182,7 +192,7 @@ export function CommandPalette({ open, onClose }: Props) {
             ) : (
               results.map((item, i) => {
                 const IconComponent = item.isModule
-                  ? MODULES.find(m => m.id === item.id)?.icon || Sparkles
+                  ? activeModules.find(m => m.id === item.id)?.icon || Sparkles
                   : TYPE_ICON[item.type] || StickyNote;
                 const color = item.isModule ? "text-accent" : TYPE_COLORS[item.type] || "text-text-tertiary";
 

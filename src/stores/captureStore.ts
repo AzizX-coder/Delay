@@ -1,6 +1,6 @@
 import { create } from "zustand";
 
-export interface SavedItem {
+export interface CaptureItem {
   id: string;
   type: "text" | "link" | "todo";
   content: string;
@@ -11,11 +11,11 @@ export interface SavedItem {
   created_at: number;
 }
 
-interface SavedState {
-  items: SavedItem[];
+interface CaptureState {
+  items: CaptureItem[];
   loading: boolean;
   loadItems: () => void;
-  addItem: (item: Omit<SavedItem, "id" | "created_at" | "pinned">) => void;
+  addItem: (item: Omit<CaptureItem, "id" | "created_at" | "pinned">) => void;
   removeItem: (id: string) => void;
   togglePin: (id: string) => void;
   toggleComplete: (id: string) => void;
@@ -24,7 +24,7 @@ interface SavedState {
 
 const KEY = "delay_saved_messages";
 
-export const useSavedStore = create<SavedState>((set, get) => ({
+export const useCaptureStore = create<CaptureState>((set, get) => ({
   items: [],
   loading: true,
 
@@ -38,7 +38,7 @@ export const useSavedStore = create<SavedState>((set, get) => ({
   },
 
   addItem: (partial) => {
-    const item: SavedItem = { ...partial, id: crypto.randomUUID(), pinned: false, created_at: Date.now() };
+    const item: CaptureItem = { ...partial, id: crypto.randomUUID(), pinned: false, created_at: Date.now() };
     const next = [item, ...get().items];
     set({ items: next });
     localStorage.setItem(KEY, JSON.stringify(next));

@@ -23,7 +23,7 @@ export function OnboardingFlow() {
   const [step, setStep] = useState(0);
   const [direction, setDirection] = useState(1);
   const { theme, setTheme } = useThemeStore();
-  const { language, ai_model, setSetting, completeOnboarding } = useSettingsStore();
+  const { language, ai_model, ai_enabled, ai_provider, setSetting, completeOnboarding } = useSettingsStore();
 
   const [selectedLang, setSelectedLang] = useState(language);
   const [selectedModel, setSelectedModel] = useState(ai_model);
@@ -221,21 +221,48 @@ export function OnboardingFlow() {
                     <p className="text-[12px] text-text-tertiary">Pick a model now, or skip and configure later in Settings.</p>
                   </div>
                 </div>
-                <div className={`p-5 rounded-[24px] mb-6 flex items-center gap-4 border transition-all
-                    ${ollamaOnline ? "bg-success/5 border-success/20 text-success" : "bg-warning/5 border-warning/20 text-warning"}`}>
-                  <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 ${ollamaOnline ? "bg-success text-white shadow-lg shadow-success/20" : "bg-warning text-white shadow-lg shadow-warning/20"}`}>
-                    {ollamaOnline ? <Wifi size={24} /> : <WifiOff size={24} />}
-                  </div>
-                  <div>
-                    <p className="text-[14px] font-bold">{ollamaOnline ? "Connection Active" : "Ollama Not Found"}</p>
-                    <p className="text-[12px] opacity-80 font-medium">{ollamaOnline ? "Local models are ready." : "Cloud mode still works."}</p>
-                  </div>
-                </div>
                 <div className="grid grid-cols-1 gap-3 overflow-y-auto max-h-[220px] pr-2 custom-scrollbar">
-                  <ModelItem name="glm-5:cloud" desc="High-speed, premium (No setup)" selected={selectedModel === "glm-5:cloud"} isCloud onClick={() => setSelectedModel("glm-5:cloud")} />
-                  {models.filter(m => m.name !== "glm-5:cloud").map(m => (
-                    <ModelItem key={m.name} name={m.name} desc="Local Execution" selected={selectedModel === m.name} onClick={() => setSelectedModel(m.name)} />
-                  ))}
+                  <div className="space-y-4">
+                    <p className="text-[14px] font-bold text-text-primary">Do you want to use AI?</p>
+                    <div className="flex items-center gap-3">
+                      <button onClick={() => setSetting("ai_enabled", true)} className={`flex-1 py-3 rounded-xl border font-bold text-[13px] ${ai_enabled ? "bg-accent text-white border-accent" : "bg-bg-secondary/40 text-text-secondary border-border/40 hover:border-accent/40"}`}>Yes, Enable AI</button>
+                      <button onClick={() => { setSetting("ai_enabled", false); setSelectedModel("none"); }} className={`flex-1 py-3 rounded-xl border font-bold text-[13px] ${!ai_enabled ? "bg-danger text-white border-danger" : "bg-bg-secondary/40 text-text-secondary border-border/40 hover:border-danger/40"}`}>No, Disable AI</button>
+                    </div>
+
+                    {ai_enabled && (
+                      <div className="space-y-3 pt-4 border-t border-border/20">
+                        <label className="text-[12px] font-bold text-text-tertiary">Select Provider</label>
+                        <select onChange={(e) => {
+                          const val = e.target.value as any;
+                          setSetting("ai_provider", val);
+                          if (val === "openrouter") setSelectedModel("liquid/lfm-40b");
+                        }} value={ai_provider} className="w-full bg-bg-secondary px-3 py-2.5 rounded-xl border border-border/40 text-[13px] outline-none">
+                          <option value="openrouter">OpenRouter (Cloud)</option>
+                          <option value="ollama">Ollama (Local)</option>
+                        </select>
+                        
+                        {ai_provider !== "ollama" && (
+                          <div>
+                            <label className="text-[12px] font-bold text-text-tertiary">API Key</label>
+                            <input 
+                              type="password" 
+                              placeholder={`Enter ${ai_provider} API Key`}
+                              onChange={(e) => setSetting("api_key_openrouter", e.target.value)}
+                              className="w-full mt-1 bg-bg-secondary px-3 py-2.5 rounded-xl border border-border/40 text-[13px] outline-none"
+                            />
+                          </div>
+                        )}
+                        {ai_provider === "ollama" && (
+                          <div>
+                            <label className="text-[12px] font-bold text-text-tertiary">Select Local Model</label>
+                            <select onChange={(e) => setSelectedModel(e.target.value)} className="w-full mt-1 bg-bg-secondary px-3 py-2.5 rounded-xl border border-border/40 text-[13px] outline-none">
+                              {models.map(m => <option key={m.name} value={m.name}>{m.name}</option>)}
+                            </select>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </div>
               </motion.div>
             )}

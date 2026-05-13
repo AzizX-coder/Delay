@@ -67,6 +67,9 @@ export const useNotesStore = create<NotesState>((set, get) => ({
 
     try {
       await db.notes.add(note);
+      import("./gamificationStore").then(m => {
+        m.useGamificationStore.getState().addXP(5, "Note created");
+      });
     } catch {
       set((state) => ({
         notes: state.notes.filter((n) => n.id !== id),

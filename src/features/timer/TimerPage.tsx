@@ -57,7 +57,7 @@ export function TimerPage() {
   const seconds = remaining % 60;
   const progress = duration > 0 ? (duration - remaining) / duration : 0;
 
-  const radius = 140;
+  const radius = 160;
   const circumference = 2 * Math.PI * radius;
   const dashOffset = circumference * (1 - progress);
 
@@ -147,15 +147,15 @@ export function TimerPage() {
           </div>
 
           {/* Circular timer */}
-          <div className="relative w-[320px] h-[320px] flex items-center justify-center mb-10">
-            <svg className="timer-ring absolute inset-0" width="320" height="320" viewBox="0 0 320 320">
-              <circle cx="160" cy="160" r={radius} fill="none" stroke="currentColor" strokeWidth="4" className="text-border" opacity="0.3" />
-              <circle cx="160" cy="160" r={radius} fill="none" stroke={accentColor} strokeWidth="5" strokeLinecap="round"
+          <div className="relative w-[360px] h-[360px] flex items-center justify-center mb-10">
+            <svg className="timer-ring absolute inset-0" width="360" height="360" viewBox="0 0 360 360">
+              <circle cx="180" cy="180" r={radius} fill="none" stroke="currentColor" strokeWidth="4" className="text-border" opacity="0.3" />
+              <circle cx="180" cy="180" r={radius} fill="none" stroke={accentColor} strokeWidth="5" strokeLinecap="round"
                 strokeDasharray={circumference} strokeDashoffset={dashOffset}
                 style={{ filter: `drop-shadow(0 0 8px ${accentColor}40)` }} />
             </svg>
             <div className="relative flex flex-col items-center">
-              <span className="text-[56px] md:text-[84px] font-bold tracking-[-0.04em] text-text-primary leading-none tabular-nums"
+              <span className="text-[72px] md:text-[104px] font-bold tracking-[-0.04em] text-text-primary leading-none tabular-nums"
                 style={{ fontVariantNumeric: "tabular-nums" }}>
                 {String(minutes).padStart(2, "0")}:{String(seconds).padStart(2, "0")}
               </span>

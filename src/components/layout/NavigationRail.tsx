@@ -21,7 +21,7 @@ const MODULE_ICON_MAP: Record<string, string> = {
   tasks: "tasks",
   calendar: "calendar",
   timer: "timer",
-  saved: "saved",
+  capture: "saved",
   kanban: "kanban",
   whiteboard: "whiteboard",
   "code-studio": "code",

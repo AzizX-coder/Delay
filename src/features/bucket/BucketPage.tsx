@@ -6,7 +6,7 @@ import {
   Archive, Download, Search, X, Folder, ChevronLeft, MoreVertical,
   Edit3, Film, Music, File, Share2, Shield,
 } from "lucide-react";
-import { EmptyState } from "@/components/ui/EmptyState";
+import { EmptyState } from "@/shared/components/EmptyState";
 
 const formatSize = (bytes: number) => {
   if (bytes < 1024) return bytes + " B";
@@ -183,7 +183,7 @@ export function BucketPage() {
                 </h3>
               </div>
               {filtered.length === 0 ? (
-                <EmptyState icon={<Archive size={36} />} title={activeFolderId ? "Empty folder" : "No files"} description="Upload files to keep them safe in your Vault." />
+                <EmptyState type="vault" title={activeFolderId ? "Empty folder" : "No files"} description="Upload files to keep them safe in your Vault." />
               ) : (
                 <div className="space-y-1.5">
                   {filtered.map(file => (

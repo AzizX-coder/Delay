@@ -1,18 +1,18 @@
 import { useState, useEffect, useRef } from "react";
-import { useSavedStore, SavedItem } from "@/stores/savedStore";
+import { useCaptureStore, CaptureItem } from "@/stores/captureStore";
 import { motion, AnimatePresence } from "motion/react";
 import {
   Send, Bookmark, Pin, PinOff, Trash2, Link2, CheckSquare,
   Search, X, ExternalLink, Filter, SmilePlus, Square, CheckSquare2,
 } from "lucide-react";
-import { EmptyState } from "@/components/ui/EmptyState";
+import { EmptyState } from "@/shared/components/EmptyState";
 
 const REACTIONS = ["👍", "❤️", "🔥", "⭐", "🎯", "💡", "✅", "🚀"];
 
 const isUrl = (text: string) => /^https?:\/\//i.test(text);
 
-export function SavedPage() {
-  const { items, loading, loadItems, addItem, removeItem, togglePin, toggleComplete, addReaction } = useSavedStore();
+export function CapturePage() {
+  const { items, loading, loadItems, addItem, removeItem, togglePin, toggleComplete, addReaction } = useCaptureStore();
   const [input, setInput] = useState("");
   const [search, setSearch] = useState("");
   const [showSearch, setShowSearch] = useState(false);
@@ -66,8 +66,8 @@ export function SavedPage() {
             <Bookmark size={18} className="text-accent" />
           </div>
           <div>
-            <h1 className="text-[15px] font-bold text-text-primary">Saved</h1>
-            <p className="text-[10px] text-text-tertiary">{items.length} messages</p>
+            <h1 className="text-[15px] font-bold text-text-primary">Capture</h1>
+            <p className="text-[10px] text-text-tertiary">Quick capture inbox</p>
           </div>
         </div>
         <div className="flex items-center gap-1.5">
@@ -104,7 +104,7 @@ export function SavedPage() {
         {loading ? (
           <div className="flex items-center justify-center h-full text-text-tertiary text-[12px]">Loading...</div>
         ) : all.length === 0 ? (
-          <EmptyState icon={<Bookmark size={40} />} title="No saved messages" description="Save text, links, or quick todos. Type [] before text for a todo item." />
+          <EmptyState type="capture" title="Capture inbox" description="Save links, thoughts, and todos. Use Ctrl+Shift+S from anywhere." />
         ) : (
           <AnimatePresence initial={false}>
             {all.map(item => (
@@ -199,7 +199,7 @@ export function SavedPage() {
             value={input}
             onChange={e => setInput(e.target.value)}
             onKeyDown={e => e.key === "Enter" && !e.shiftKey && handleSend()}
-            placeholder="Message, link, or [] todo..."
+            placeholder="Capture a thought, link, or [] todo..."
             className="flex-1 px-4 py-2.5 rounded-xl bg-bg-primary border border-border/30 text-[13px] text-text-primary outline-none placeholder:text-text-tertiary focus:border-accent/40 transition-colors"
           />
           <button onClick={handleSend} disabled={!input.trim()}

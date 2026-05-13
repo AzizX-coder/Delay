@@ -4,6 +4,7 @@ import {
   Mic, Square, Play, Pause, Trash2, Download, Clock, Volume2,
   Settings2, Wand2, FastForward, SlidersHorizontal, Loader2, X
 } from "lucide-react";
+import { EmptyState } from "@/shared/components/EmptyState";
 
 interface Recording {
   id: string; name: string; blob: Blob; url: string; duration: number; date: number;
@@ -203,10 +204,7 @@ export function VoiceStudioPage() {
                 </div>
               ))}
               {recordings.length === 0 && (
-                <div className="text-center py-6">
-                  <Mic size={24} className="mx-auto mb-2 text-text-tertiary/20" />
-                  <p className="text-[12px] text-text-tertiary">No recordings yet</p>
-                </div>
+                <EmptyState type="voice" title="No recordings" description="Tap the mic to start." />
               )}
             </div>
           </div>

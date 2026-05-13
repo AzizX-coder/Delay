@@ -6,7 +6,7 @@ import {
 } from "lucide-react";
 import { useFlowsStore, FLOW_COLORS, type BlockType, type Flow } from "@/stores/flowsStore";
 import { DelayIcon } from "@/components/ui/DelayIcon";
-import { EmptyState } from "@/components/ui/EmptyState";
+import { EmptyState } from "@/shared/components/EmptyState";
 
 const BLOCK_META: Record<BlockType, { icon: React.ReactNode; label: string }> = {
   tasks: { icon: <ListTodo size={14} />, label: "Tasks" },
@@ -69,7 +69,7 @@ export function FlowsPage() {
             <p className="text-[12px] text-text-tertiary text-center py-8">Loading...</p>
           ) : sorted.length === 0 ? (
             <div className="py-12">
-              <EmptyState icon={<GitBranch size={36} />}
+              <EmptyState type="flows"
                 title={search ? "No matches" : "No flows yet"}
                 description={search ? "Try another keyword." : "Create a project to link tasks, notes, and steps together."} />
             </div>
@@ -104,7 +104,7 @@ export function FlowsPage() {
             onTogglePin={() => togglePin(selected.id)} />
         ) : (
           <div className="hidden md:flex flex-1 items-center justify-center">
-            <EmptyState icon={<DelayIcon name="flows" size={48} />}
+            <EmptyState type="flows"
               title="Pick or create a flow"
               description="A flow is a project that pulls together tasks, notes, links, and steps in one place." />
           </div>

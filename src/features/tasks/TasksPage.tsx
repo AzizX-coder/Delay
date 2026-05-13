@@ -23,7 +23,7 @@ import type { Task } from "@/types/task";
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
-import { EmptyState } from "@/components/ui/EmptyState";
+import { EmptyState } from "@/shared/components/EmptyState";
 import data from "@emoji-mart/data";
 import Picker from "@emoji-mart/react";
 
@@ -235,8 +235,7 @@ export function TasksPage() {
           <AnimatePresence mode="popLayout">
             {filteredTasks.length === 0 ? (
               <EmptyState
-                size="lg"
-                icon={<div className="p-4 rounded-[28px] bg-accent/10 text-accent mb-4"><CheckCircle2 size={32} /></div>}
+                type="tasks"
                 title={activeView === "completed" ? t("tasks.archive_clean") : t("notes.peak")}
                 description={activeView === "completed" ? t("tasks.archive_sub") : t("notes.peak_sub")}
               />

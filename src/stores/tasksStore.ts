@@ -90,7 +90,14 @@ export const useTasksStore = create<TasksState>((set, get) => ({
   toggleTask: async (id) => {
     const task = get().tasks.find((t) => t.id === id);
     if (!task) return;
-    await get().updateTask(id, { completed: task.completed ? 0 : 1 });
+    const completing = !task.completed;
+    await get().updateTask(id, { completed: completing ? 1 : 0 });
+    
+    if (completing) {
+      import("./gamificationStore").then(m => {
+        m.useGamificationStore.getState().addXP(10, "Task completed");
+      });
+    }
   },
 
   deleteTask: async (id) => {

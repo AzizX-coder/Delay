@@ -1,80 +1,30 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Plus, Trash2, GripVertical, Edit3, LayoutGrid, FolderPlus, ChevronLeft } from "lucide-react";
-
-interface Card { id: string; title: string; desc: string; color: string; }
-interface Column { id: string; title: string; cards: Card[]; }
-interface Board { id: string; name: string; columns: Column[]; color: string; }
+import { Plus, Trash2, GripVertical, Edit3, LayoutGrid, ChevronLeft } from "lucide-react";
+import { useKanbanStore, KanbanCard } from "@/stores/kanbanStore";
+import { KanbanDetailDrawer } from "./KanbanDetailDrawer";
+import { EmptyState } from "@/shared/components/EmptyState";
 
 const COLORS = ["#6366F1","#F59E0B","#10B981","#EF4444","#8B5CF6","#06B6D4","#EC4899"];
-const uid = () => crypto.randomUUID();
-
-function getBoards(): Board[] {
-  try { return JSON.parse(localStorage.getItem("delay_kanban_boards") || "[]"); } catch { return []; }
-}
-function saveBoards(boards: Board[]) { localStorage.setItem("delay_kanban_boards", JSON.stringify(boards)); }
 
 export function KanbanPage() {
-  const [boards, setBoards] = useState<Board[]>(() => getBoards());
-  const [activeBoardId, setActiveBoardId] = useState<string | null>(boards[0]?.id || null);
-  const [dragCard, setDragCard] = useState<{card: Card; fromCol: string} | null>(null);
+  const { boards, activeBoardId, loadBoards, createBoard, deleteBoard, renameBoard, setActiveBoardId, addColumn, deleteColumn, updateColumnTitle, addCard, deleteCard, updateCard, moveCard } = useKanbanStore();
+  const [dragCard, setDragCard] = useState<{card: KanbanCard; fromCol: string} | null>(null);
   const [editingBoard, setEditingBoard] = useState<string | null>(null);
   const [dragOverCol, setDragOverCol] = useState<string | null>(null);
+  const [selectedCard, setSelectedCard] = useState<{colId: string, card: KanbanCard} | null>(null);
+
+  useEffect(() => { loadBoards(); }, []);
 
   const activeBoard = boards.find(b => b.id === activeBoardId);
 
-  const persist = (updated: Board[]) => { setBoards(updated); saveBoards(updated); };
-
-  const createBoard = () => {
-    const b: Board = { id: uid(), name: "New Board", color: COLORS[boards.length % COLORS.length], columns: [
-      { id: uid(), title: "To Do", cards: [] },
-      { id: uid(), title: "In Progress", cards: [] },
-      { id: uid(), title: "Done", cards: [] },
-    ]};
-    const updated = [...boards, b];
-    persist(updated);
-    setActiveBoardId(b.id);
-  };
-
-  const deleteBoard = (id: string) => {
-    const updated = boards.filter(b => b.id !== id);
-    persist(updated);
-    if (activeBoardId === id) setActiveBoardId(updated[0]?.id || null);
-  };
-
-  const renameBoard = (id: string, name: string) => {
-    persist(boards.map(b => b.id === id ? { ...b, name } : b));
-    setEditingBoard(null);
-  };
-
-  const updateBoard = (updater: (b: Board) => Board) => {
-    if (!activeBoardId) return;
-    persist(boards.map(b => b.id === activeBoardId ? updater(b) : b));
-  };
-
-  const addColumn = () => updateBoard(b => ({ ...b, columns: [...b.columns, { id: uid(), title: "New Column", cards: [] }] }));
-  const deleteColumn = (colId: string) => updateBoard(b => ({ ...b, columns: b.columns.filter(c => c.id !== colId) }));
-  const updateColumnTitle = (colId: string, title: string) => updateBoard(b => ({ ...b, columns: b.columns.map(c => c.id === colId ? { ...c, title } : c) }));
-
-  const addCard = (colId: string) => {
-    const card: Card = { id: uid(), title: "New Card", desc: "", color: COLORS[Math.floor(Math.random()*COLORS.length)] };
-    updateBoard(b => ({ ...b, columns: b.columns.map(c => c.id === colId ? { ...c, cards: [...c.cards, card] } : c) }));
-  };
-
-  const deleteCard = (colId: string, cardId: string) => {
-    updateBoard(b => ({ ...b, columns: b.columns.map(c => c.id === colId ? { ...c, cards: c.cards.filter(cd => cd.id !== cardId) } : c) }));
-  };
-
-  const updateCard = (colId: string, cardId: string, updates: Partial<Card>) => {
-    updateBoard(b => ({ ...b, columns: b.columns.map(c => c.id === colId ? { ...c, cards: c.cards.map(cd => cd.id === cardId ? { ...cd, ...updates } : cd) } : c) }));
+  const handleCreateBoard = () => {
+    createBoard("New Board", COLORS[boards.length % COLORS.length]);
   };
 
   const handleDrop = (targetColId: string) => {
     if (!dragCard || !activeBoardId) return;
-    updateBoard(b => {
-      const cols = b.columns.map(c => ({ ...c, cards: c.id === dragCard.fromCol ? c.cards.filter(cd => cd.id !== dragCard.card.id) : c.cards }));
-      return { ...b, columns: cols.map(c => c.id === targetColId ? { ...c, cards: [...c.cards, dragCard.card] } : c) };
-    });
+    moveCard(activeBoardId, dragCard.card, dragCard.fromCol, targetColId);
     setDragCard(null);
     setDragOverCol(null);
   };
@@ -83,15 +33,7 @@ export function KanbanPage() {
   if (boards.length === 0) {
     return (
       <div className="flex-1 flex items-center justify-center h-full bg-bg-primary">
-        <div className="text-center">
-          <LayoutGrid size={48} className="mx-auto mb-4 text-text-tertiary/20" />
-          <h2 className="text-[18px] font-bold text-text-primary mb-2">No Kanban Boards</h2>
-          <p className="text-[13px] text-text-tertiary mb-6">Create your first board to start organizing</p>
-          <button onClick={createBoard}
-            className="flex items-center gap-2 px-6 py-3 mx-auto rounded-xl bg-accent text-white font-bold text-[13px] cursor-pointer shadow-xl shadow-accent/20">
-            <Plus size={16} /> Create Board
-          </button>
-        </div>
+        <EmptyState type="kanban" title="No Kanban Boards" description="Create your first board to start organizing." action={{ label: "Create Board", onClick: handleCreateBoard }} />
       </div>
     );
   }
@@ -102,7 +44,7 @@ export function KanbanPage() {
       <div className={`shrink-0 border-r border-border/40 bg-bg-secondary/30 flex flex-col h-full ${activeBoardId ? 'hidden md:flex w-56' : 'w-full md:w-56 flex'}`}>
         <div className="p-3 flex items-center justify-between border-b border-border/20">
           <h2 className="text-[11px] font-extrabold text-text-tertiary uppercase tracking-widest">Boards</h2>
-          <button onClick={createBoard} className="w-7 h-7 flex items-center justify-center rounded-lg bg-accent text-white cursor-pointer">
+          <button onClick={handleCreateBoard} className="w-7 h-7 flex items-center justify-center rounded-lg bg-accent text-white cursor-pointer">
             <Plus size={13} />
           </button>
         </div>
@@ -112,7 +54,7 @@ export function KanbanPage() {
               ${activeBoardId === b.id ? "bg-accent/10 text-accent" : "text-text-secondary hover:bg-bg-hover"}`}>
               <div className="w-3 h-3 rounded-sm shrink-0" style={{ background: b.color }} onClick={() => setActiveBoardId(b.id)} />
               {editingBoard === b.id ? (
-                <input autoFocus value={b.name} onChange={e => persist(boards.map(bb => bb.id === b.id ? { ...bb, name: e.target.value } : bb))}
+                <input autoFocus value={b.name} onChange={e => renameBoard(b.id, e.target.value)}
                   onBlur={() => setEditingBoard(null)} onKeyDown={e => { if (e.key === "Enter") setEditingBoard(null); }}
                   className="flex-1 bg-transparent text-[12px] font-bold outline-none" />
               ) : (
@@ -144,37 +86,37 @@ export function KanbanPage() {
                 onDragLeave={() => setDragOverCol(null)}
                 onDrop={() => handleDrop(col.id)}>
                 <div className="flex items-center gap-2 p-3 border-b border-border/20">
-                  <input value={col.title} onChange={e => updateColumnTitle(col.id, e.target.value)}
+                  <input value={col.title} onChange={e => updateColumnTitle(activeBoardId!, col.id, e.target.value)}
                     className="flex-1 bg-transparent font-bold text-[13px] text-text-primary outline-none" />
                   <span className="text-[10px] font-bold text-text-tertiary bg-bg-hover px-1.5 py-0.5 rounded-md">{col.cards.length}</span>
-                  <button onClick={() => deleteColumn(col.id)} className="text-text-tertiary hover:text-danger cursor-pointer"><Trash2 size={12} /></button>
+                  <button onClick={() => deleteColumn(activeBoardId!, col.id)} className="text-text-tertiary hover:text-danger cursor-pointer"><Trash2 size={12} /></button>
                 </div>
                 <div className="flex-1 overflow-y-auto p-2 space-y-1.5 min-h-[80px]">
                   {col.cards.map(card => (
                     <motion.div key={card.id} layout draggable onDragStart={() => setDragCard({ card, fromCol: col.id })} onDragEnd={() => setDragOverCol(null)}
+                      onClick={() => setSelectedCard({ colId: col.id, card })}
                       className={`bg-bg-primary rounded-xl p-3 border border-border/20 cursor-grab active:cursor-grabbing hover:border-accent/30 hover:shadow-lg transition-all group
                         ${dragCard?.card.id === card.id ? "opacity-30 scale-95" : ""}`}>
                       <div className="flex items-start gap-2 mb-1">
                         <div className="w-2 h-2 rounded-full mt-1.5 shrink-0" style={{ background: card.color }} />
-                        <input value={card.title} onChange={e => updateCard(col.id, card.id, { title: e.target.value })}
-                          className="flex-1 bg-transparent text-[12px] font-bold text-text-primary outline-none" />
-                        <button onClick={() => deleteCard(col.id, card.id)}
+                        <span className="flex-1 text-[12px] font-bold text-text-primary truncate">{card.title}</span>
+                        <button onClick={(e) => { e.stopPropagation(); deleteCard(activeBoardId!, col.id, card.id); }}
                           className="opacity-0 group-hover:opacity-100 text-text-tertiary hover:text-danger cursor-pointer"><Trash2 size={11} /></button>
                       </div>
-                      <textarea value={card.desc} onChange={e => updateCard(col.id, card.id, { desc: e.target.value })}
-                        placeholder="Add description..."
-                        className="w-full bg-transparent text-[11px] text-text-tertiary outline-none resize-none leading-relaxed placeholder:text-text-tertiary/40" rows={1} />
+                      <p className="w-full text-[11px] text-text-tertiary truncate leading-relaxed">
+                        {card.desc || "No description"}
+                      </p>
                     </motion.div>
                   ))}
                 </div>
-                <button onClick={() => addCard(col.id)}
+                <button onClick={() => addCard(activeBoardId!, col.id)}
                   className="flex items-center gap-2 px-3 py-2.5 text-[11px] font-bold text-text-tertiary hover:text-accent hover:bg-accent/5 transition-all cursor-pointer border-t border-border/10">
                   <Plus size={12} /> Add Card
                 </button>
               </motion.div>
             ))}
           </AnimatePresence>
-          <button onClick={addColumn}
+          <button onClick={() => addColumn(activeBoardId!)}
             className="w-[280px] shrink-0 h-fit flex items-center justify-center gap-2 p-3 rounded-2xl border-2 border-dashed border-border/30
               text-text-tertiary hover:text-accent hover:border-accent/40 transition-all cursor-pointer font-bold text-[12px]">
             <Plus size={14} /> Add Column
@@ -183,8 +125,17 @@ export function KanbanPage() {
         </div>
       ) : (
         <div className="flex-1 flex items-center justify-center">
-          <p className="text-text-tertiary">Select a board</p>
+          <EmptyState type="kanban" title="No Kanban Boards" description="Select a board from the sidebar to view your tasks." />
         </div>
+      )}
+
+      {selectedCard && activeBoardId && (
+        <KanbanDetailDrawer
+          boardId={activeBoardId}
+          colId={selectedCard.colId}
+          card={boards.find(b => b.id === activeBoardId)?.columns.find(c => c.id === selectedCard.colId)?.cards.find(c => c.id === selectedCard.card.id) || selectedCard.card}
+          onClose={() => setSelectedCard(null)}
+        />
       )}
     </div>
   );

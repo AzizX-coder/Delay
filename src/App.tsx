@@ -21,12 +21,13 @@ import { KanbanPage } from "@/features/kanban/KanbanPage";
 import { WhiteboardPage } from "@/features/whiteboard/WhiteboardPage";
 import { VoiceStudioPage } from "@/features/voice-studio/VoiceStudioPage";
 import { BucketPage } from "@/features/bucket/BucketPage";
-import { SavedPage } from "@/features/saved/SavedPage";
+import { CapturePage } from "@/features/capture/CapturePage";
 import { StatusPage } from "@/features/status/StatusPage";
 import { FlowsPage } from "@/features/flows/FlowsPage";
 import { AppLock } from "@/components/ui/AppLock";
 import { Logo } from "@/components/ui/Logo";
 import { CommandPalette } from "@/components/ui/CommandPalette";
+import { QuickCaptureModal } from "@/components/ui/QuickCaptureModal";
 import { motion } from "motion/react";
 
 export default function App() {
@@ -36,6 +37,7 @@ export default function App() {
   const [showSplash, setShowSplash] = useState(true);
   const [isLocked, setIsLocked] = useState(false);
   const [cmdkOpen, setCmdkOpen] = useState(false);
+  const [quickCaptureOpen, setQuickCaptureOpen] = useState(false);
 
   // Cmd+K shortcut
   useEffect(() => {
@@ -43,6 +45,10 @@ export default function App() {
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
         e.preventDefault();
         setCmdkOpen(v => !v);
+      }
+      if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key.toLowerCase() === 's') {
+        e.preventDefault();
+        setQuickCaptureOpen(v => !v);
       }
     };
     window.addEventListener('keydown', handler);
@@ -107,6 +113,7 @@ export default function App() {
   return (
     <HashRouter>
       <CommandPalette open={cmdkOpen} onClose={() => setCmdkOpen(false)} />
+      <QuickCaptureModal open={quickCaptureOpen} onClose={() => setQuickCaptureOpen(false)} />
       <Routes>
         <Route path="/" element={<AppLayout />}>
           <Route index element={<Navigate to="/notes" replace />} />
@@ -121,7 +128,7 @@ export default function App() {
           <Route path="whiteboard" element={<WhiteboardPage />} />
           <Route path="voice-studio" element={<VoiceStudioPage />} />
           <Route path="bucket" element={<BucketPage />} />
-          <Route path="saved" element={<SavedPage />} />
+          <Route path="capture" element={<CapturePage />} />
           <Route path="status" element={<StatusPage />} />
           <Route path="flows" element={<FlowsPage />} />
           <Route path="settings" element={<SettingsPage />} />

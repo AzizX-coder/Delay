@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from "react";
 import { useAIStore } from "@/stores/aiStore";
 import { useSettingsStore } from "@/stores/settingsStore";
 import { listOllamaModels, checkOllamaStatus } from "@/lib/ollama";
+import { useAIBackend } from "./aiBackend";
 import { useThemeStore } from "@/stores/themeStore";
 import data from "@emoji-mart/data";
 import Picker from "@emoji-mart/react";
@@ -68,6 +69,7 @@ export function AIChatPage() {
   const [isRecording, setIsRecording] = useState(false);
   const [liveTranscript, setLiveTranscript] = useState("");
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const { backend } = useAIBackend();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const recognitionRef = useRef<any>(null);
@@ -199,13 +201,16 @@ export function AIChatPage() {
 
           <div
             className={`flex items-center gap-2 px-3 py-2 rounded-xl text-[12px] font-medium border
-              ${ollamaOnline
+              ${backend === "ollama"
                   ? "bg-bg-primary/50 text-success border-success/20"
-                  : "bg-danger/5 text-danger border-danger/10"
+                  : backend === "cloud"
+                  ? "bg-accent/8 text-accent border-accent/20"
+                  : "bg-warning/5 text-warning border-warning/20"
               }`}
+            title={backend === "none" ? "Add an API key in Settings to enable cloud AI, or install Ollama for local AI" : undefined}
           >
-            <div className={`w-2 h-2 rounded-full ${ollamaOnline ? "bg-success animate-pulse" : "bg-danger"}`} />
-            {ollamaOnline ? "Ollama Connected" : "Ollama Offline"}
+            <div className={`w-2 h-2 rounded-full ${backend === "ollama" ? "bg-success animate-pulse" : backend === "cloud" ? "bg-accent animate-pulse" : "bg-warning"}`} />
+            {backend === "ollama" ? "Ollama · Local" : backend === "cloud" ? "Cloud AI" : "Not configured"}
           </div>
         </div>
 

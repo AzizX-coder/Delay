@@ -4,9 +4,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Delay v2.9 — Liquid UI Super App by AlpSoft</title>
+  <title>Delay v3.0 — The Agentic OS by AlpSoft</title>
   <meta name="description"
-    content="Delay is a completely free, local-first super app by AlpSoft. Docs, Planner, Schedule, Focus Timer, Saved Messages, Vault, Code Studio, Canvas, Status Dashboard, Voice, and AI Copilot — all in one stunning app.">
+    content="Delay is a completely free, local-first super app by AlpSoft. Docs, Planner, Schedule, Focus Timer, Capture, Vault, Code Studio, Canvas, Status Dashboard, Voice, and AI Copilot — all in one stunning app.">
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
   <style>
@@ -125,15 +125,19 @@
   <!-- HERO -->
   <section class="hero">
     <img src="logo.png" alt="Delay" class="hero-logo">
-    <div class="badge">✦ v2.9 · Liquid UI, Project Flows, Custom Illustrations — by AlpSoft, Tashkent</div>
+    <div class="badge">✦ v3.0 · Full SaaS Features, Gamification, Secure Vault — by AlpSoft</div>
     <h1>The Super App<br>For Everything You Do.</h1>
     <p>
-      Delay is a free, local-first super app crafted by <strong>AlpSoft</strong>.
-      Docs, Planner, Schedule, Focus Timer, Project Flows, Saved Messages, Vault, Code Studio, Canvas, Status Dashboard, Voice Studio, and AI Copilot — now with Notion-level customization, a floating liquid sidebar, and branded illustrations on every screen.
+      Delay is a completely free cross-platform Agentic OS crafted by <strong>AlpSoft</strong>.
+      Docs, Planner, Schedule, Focus Timer, Capture, Vault, Code Studio, Canvas, Status Dashboard, Voice Studio, and AI Copilot — all in one beautiful SaaS app.
     </p>
     <div class="hero-btns">
       <a href="https://github.com/AzizX-coder/Delay/releases" class="btn-p">↓ Download Free</a>
-      <a href="#docs" class="btn-o">📖 Documentation</a>
+      <a href="#donate" class="btn-o">☕ Buy Us a Coffee</a>
+    </div>
+    
+    <div style="max-width: 1000px; margin: 60px auto 0;">
+      <img src="dashboard.png" alt="Delay Dashboard" style="width: 100%; border-radius: 20px; box-shadow: 0 20px 60px rgba(0,0,0,0.5); border: 1px solid var(--border);" />
     </div>
   </section>
 
@@ -170,100 +174,56 @@
 
   <!-- DOCUMENTATION -->
   <section class="docs" id="docs">
-    <h2>📖 Documentation</h2>
-    <p>Everything you need to get started with Delay.</p>
+    <h2>📖 Full Documentation</h2>
+    <p>Delay v3.0 introduces a seamless and powerful workflow for the modern professional. Here is everything you need to know about the tools included.</p>
+
+    <div style="margin: 40px 0;">
+      <img src="notes.png" alt="Delay Notes Editor" style="width: 100%; border-radius: 16px; border: 1px solid var(--border); box-shadow: 0 20px 60px rgba(0,0,0,0.5);" />
+    </div>
+
+    <h3>1. AI Copilot (Copilot)</h3>
+    <p>Delay features a powerful AI assistant that can be configured to use <strong>Local Models (Ollama)</strong> for complete privacy, or <strong>Cloud Models (OpenRouter, Groq, OpenAI, Anthropic)</strong> for maximum intelligence. During onboarding, you can easily select your preferred provider or disable the AI features entirely.</p>
+    <ul>
+      <li>Global command palette <code>Cmd/Ctrl + K</code> for instant AI access.</li>
+      <li>Chat context includes recent notes and tasks.</li>
+    </ul>
+
+    <h3>2. Capture & Vault</h3>
+    <p>We replaced complex disk flows with two powerful new concepts:</p>
+    <ul>
+      <li><strong>Capture (formerly Saved):</strong> A global inbox. Hit <code>Cmd/Ctrl + Shift + S</code> anywhere to capture a quick thought, link, or image. Like a personal Telegram "Saved Messages" but better.</li>
+      <li><strong>Vault (formerly Bucket):</strong> Secure, local file storage. Upload files and they remain strictly on your device, protected by the App Lock PIN if configured.</li>
+    </ul>
+
+    <h3>3. Kanban & Tasks</h3>
+    <p>A full Trello-style Kanban board is built right in. With the new v3 update, you can drag and drop cards, open a <strong>Detail Drawer</strong> to set due dates, priorities, and write rich descriptions, and view a complete activity log for every card.</p>
+
+    <h3>4. Gamification</h3>
+    <p>Productivity is now a game. Earn XP by completing tasks, finishing Pomodoro focus sessions, and writing notes. Level up and see your stats grow on the Status Dashboard.</p>
+
     <div class="docs-hr"></div>
 
-    <h3>Installation</h3>
-    <ul>
-      <li><strong>Windows</strong> — Download <code>.exe</code> from <a href="https://github.com/AzizX-coder/Delay/releases">GitHub Releases</a></li>
-      <li><strong>Android / Tablet</strong> — Download <code>.apk</code> from the same page. Enable "Install from Unknown Sources"</li>
-      <li><strong>Web</strong> — Limited features available directly in your browser</li>
-    </ul>
-
-    <h3>Getting Started</h3>
-    <ul>
-      <li>Choose your visual theme (Aura Light, Obsidian, Forest, Mocha, Ocean, Rosé)</li>
-      <li>Select your preferred language from 11 options</li>
-      <li>Customize enabled modules from the sidebar's + button</li>
-    </ul>
-
-    <h3>AI Configuration</h3>
-    <p>AI features are <strong>completely optional</strong>. Toggle on/off in Settings → AI Intelligence. When enabled, configure your provider:</p>
+    <h2>Keyboard Shortcuts</h2>
     <table class="spec-tbl">
-      <thead><tr><th>Provider</th><th>Models</th><th>Notes</th></tr></thead>
+      <thead>
+        <tr><th>Shortcut</th><th>Action</th></tr>
+      </thead>
       <tbody>
-        <tr><td>OpenRouter</td><td><code>liquid/lfm-40b</code></td><td>Recommended — access to all models</td></tr>
-        <tr><td>OpenAI</td><td><code>gpt-4o</code></td><td>Requires API key</td></tr>
-        <tr><td>Anthropic</td><td><code>claude-3.5-sonnet</code></td><td>Requires API key</td></tr>
-        <tr><td>Groq</td><td><code>llama3-70b</code></td><td>Free tier available</td></tr>
-        <tr><td>DeepSeek</td><td><code>deepseek-chat</code></td><td>Affordable</td></tr>
-        <tr><td>Gemini</td><td><code>gemini-pro</code></td><td>Requires API key</td></tr>
-        <tr><td>Ollama</td><td><code>llama3</code></td><td>Local — no key needed</td></tr>
-      </tbody>
-    </table>
-
-    <h3>Saved Messages</h3>
-    <p>Works like Telegram's Saved Messages. Send yourself text, links, or type <code>[] your todo</code> for quick tasks. Features include:</p>
-    <ul>
-      <li>Link domain previews</li>
-      <li>Emoji reactions (👍 ❤️ 🔥 ⭐ 🎯 💡 ✅ 🚀)</li>
-      <li>Pin important messages</li>
-      <li>Filter by type: All, Pinned, Links, Todos</li>
-      <li>Search across all saved items</li>
-    </ul>
-
-    <h3>Vault (Secure Files)</h3>
-    <p>Create folders, upload any file type. Files are stored in the app's protected sandbox on Android, inaccessible to other apps. You can share files to Telegram or any app using the native share button.</p>
-
-    <h3>Status Dashboard</h3>
-    <p>Real-time analytics of your productivity:</p>
-    <ul>
-      <li>Focus time bar chart (daily minutes)</li>
-      <li>Tasks completed chart</li>
-      <li>Activity heatmap (30-day overview)</li>
-      <li>Current streak counter</li>
-      <li>Task completion rate ring</li>
-      <li>Data overview with horizontal bars</li>
-    </ul>
-
-    <div class="docs-hr"></div>
-    <h3 id="security">Privacy & Security</h3>
-    <ul>
-      <li>All data stored exclusively on your device (IndexedDB + localStorage)</li>
-      <li>No telemetry, no tracking, no analytics sent anywhere</li>
-      <li>AI is optional — disable it and the app works fully offline</li>
-      <li>Vault files protected by app sandbox on Android</li>
-      <li>PIN lock prevents physical access on shared devices</li>
-      <li>Open source — audit the code yourself on GitHub</li>
-    </ul>
-
-    <div class="docs-hr"></div>
-    <h3>Tech Stack</h3>
-    <table class="spec-tbl">
-      <thead><tr><th>Component</th><th>Technology</th></tr></thead>
-      <tbody>
-        <tr><td>Frontend</td><td>React 19, TypeScript, Tailwind CSS</td></tr>
-        <tr><td>State</td><td>Zustand</td></tr>
-        <tr><td>Database</td><td>Dexie.js (IndexedDB)</td></tr>
-        <tr><td>Desktop</td><td>Electron</td></tr>
-        <tr><td>Mobile</td><td>Capacitor (Android)</td></tr>
-        <tr><td>Code Editor</td><td>Monaco Editor</td></tr>
-        <tr><td>Canvas</td><td>tldraw</td></tr>
-        <tr><td>Animations</td><td>Framer Motion</td></tr>
-        <tr><td>Build</td><td>Vite</td></tr>
-        <tr><td>License</td><td>Apache 2.0</td></tr>
+        <tr><td><code>Cmd/Ctrl + K</code></td><td>Open Global Command Palette</td></tr>
+        <tr><td><code>Cmd/Ctrl + Shift + S</code></td><td>Open Quick Capture</td></tr>
+        <tr><td><code>/</code> (in Notes)</td><td>Open TipTap Slash Commands menu</td></tr>
       </tbody>
     </table>
   </section>
 
   <!-- DONATE -->
   <section class="donate" id="donate">
-    <h2>☕ Support AlpSoft</h2>
-    <p>Delay is completely free, forever. If it helps your workflow, consider fueling the next update.</p>
-    <a href="https://buymeacoffee.com/azizxcoder" class="donate-btn" target="_blank" rel="noopener">☕ Buy Me a Coffee</a>
+    <h2>Support the AlpSoft Team</h2>
+    <p>We built Delay to be the ultimate, completely free Agentic OS. No subscriptions, no ads, no cloud lock-in. If Delay helps you get things done, consider supporting our development.</p>
+    <a href="https://www.buymeacoffee.com/alpsoft" target="_blank" class="donate-btn">
+      ☕ Buy us a Coffee
+    </a>
   </section>
-
   <!-- FOOTER -->
   <footer>
     <p>

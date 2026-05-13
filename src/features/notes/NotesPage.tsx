@@ -3,7 +3,7 @@ import { useNotesStore } from "@/stores/notesStore";
 import { NotesList } from "./NotesList";
 import { NoteEditor } from "./NoteEditor";
 import { StickyNote, X, ChevronLeft } from "lucide-react";
-import { EmptyState } from "@/components/ui/EmptyState";
+import { EmptyState } from "@/shared/components/EmptyState";
 import { motion, AnimatePresence } from "motion/react";
 
 export function NotesPage() {
@@ -97,8 +97,7 @@ export function NotesPage() {
           ) : (
             <div className="h-full flex items-center justify-center">
               <EmptyState
-                size="lg"
-                icon={<StickyNote size={30} strokeWidth={1.5} />}
+                type="notes"
                 title="Select a note or create a new one"
                 description="Your thoughts, beautifully organized."
               />
