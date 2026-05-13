@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { Outlet } from "react-router-dom";
+import { Outlet, useLocation } from "react-router-dom";
 import { TitleBar } from "./TitleBar";
 import { NavigationRail } from "./NavigationRail";
 import { MobileClockWidget } from "./MobileClockWidget";
@@ -7,10 +7,12 @@ import { UpdateToast } from "@/components/ui/UpdateToast";
 import { XPPopup, LevelUpOverlay } from "@/components/ui/Gamification";
 import { useSettingsStore } from "@/stores/settingsStore";
 import { useGamificationStore } from "@/stores/gamificationStore";
+import { motion, AnimatePresence } from "motion/react";
 
 export function AppLayout() {
   const { nav_position } = useSettingsStore();
   const { loadGamification, checkStreak } = useGamificationStore();
+  const location = useLocation();
 
   useEffect(() => {
     loadGamification();
@@ -30,7 +32,18 @@ export function AppLayout() {
       }`}>
         <NavigationRail />
         <main className="flex-1 overflow-hidden bg-bg-primary min-w-0">
-          <Outlet />
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={location.pathname}
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -4 }}
+              transition={{ duration: 0.18, ease: "easeOut" }}
+              className="h-full"
+            >
+              <Outlet />
+            </motion.div>
+          </AnimatePresence>
         </main>
       </div>
       <UpdateToast />

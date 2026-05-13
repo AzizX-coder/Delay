@@ -8,6 +8,9 @@ export interface Note {
   created_at: number;
   updated_at: number;
   deleted_at: number;
+  // Public sharing
+  is_public?: number;    // 0 | 1
+  public_slug?: string | null;
 }
 
 export type NoteColor =

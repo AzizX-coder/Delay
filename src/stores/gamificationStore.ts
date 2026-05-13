@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { supabase } from "@/lib/supabase";
 
 interface XPEvent {
   amount: number;
@@ -15,6 +16,8 @@ interface GamificationState {
   show_level_up: boolean;
 
   loadGamification: () => void;
+  setXP: (xp: number) => void;
+  setStreak: (days: number, lastDate: string | null) => void;
   addXP: (amount: number, label: string) => void;
   clearPendingXP: () => void;
   clearLevelUp: () => void;
@@ -50,6 +53,24 @@ export const useGamificationStore = create<GamificationState>((set, get) => ({
     } catch {}
   },
 
+  setXP: (xp) => {
+    set({ xp, level: calcLevel(xp) });
+    try {
+      const raw = localStorage.getItem(KEY);
+      const data = raw ? JSON.parse(raw) : {};
+      localStorage.setItem(KEY, JSON.stringify({ ...data, xp }));
+    } catch {}
+  },
+
+  setStreak: (days, lastDate) => {
+    set({ streak_days: days, streak_last_date: lastDate });
+    try {
+      const raw = localStorage.getItem(KEY);
+      const data = raw ? JSON.parse(raw) : {};
+      localStorage.setItem(KEY, JSON.stringify({ ...data, streak_days: days, streak_last_date: lastDate }));
+    } catch {}
+  },
+
   addXP: (amount, label) => {
     const state = get();
     const newXP = state.xp + amount;
@@ -69,6 +90,19 @@ export const useGamificationStore = create<GamificationState>((set, get) => ({
       streak_days: state.streak_days,
       streak_last_date: state.streak_last_date,
     }));
+
+    // Sync to Supabase (fire-and-forget)
+    if (supabase) {
+      supabase.auth.getSession().then(({ data }) => {
+        const uid = data?.session?.user?.id;
+        if (uid) {
+          supabase!.from("profiles").update({
+            xp: newXP,
+            level: newLevel,
+          }).eq("id", uid).then(() => {});
+        }
+      });
+    }
   },
 
   clearPendingXP: () => set({ pending_xp: null }),
@@ -92,6 +126,19 @@ export const useGamificationStore = create<GamificationState>((set, get) => ({
       streak_days: newStreak,
       streak_last_date: today,
     }));
+
+    // Sync streak to Supabase (fire-and-forget)
+    if (supabase) {
+      supabase.auth.getSession().then(({ data }) => {
+        const uid = data?.session?.user?.id;
+        if (uid) {
+          supabase!.from("profiles").update({
+            streak_days: newStreak,
+            streak_last_date: today,
+          }).eq("id", uid).then(() => {});
+        }
+      });
+    }
 
     // Streak bonus
     if (newStreak === 7) {

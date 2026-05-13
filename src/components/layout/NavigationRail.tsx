@@ -9,6 +9,7 @@ import { useSettingsStore } from "@/stores/settingsStore";
 import { useTimerStore } from "@/stores/timerStore";
 import { ALL_MODULES } from "@/types/settings";
 import { DelayIcon } from "@/components/ui/DelayIcon";
+import { ProfileButton } from "@/components/ui/ProfileButton";
 
 const ICON_MAP: Record<string, any> = {
   StickyNote, CheckSquare, Calendar, Timer, Sparkles, Code2,
@@ -183,6 +184,11 @@ export function NavigationRail() {
 
       {/* Module items */}
       {visibleItems.map(renderItem)}
+
+      {/* Profile */}
+      <div className={`${isTelegram ? "w-full" : "flex justify-center"} md:mt-auto ml-auto md:ml-0`}>
+        <ProfileButton compact={isCompact} telegram={isTelegram} />
+      </div>
 
       {/* Settings */}
       <button onClick={() => navigate("/settings")}
