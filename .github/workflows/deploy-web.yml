@@ -1,4 +1,4 @@
-name: Deploy Web App
+name: Deploy Site (Landing + Web App)
 
 on:
   push:
@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   deploy:
-    name: Build & Deploy Web App
+    name: Build & Deploy Site
     runs-on: ubuntu-latest
 
     steps:
@@ -36,10 +36,17 @@ jobs:
           VITE_OPENROUTER_API_KEY: ${{ secrets.VITE_OPENROUTER_API_KEY }}
           VITE_TLDRAW_LICENSE_KEY: ${{ secrets.VITE_TLDRAW_LICENSE_KEY }}
 
+      - name: Assemble site (landing at /, app at /app)
+        run: |
+          mkdir -p site
+          cp -r landing/. site/
+          mkdir -p site/app
+          cp -r dist/. site/app/
+
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./dist
+          publish_dir: ./site
           publish_branch: gh-pages
           force_orphan: true
