@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { db } from "@/lib/database";
 
-type ThemeMode = "light" | "dark" | "system" | "forest" | "mocha" | "ocean" | "rose";
+type ThemeMode = "light" | "dark" | "system" | "forest" | "mocha" | "ocean" | "rose" | "nord" | "solarized" | "sakura";
 
 interface ThemeState {
   theme: ThemeMode;
@@ -19,13 +19,16 @@ function getSystemTheme(): ThemeMode {
 }
 
 function applyTheme(resolved: ThemeMode, bgData: string | null = null) {
-  document.documentElement.classList.remove("dark", "theme-forest", "theme-mocha", "theme-ocean", "theme-rose");
+  document.documentElement.classList.remove("dark", "theme-forest", "theme-mocha", "theme-ocean", "theme-rose", "theme-nord", "theme-solarized", "theme-sakura");
   
   if (resolved === "dark") document.documentElement.classList.add("dark");
   else if (resolved === "forest") document.documentElement.classList.add("theme-forest");
   else if (resolved === "mocha") document.documentElement.classList.add("theme-mocha");
   else if (resolved === "ocean") document.documentElement.classList.add("theme-ocean");
   else if (resolved === "rose") document.documentElement.classList.add("theme-rose");
+  else if (resolved === "nord") document.documentElement.classList.add("theme-nord");
+  else if (resolved === "solarized") document.documentElement.classList.add("theme-solarized");
+  else if (resolved === "sakura") document.documentElement.classList.add("theme-sakura");
   
   if (bgData) {
     document.documentElement.classList.add("custom-bg");

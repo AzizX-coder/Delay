@@ -1,12 +1,21 @@
+import { useEffect } from "react";
 import { Outlet } from "react-router-dom";
 import { TitleBar } from "./TitleBar";
 import { NavigationRail } from "./NavigationRail";
 import { MobileClockWidget } from "./MobileClockWidget";
 import { UpdateToast } from "@/components/ui/UpdateToast";
+import { XPPopup, LevelUpOverlay } from "@/components/ui/Gamification";
 import { useSettingsStore } from "@/stores/settingsStore";
+import { useGamificationStore } from "@/stores/gamificationStore";
 
 export function AppLayout() {
   const { nav_position } = useSettingsStore();
+  const { loadGamification, checkStreak } = useGamificationStore();
+
+  useEffect(() => {
+    loadGamification();
+    checkStreak();
+  }, []);
 
   const isBottom = nav_position === "bottom";
   const isRight = nav_position === "right";
@@ -26,6 +35,8 @@ export function AppLayout() {
       </div>
       <UpdateToast />
       <MobileClockWidget />
+      <XPPopup />
+      <LevelUpOverlay />
     </div>
   );
 }

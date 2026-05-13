@@ -26,7 +26,6 @@ const MODULE_ICON_MAP: Record<string, string> = {
   whiteboard: "whiteboard",
   "code-studio": "code",
   bucket: "vault",
-  "disk-flows": "disk",
   "voice-studio": "voice",
   status: "status",
   ai: "ai",

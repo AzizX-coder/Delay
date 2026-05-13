@@ -14,7 +14,7 @@ import { CalendarPage } from "@/features/calendar/CalendarPage";
 import { AIChatPage } from "@/features/ai/AIChatPage";
 import { TimerPage } from "@/features/timer/TimerPage";
 import { CodeStudioPage } from "@/features/code-studio/CodeStudioPage";
-import { DiskFlowsPage } from "@/features/disk-flows/DiskFlowsPage";
+
 import { SettingsPage } from "@/features/settings/SettingsPage";
 import { OnboardingFlow } from "@/features/onboarding/OnboardingFlow";
 import { KanbanPage } from "@/features/kanban/KanbanPage";
@@ -26,6 +26,7 @@ import { StatusPage } from "@/features/status/StatusPage";
 import { FlowsPage } from "@/features/flows/FlowsPage";
 import { AppLock } from "@/components/ui/AppLock";
 import { Logo } from "@/components/ui/Logo";
+import { CommandPalette } from "@/components/ui/CommandPalette";
 import { motion } from "motion/react";
 
 export default function App() {
@@ -34,6 +35,19 @@ export default function App() {
   const [ready, setReady] = useState(false);
   const [showSplash, setShowSplash] = useState(true);
   const [isLocked, setIsLocked] = useState(false);
+  const [cmdkOpen, setCmdkOpen] = useState(false);
+
+  // Cmd+K shortcut
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setCmdkOpen(v => !v);
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, []);
 
   useEffect(() => {
     async function init() {
@@ -92,6 +106,7 @@ export default function App() {
 
   return (
     <HashRouter>
+      <CommandPalette open={cmdkOpen} onClose={() => setCmdkOpen(false)} />
       <Routes>
         <Route path="/" element={<AppLayout />}>
           <Route index element={<Navigate to="/notes" replace />} />
@@ -101,7 +116,7 @@ export default function App() {
           <Route path="timer" element={<TimerPage />} />
           <Route path="ai" element={<AIChatPage />} />
           <Route path="code-studio" element={<CodeStudioPage />} />
-          <Route path="disk-flows" element={<DiskFlowsPage />} />
+
           <Route path="kanban" element={<KanbanPage />} />
           <Route path="whiteboard" element={<WhiteboardPage />} />
           <Route path="voice-studio" element={<VoiceStudioPage />} />

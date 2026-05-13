@@ -27,18 +27,7 @@ export interface TimerSession {
   ended_at: number;
 }
 
-export interface DiskFlowDownload {
-  id: string;
-  url: string;
-  title: string;
-  platform: "youtube" | "instagram" | "other";
-  status: "pending" | "downloading" | "completed" | "error";
-  progress: number;
-  file_path: string | null;
-  thumbnail: string | null;
-  error: string | null;
-  created_at: number;
-}
+
 
 export const db = new Dexie("DelayDB") as Dexie & {
   settings: EntityTable<SettingRow, "key">;
@@ -51,7 +40,6 @@ export const db = new Dexie("DelayDB") as Dexie & {
   memories: EntityTable<{ id: string; content: string; created_at: number }, "id">;
   codeSnippets: EntityTable<CodeSnippet, "id">;
   timerSessions: EntityTable<TimerSession, "id">;
-  diskFlows: EntityTable<DiskFlowDownload, "id">;
 };
 
 db.version(3).stores({
@@ -65,7 +53,6 @@ db.version(3).stores({
   memories: "id, created_at",
   codeSnippets: "id, updated_at",
   timerSessions: "id, started_at",
-  diskFlows: "id, created_at, status",
 });
 
 // Seed default task list

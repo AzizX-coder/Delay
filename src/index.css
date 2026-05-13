@@ -265,6 +265,128 @@
     --color-shadow-lg: rgba(0, 0, 0, 0.50);
   }
 
+  .theme-nord {
+    --color-bg-primary: #1a1e2a;
+    --color-bg-secondary: #1f2535;
+    --color-bg-tertiary: #262d40;
+    --color-bg-elevated: #222838;
+    --color-bg-accent: #1c2a38;
+    --color-bg-glass: rgba(26, 30, 42, 0.65);
+    --color-bg-glass-heavy: rgba(26, 30, 42, 0.85);
+    --color-bg-hover: rgba(136, 192, 208, 0.08);
+    --color-bg-active: rgba(136, 192, 208, 0.14);
+    --color-bg-sidebar: rgba(24, 28, 38, 0.88);
+
+    --color-text-primary: #eceff4;
+    --color-text-secondary: #a8b5c4;
+    --color-text-tertiary: #6a7b8e;
+    --color-text-inverse: #1a1e2a;
+
+    --color-accent: #88c0d0;
+    --color-accent-hover: #7ab8c8;
+    --color-accent-light: rgba(136, 192, 208, 0.14);
+    --color-success: #a3be8c;
+    --color-warning: #ebcb8b;
+    --color-danger: #bf616a;
+
+    --color-border: rgba(136, 192, 208, 0.12);
+    --color-border-light: rgba(136, 192, 208, 0.06);
+    --color-divider: rgba(136, 192, 208, 0.08);
+
+    --color-note-yellow: #2a2e28;
+    --color-note-green: #222e28;
+    --color-note-blue: #1c2838;
+    --color-note-pink: #2e222a;
+    --color-note-purple: #261e34;
+    --color-note-orange: #2e2a20;
+    --color-note-gray: #222838;
+
+    --color-shadow: rgba(0, 0, 0, 0.30);
+    --color-shadow-md: rgba(0, 0, 0, 0.40);
+    --color-shadow-lg: rgba(0, 0, 0, 0.55);
+  }
+
+  .theme-solarized {
+    --color-bg-primary: #002b36;
+    --color-bg-secondary: #073642;
+    --color-bg-tertiary: #0a3e4a;
+    --color-bg-elevated: #094050;
+    --color-bg-accent: #073848;
+    --color-bg-glass: rgba(0, 43, 54, 0.65);
+    --color-bg-glass-heavy: rgba(0, 43, 54, 0.85);
+    --color-bg-hover: rgba(38, 139, 210, 0.08);
+    --color-bg-active: rgba(38, 139, 210, 0.14);
+    --color-bg-sidebar: rgba(0, 38, 48, 0.88);
+
+    --color-text-primary: #fdf6e3;
+    --color-text-secondary: #839496;
+    --color-text-tertiary: #586e75;
+    --color-text-inverse: #002b36;
+
+    --color-accent: #268bd2;
+    --color-accent-hover: #1a7cc0;
+    --color-accent-light: rgba(38, 139, 210, 0.14);
+    --color-success: #859900;
+    --color-warning: #b58900;
+    --color-danger: #dc322f;
+
+    --color-border: rgba(38, 139, 210, 0.15);
+    --color-border-light: rgba(38, 139, 210, 0.08);
+    --color-divider: rgba(38, 139, 210, 0.10);
+
+    --color-note-yellow: #1a3028;
+    --color-note-green: #123828;
+    --color-note-blue: #0a2e40;
+    --color-note-pink: #2a1828;
+    --color-note-purple: #1a1838;
+    --color-note-orange: #2a2818;
+    --color-note-gray: #073842;
+
+    --color-shadow: rgba(0, 0, 0, 0.35);
+    --color-shadow-md: rgba(0, 0, 0, 0.45);
+    --color-shadow-lg: rgba(0, 0, 0, 0.60);
+  }
+
+  .theme-sakura {
+    --color-bg-primary: #fef0f4;
+    --color-bg-secondary: #fff5f8;
+    --color-bg-tertiary: #ffe8ee;
+    --color-bg-elevated: #ffffff;
+    --color-bg-accent: #fde8ef;
+    --color-bg-glass: rgba(254, 240, 244, 0.65);
+    --color-bg-glass-heavy: rgba(254, 240, 244, 0.85);
+    --color-bg-hover: rgba(236, 72, 153, 0.06);
+    --color-bg-active: rgba(236, 72, 153, 0.10);
+    --color-bg-sidebar: rgba(255, 245, 248, 0.88);
+
+    --color-text-primary: #3b1f28;
+    --color-text-secondary: #7a5060;
+    --color-text-tertiary: #b08898;
+    --color-text-inverse: #ffffff;
+
+    --color-accent: #ec4899;
+    --color-accent-hover: #db2777;
+    --color-accent-light: rgba(236, 72, 153, 0.10);
+    --color-success: #34C759;
+    --color-warning: #f59e0b;
+    --color-danger: #ef4444;
+
+    --color-border: rgba(236, 72, 153, 0.12);
+    --color-border-light: rgba(236, 72, 153, 0.06);
+    --color-divider: rgba(236, 72, 153, 0.08);
+
+    --color-note-yellow: #fef9e7;
+    --color-note-green: #ecfdf5;
+    --color-note-blue: #eff6ff;
+    --color-note-pink: #fdf2f8;
+    --color-note-purple: #f5f3ff;
+    --color-note-orange: #fff7ed;
+    --color-note-gray: #f9fafb;
+
+    --color-shadow: rgba(0, 0, 0, 0.04);
+    --color-shadow-md: rgba(0, 0, 0, 0.06);
+    --color-shadow-lg: rgba(0, 0, 0, 0.10);
+  }
 
   *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 

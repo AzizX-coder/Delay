@@ -15,7 +15,7 @@ export const ACCENT_PRESETS = [
 ] as const;
 
 export interface AppSettings {
-  theme: "light" | "dark" | "system" | "forest" | "mocha" | "ocean" | "rose";
+  theme: "light" | "dark" | "system" | "forest" | "mocha" | "ocean" | "rose" | "nord" | "solarized" | "sakura";
   language: string;
   security_pin: string | null;
   ai_enabled: boolean;
@@ -51,7 +51,6 @@ export const ALL_MODULES = [
   { id: "whiteboard",   label: "Canvas",      icon: "PenTool",     group: "workspace", desc: "Infinite design canvas" },
   { id: "code-studio",  label: "Studio",      icon: "Code2",       group: "workspace", desc: "Code editor & terminal" },
   { id: "bucket",       label: "Vault",       icon: "Archive",     group: "workspace", desc: "Secure file storage & folders" },
-  { id: "disk-flows",   label: "Media",       icon: "HardDrive",   group: "media",     desc: "Media downloads & library" },
   { id: "voice-studio", label: "Voice",       icon: "Mic",         group: "media",     desc: "Audio recording & processing" },
   { id: "status",       label: "Status",      icon: "BarChart3",   group: "system",    desc: "Activity graphs & analytics" },
   { id: "ai",           label: "Copilot",     icon: "Sparkles",    group: "system",    desc: "AI-powered assistant" },

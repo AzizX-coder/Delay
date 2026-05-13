@@ -17,13 +17,6 @@ declare global {
           cb: (data: { event: string; payload: unknown }) => void
         ) => () => void;
       };
-      diskFlows?: {
-        download: (url: string, id: string) => Promise<{ ok: boolean }>;
-        openFolder: () => Promise<void>;
-        onEvent: (
-          cb: (data: { event: string; payload: any }) => void
-        ) => () => void;
-      };
     };
   }
 }
