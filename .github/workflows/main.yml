@@ -9,7 +9,8 @@ on:
       - 'v*'
 
 jobs:
-  build:
+  build-windows:
+    name: Windows (x64 + arm64)
     runs-on: windows-latest
 
     steps:
@@ -24,7 +25,7 @@ jobs:
       - name: Install Dependencies
         run: npm install --legacy-peer-deps
 
-      - name: Build Windows Executable
+      - name: Build Windows Executables
         run: |
           $env:CSC_IDENTITY_AUTO_DISCOVERY = "false"
           $env:WIN_CSC_LINK = ""
@@ -40,32 +41,137 @@ jobs:
           cd release
           Get-ChildItem -Filter *.exe | ForEach-Object {
             $hash = (Get-FileHash -Algorithm SHA256 $_.FullName).Hash.ToLower()
-            "$hash  $($_.Name)" | Out-File -Append -Encoding ascii SHA256SUMS.txt
+            "$hash  $($_.Name)" | Out-File -Append -Encoding ascii SHA256SUMS-win.txt
           }
-          Get-Content SHA256SUMS.txt
+          Get-Content SHA256SUMS-win.txt
 
-      - name: Upload Artifacts to Release
-        uses: softprops/action-gh-release@v2
-        if: startsWith(github.ref, 'refs/tags/')
+      - name: Upload Windows artifacts
+        uses: actions/upload-artifact@v4
         with:
-          files: |
+          name: windows-release
+          path: |
             release/*.exe
             release/latest.yml
-            release/SHA256SUMS.txt
+            release/SHA256SUMS-win.txt
+
+  build-mac:
+    name: macOS (x64 + arm64)
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install Dependencies
+        run: npm install --legacy-peer-deps
+
+      - name: Build macOS DMG + ZIP
+        run: |
+          npm run make-icon || true
+          npm run build
+          npx electron-builder --mac --config.directories.output=release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CSC_IDENTITY_AUTO_DISCOVERY: "false"
+
+      - name: Generate SHA-256 checksums
+        run: |
+          cd release
+          shasum -a 256 *.dmg *.zip 2>/dev/null > SHA256SUMS-mac.txt || true
+          cat SHA256SUMS-mac.txt
+
+      - name: Upload macOS artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: mac-release
+          path: |
+            release/*.dmg
+            release/*.zip
+            release/SHA256SUMS-mac.txt
+
+  build-linux:
+    name: Linux (x64 AppImage)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install Dependencies
+        run: npm install --legacy-peer-deps
+
+      - name: Build Linux AppImage
+        run: |
+          npm run build
+          npx electron-builder --linux --config.directories.output=release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Generate SHA-256 checksums
+        run: |
+          cd release
+          sha256sum *.AppImage 2>/dev/null > SHA256SUMS-linux.txt || true
+          cat SHA256SUMS-linux.txt
+
+      - name: Upload Linux artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-release
+          path: |
+            release/*.AppImage
+            release/SHA256SUMS-linux.txt
+
+  create-release:
+    name: Create GitHub Release
+    needs: [build-windows, build-mac, build-linux]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            artifacts/windows-release/*.exe
+            artifacts/windows-release/latest.yml
+            artifacts/windows-release/SHA256SUMS-win.txt
+            artifacts/mac-release/*.dmg
+            artifacts/mac-release/*.zip
+            artifacts/mac-release/SHA256SUMS-mac.txt
+            artifacts/linux-release/*.AppImage
+            artifacts/linux-release/SHA256SUMS-linux.txt
           body: |
             ## Delay ${{ github.ref_name }}
 
-            Local-first desktop productivity — Notes, Tasks, Calendar, AI.
+            Your second brain for deep work — Notes, Tasks, Calendar, AI, and more.
 
-            ### 📥 Install
-            Download `Delay-Setup-*.exe` below and run it.
+            ### Download
 
-            > **Windows SmartScreen warning?** Delay is not yet code-signed.
-            > On the blue Defender dialog click **More info → Run anyway**.
-            > Verify the download integrity against `SHA256SUMS.txt`:
-            > ```powershell
-            > Get-FileHash .\Delay-Setup-*.exe -Algorithm SHA256
-            > ```
+            | Platform | File |
+            |----------|------|
+            | Windows x64 | `Delay-Setup-*-x64.exe` |
+            | Windows ARM64 | `Delay-Setup-*-arm64.exe` |
+            | macOS Apple Silicon | `Delay-*-arm64.dmg` |
+            | macOS Intel | `Delay-*-x64.dmg` |
+            | Linux | `Delay-*.AppImage` (chmod +x first) |
 
-            ### 🔄 Auto-update
-            Installed copies update themselves in the background — no action needed.
+            > **Windows SmartScreen warning?** Click **More info → Run anyway**.
+            > Verify integrity against `SHA256SUMS-*.txt`.
+
+            ### Auto-update
+            Installed copies update themselves in the background.
