@@ -1,7 +1,10 @@
 import { useProfile } from "./useProfile";
 
+// Keep in sync with the `plans` table in supabase/schema.sql.
 export const PLAN_LIMITS = {
   free: {
+    priceMonthly: 0,
+    priceYearly: 0,
     maxNotes: 50,
     maxBoards: 3,
     maxFlows: 10,
@@ -9,9 +12,13 @@ export const PLAN_LIMITS = {
     canShare: false,
     canCloudSync: false,
     canUseCloudVault: false,
+    canCollaborate: false,
+    maxWorkspaceMembers: 1,
     aiCreditsPerMonth: 20,
   },
   pro: {
+    priceMonthly: 12,
+    priceYearly: 120,
     maxNotes: Infinity,
     maxBoards: Infinity,
     maxFlows: Infinity,
@@ -19,9 +26,13 @@ export const PLAN_LIMITS = {
     canShare: true,
     canCloudSync: true,
     canUseCloudVault: true,
+    canCollaborate: true,
+    maxWorkspaceMembers: 3,
     aiCreditsPerMonth: 500,
   },
   max: {
+    priceMonthly: 29,
+    priceYearly: 290,
     maxNotes: Infinity,
     maxBoards: Infinity,
     maxFlows: Infinity,
@@ -29,6 +40,8 @@ export const PLAN_LIMITS = {
     canShare: true,
     canCloudSync: true,
     canUseCloudVault: true,
+    canCollaborate: true,
+    maxWorkspaceMembers: 10,
     aiCreditsPerMonth: Infinity,
   },
 } as const;

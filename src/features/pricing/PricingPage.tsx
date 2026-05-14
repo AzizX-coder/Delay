@@ -9,6 +9,7 @@ const PLANS = [
     name: "Free",
     price: "$0",
     period: "forever",
+    note: "",
     icon: <Sparkles size={20} className="text-text-tertiary" />,
     color: "border-border/30",
     badge: "",
@@ -27,17 +28,18 @@ const PLANS = [
   {
     id: "pro",
     name: "Pro",
-    price: "$8",
+    price: "$12",
     period: "/ month",
+    note: "or $120 / year — save 17%",
     icon: <Crown size={20} className="text-amber-400" />,
     color: "border-amber-400/40 ring-1 ring-amber-400/20",
     badge: "Most Popular",
     features: [
-      "Unlimited notes, tasks & flows",
-      "Unlimited Kanban boards",
-      "Cloud sync across devices",
-      "Public note sharing",
-      "Cloud Vault (5GB)",
+      "Unlimited notes, tasks, boards & flows",
+      "Cloud sync across all your devices",
+      "Real-time collaboration — up to 3 people",
+      "Public note sharing with links",
+      "5 GB encrypted Cloud Vault",
       "500 AI credits / month",
       "Priority support",
     ],
@@ -47,18 +49,19 @@ const PLANS = [
   {
     id: "max",
     name: "Max",
-    price: "$18",
+    price: "$29",
     period: "/ month",
+    note: "or $290 / year — save 17%",
     icon: <Zap size={20} className="text-purple-400" />,
     color: "border-purple-400/40",
     badge: "",
     features: [
       "Everything in Pro",
-      "20GB Cloud Vault",
+      "Team workspaces — up to 10 people",
+      "20 GB encrypted Cloud Vault",
       "Unlimited AI credits",
-      "Advanced AI features",
+      "Advanced AI models",
       "Early access to new features",
-      "Team collaboration (coming soon)",
       "Dedicated support",
     ],
     cta: "Upgrade to Max",
@@ -137,8 +140,13 @@ export function PricingPage() {
 
               {/* Price */}
               <div className="mb-5">
-                <span className="text-[36px] font-black text-text-primary">{plan.price}</span>
-                <span className="text-[13px] text-text-tertiary ml-1">{plan.period}</span>
+                <div>
+                  <span className="text-[36px] font-black text-text-primary">{plan.price}</span>
+                  <span className="text-[13px] text-text-tertiary ml-1">{plan.period}</span>
+                </div>
+                {plan.note && (
+                  <p className="text-[11px] text-text-tertiary mt-1">{plan.note}</p>
+                )}
               </div>
 
               {/* Features */}
