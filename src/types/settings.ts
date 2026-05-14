@@ -28,6 +28,7 @@ export interface AppSettings {
   api_key_deepseek: string;
   api_key_gemini: string;
   onboarding_completed: boolean;
+  usage_mode: "cloud" | "local" | null;
   sidebar_collapsed: boolean;
   enabled_modules: string[];
   nav_position: NavPosition;
@@ -75,6 +76,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   api_key_deepseek: "",
   api_key_gemini: "",
   onboarding_completed: false,
+  usage_mode: null,
   sidebar_collapsed: false,
   enabled_modules: DEFAULT_MODULES,
   nav_position: "left",

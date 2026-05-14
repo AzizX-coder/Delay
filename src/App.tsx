@@ -40,7 +40,7 @@ const OFFLINE_KEY = "delay_offline_mode";
 
 export default function App() {
   const { initTheme } = useThemeStore();
-  const { onboarding_completed, loading, initSettings, language, security_pin } = useSettingsStore();
+  const { onboarding_completed, usage_mode, loading, initSettings, setSetting, language, security_pin } = useSettingsStore();
   const [ready, setReady] = useState(false);
   const [showSplash, setShowSplash] = useState(true);
   const [isLocked, setIsLocked] = useState(false);
@@ -163,13 +163,16 @@ export default function App() {
     return <OnboardingFlow />;
   }
 
-  // Auth gate — only when Supabase is configured
-  if (isSupabaseConfigured) {
+  // Auth gate — only when Supabase is configured AND the user didn't choose
+  // "Local Only" during onboarding. (usage_mode === null = legacy users who
+  // onboarded before this choice existed → keep the old prompt-once behavior.)
+  if (isSupabaseConfigured && usage_mode !== "local") {
     if (authLoading) return <SplashScreen />;
     if (!user && !skippedAuth) {
       return (
         <AuthPage
           onSkip={() => {
+            setSetting("usage_mode", "local");
             sessionStorage.setItem(OFFLINE_KEY, "1");
             setSkippedAuth(true);
           }}

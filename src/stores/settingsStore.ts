@@ -25,6 +25,9 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       for (const row of rows) {
         if (row.key === "onboarding_completed") {
           settings.onboarding_completed = row.value === "true";
+        } else if (row.key === "usage_mode") {
+          settings.usage_mode =
+            row.value === "cloud" || row.value === "local" ? row.value : null;
         } else if (row.key === "sidebar_collapsed") {
           settings.sidebar_collapsed = row.value === "true";
         } else if (row.key === "ai_enabled") {
