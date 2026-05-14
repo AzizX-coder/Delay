@@ -83,7 +83,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   nav_style: "pill",
   show_clock: true,
   workspace_name: "My workspace",
-  accent_color: "#6366F1",
+  accent_color: "#6E62F5",
   density: "comfortable",
   font_family: "sans",
   reduce_motion: false,

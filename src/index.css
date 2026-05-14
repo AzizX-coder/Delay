@@ -20,9 +20,9 @@
   --color-text-inverse: #FFFFFF;
 
   /* ─── Accent palette ─── */
-  --color-accent: #007AFF;
-  --color-accent-hover: #0066D6;
-  --color-accent-light: rgba(0, 122, 255, 0.12);
+  --color-accent: #6E62F5;
+  --color-accent-hover: #5D50E8;
+  --color-accent-light: rgba(110, 98, 245, 0.12);
   --color-success: #34C759;
   --color-warning: #FF9500;
   --color-danger: #FF3B30;
@@ -68,25 +68,32 @@
 
 @layer base {
   .dark {
-    --color-bg-primary: #161618;
-    --color-bg-secondary: #1E1F23;
-    --color-bg-tertiary: #2A2B30;
-    --color-bg-elevated: #202125;
+    /* Deeper & richer — true near-black base with clear surface layering */
+    --color-bg-primary: #0B0B0E;
+    --color-bg-secondary: #141417;
+    --color-bg-tertiary: #1F1F25;
+    --color-bg-elevated: #18181D;
     --color-bg-accent: #332E1A;
-    --color-bg-glass: rgba(30, 31, 35, 0.60);
-    --color-bg-glass-heavy: rgba(30, 31, 35, 0.82);
-    --color-bg-hover: rgba(255, 255, 255, 0.07);
-    --color-bg-active: rgba(255, 255, 255, 0.11);
-    --color-bg-sidebar: rgba(24, 25, 28, 0.85);
+    --color-bg-glass: rgba(20, 20, 23, 0.60);
+    --color-bg-glass-heavy: rgba(20, 20, 23, 0.82);
+    --color-bg-hover: rgba(255, 255, 255, 0.06);
+    --color-bg-active: rgba(255, 255, 255, 0.10);
+    --color-bg-sidebar: rgba(14, 14, 17, 0.85);
 
-    --color-text-primary: #F0F0F2;
-    --color-text-secondary: #A0A0A8;
-    --color-text-tertiary: #6C6C74;
-    --color-text-inverse: #1D1D1F;
+    --color-text-primary: #F4F4F6;
+    --color-text-secondary: #A0A0AA;
+    --color-text-tertiary: #6A6A74;
+    --color-text-inverse: #0B0B0E;
 
-    --color-border: rgba(255, 255, 255, 0.10);
-    --color-border-light: rgba(255, 255, 255, 0.07);
-    --color-divider: rgba(255, 255, 255, 0.09);
+    /* Refined indigo accent */
+    --color-accent: #6E62F5;
+    --color-accent-hover: #5D50E8;
+    --color-accent-light: rgba(110, 98, 245, 0.16);
+
+    /* Brighter, crisper borders */
+    --color-border: rgba(255, 255, 255, 0.12);
+    --color-border-light: rgba(255, 255, 255, 0.08);
+    --color-divider: rgba(255, 255, 255, 0.10);
 
     --color-note-yellow: #332E1A;
     --color-note-green: #1A3A1A;
@@ -94,11 +101,11 @@
     --color-note-pink: #3A1A2A;
     --color-note-purple: #2A1A3A;
     --color-note-orange: #3A2A1A;
-    --color-note-gray: #2A2B30;
+    --color-note-gray: #1F1F25;
 
-    --color-shadow: rgba(0, 0, 0, 0.30);
-    --color-shadow-md: rgba(0, 0, 0, 0.40);
-    --color-shadow-lg: rgba(0, 0, 0, 0.55);
+    --color-shadow: rgba(0, 0, 0, 0.44);
+    --color-shadow-md: rgba(0, 0, 0, 0.58);
+    --color-shadow-lg: rgba(0, 0, 0, 0.72);
   }
 
   .theme-forest {
