@@ -13,7 +13,7 @@ interface NotesState {
   createNote: () => Promise<string>;
   updateNote: (
     id: string,
-    data: Partial<Pick<Note, "title" | "content" | "content_text" | "color" | "pinned">>
+    data: Partial<Pick<Note, "title" | "content" | "content_text" | "color" | "pinned" | "is_public" | "public_slug">>
   ) => Promise<void>;
   deleteNote: (id: string) => Promise<void>;
   setActiveNote: (id: string | null) => void;
