@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, Suspense } from "react";
 import { Outlet, useLocation } from "react-router-dom";
 import { TitleBar } from "./TitleBar";
 import { NavigationRail } from "./NavigationRail";
@@ -32,24 +32,42 @@ export function AppLayout() {
       }`}>
         <NavigationRail />
         <main className="flex-1 overflow-hidden bg-bg-primary min-w-0">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={location.pathname}
-              initial={{ opacity: 0, y: 6 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -4 }}
-              transition={{ duration: 0.18, ease: "easeOut" }}
-              className="h-full"
-            >
-              <Outlet />
-            </motion.div>
-          </AnimatePresence>
+          {/* Suspense scoped HERE (not around the whole router) so a lazy
+              page chunk loading only swaps the content area — the nav rail
+              and title bar stay put instead of flashing to a spinner. */}
+          <Suspense fallback={<ContentFallback />}>
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={location.pathname}
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -4 }}
+                transition={{ duration: 0.18, ease: "easeOut" }}
+                className="h-full"
+              >
+                <Outlet />
+              </motion.div>
+            </AnimatePresence>
+          </Suspense>
         </main>
       </div>
       <UpdateToast />
       <MobileClockWidget />
       <XPPopup />
       <LevelUpOverlay />
+    </div>
+  );
+}
+
+/** Fallback while a lazy page chunk loads — fills the content area only. */
+function ContentFallback() {
+  return (
+    <div className="h-full w-full flex items-center justify-center bg-bg-primary">
+      <motion.span
+        animate={{ rotate: 360 }}
+        transition={{ duration: 0.8, repeat: Infinity, ease: "linear" }}
+        className="w-5 h-5 rounded-full border-2 border-border-light border-t-accent"
+      />
     </div>
   );
 }

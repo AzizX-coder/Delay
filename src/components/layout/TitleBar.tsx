@@ -3,6 +3,11 @@ import { Logo } from "@/components/ui/Logo";
 export function TitleBar() {
   const isElectron = !!window.electronAPI?.isElectron;
 
+  // On the web / PWA there are no native window controls and nothing to
+  // drag, so this bar would just be 44px of dead space above the app.
+  // Only the desktop (Electron) build needs the draggable chrome.
+  if (!isElectron) return null;
+
   return (
     <div
       className="flex items-center h-11 px-4 glass-heavy border-b border-border-light select-none shrink-0"
@@ -19,11 +24,10 @@ export function TitleBar() {
       <div className="flex-1" />
 
       {/* Window controls — clean outlined style */}
-      {isElectron && (
-        <div
-          className="flex items-center -mr-2"
-          style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
-        >
+      <div
+        className="flex items-center -mr-2"
+        style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
+      >
           {/* Minimize: thin horizontal line */}
           <button
             onClick={() => window.electronAPI?.minimize()}
@@ -58,7 +62,6 @@ export function TitleBar() {
             </svg>
           </button>
         </div>
-      )}
     </div>
   );
 }
