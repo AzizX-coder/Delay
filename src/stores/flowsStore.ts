@@ -1,28 +1,28 @@
 import { create } from "zustand";
 
-export type BlockType = "tasks" | "notes" | "links" | "steps";
+/**
+ * Flows v2 — a Flow is a *project hub*. Instead of holding its own
+ * throw-away checklist items (the old "blocks" model nobody used), a Flow
+ * now LINKS to your real tasks and real notes, and keeps a small set of
+ * flow-native milestones. The detail view reads tasksStore / notesStore
+ * live, so toggling a task in a Flow toggles the actual task everywhere.
+ */
 
-export interface FlowItem {
+export interface FlowStep {
   id: string;
   text: string;
-  done?: boolean;
-  url?: string;
-}
-
-export interface FlowBlock {
-  id: string;
-  type: BlockType;
-  title: string;
-  items: FlowItem[];
+  done: boolean;
 }
 
 export interface Flow {
   id: string;
   title: string;
   description: string;
-  color: string;     // accent hex
-  emoji?: string;    // 1-glyph for header
-  blocks: FlowBlock[];
+  color: string;          // accent hex
+  emoji?: string;
+  linkedTaskIds: string[]; // real task ids (tasksStore)
+  linkedNoteIds: string[]; // real note ids (notesStore)
+  steps: FlowStep[];       // flow-native milestones
   pinned: boolean;
   created_at: number;
   updated_at: number;
@@ -37,31 +37,53 @@ interface FlowsState {
   removeFlow: (id: string) => void;
   togglePin: (id: string) => void;
 
-  addBlock: (flowId: string, type: BlockType, title?: string) => void;
-  removeBlock: (flowId: string, blockId: string) => void;
-  renameBlock: (flowId: string, blockId: string, title: string) => void;
+  linkTask: (flowId: string, taskId: string) => void;
+  unlinkTask: (flowId: string, taskId: string) => void;
+  linkNote: (flowId: string, noteId: string) => void;
+  unlinkNote: (flowId: string, noteId: string) => void;
 
-  addItem: (flowId: string, blockId: string, text: string) => void;
-  toggleItem: (flowId: string, blockId: string, itemId: string) => void;
-  updateItem: (flowId: string, blockId: string, itemId: string, patch: Partial<FlowItem>) => void;
-  removeItem: (flowId: string, blockId: string, itemId: string) => void;
+  addStep: (flowId: string, text: string) => void;
+  toggleStep: (flowId: string, stepId: string) => void;
+  updateStep: (flowId: string, stepId: string, text: string) => void;
+  removeStep: (flowId: string, stepId: string) => void;
 }
 
 const KEY = "delay_flows";
 const COLORS = ["#6366F1", "#06B6D4", "#10B981", "#F59E0B", "#EF4444", "#8B5CF6", "#EC4899", "#14B8A6"];
-
-const persist = (flows: Flow[]) => {
-  try { localStorage.setItem(KEY, JSON.stringify(flows)); } catch {}
-};
-
 const uid = () => crypto.randomUUID();
 const now = () => Date.now();
+const persist = (flows: Flow[]) => { try { localStorage.setItem(KEY, JSON.stringify(flows)); } catch {} };
 
-const defaultBlocks = (): FlowBlock[] => [
-  { id: uid(), type: "tasks", title: "Tasks",  items: [] },
-  { id: uid(), type: "notes", title: "Notes",  items: [] },
-  { id: uid(), type: "steps", title: "Steps",  items: [] },
-];
+// Migrate the old block-based model -> v2 linked model. Old flows stored
+// `blocks: [{ type, items: [{ text, done }] }]`. Nothing is thrown away:
+// every old item is flattened into `steps`, and the link arrays start empty.
+function migrate(raw: any): Flow {
+  if (Array.isArray(raw?.linkedTaskIds)) return raw as Flow; // already v2
+  const steps: FlowStep[] = [];
+  if (Array.isArray(raw?.blocks)) {
+    for (const b of raw.blocks) {
+      for (const it of b?.items ?? []) {
+        steps.push({ id: it?.id ?? uid(), text: it?.text ?? "", done: !!it?.done });
+      }
+    }
+  }
+  return {
+    id: raw?.id ?? uid(),
+    title: raw?.title ?? "Untitled flow",
+    description: raw?.description ?? "",
+    color: raw?.color ?? COLORS[0],
+    emoji: raw?.emoji,
+    linkedTaskIds: [],
+    linkedNoteIds: [],
+    steps,
+    pinned: !!raw?.pinned,
+    created_at: raw?.created_at ?? now(),
+    updated_at: raw?.updated_at ?? now(),
+  };
+}
+
+const mapFlow = (flows: Flow[], id: string, fn: (f: Flow) => Flow) =>
+  flows.map(f => (f.id === id ? { ...fn(f), updated_at: now() } : f));
 
 export const useFlowsStore = create<FlowsState>((set, get) => ({
   flows: [],
@@ -70,8 +92,13 @@ export const useFlowsStore = create<FlowsState>((set, get) => ({
   loadFlows: () => {
     try {
       const raw = localStorage.getItem(KEY);
-      set({ flows: raw ? JSON.parse(raw) : [], loading: false });
-    } catch { set({ loading: false }); }
+      const parsed = raw ? JSON.parse(raw) : [];
+      const flows = Array.isArray(parsed) ? parsed.map(migrate) : [];
+      set({ flows, loading: false });
+      persist(flows); // write the migrated shape back
+    } catch {
+      set({ loading: false });
+    }
   },
 
   createFlow: (title) => {
@@ -80,7 +107,9 @@ export const useFlowsStore = create<FlowsState>((set, get) => ({
       title: title.trim() || "Untitled flow",
       description: "",
       color: COLORS[get().flows.length % COLORS.length],
-      blocks: defaultBlocks(),
+      linkedTaskIds: [],
+      linkedNoteIds: [],
+      steps: [],
       pinned: false,
       created_at: now(),
       updated_at: now(),
@@ -92,7 +121,7 @@ export const useFlowsStore = create<FlowsState>((set, get) => ({
   },
 
   updateFlow: (id, patch) => {
-    const next = get().flows.map(f => f.id === id ? { ...f, ...patch, updated_at: now() } : f);
+    const next = mapFlow(get().flows, id, f => ({ ...f, ...patch }));
     set({ flows: next }); persist(next);
   },
 
@@ -102,63 +131,51 @@ export const useFlowsStore = create<FlowsState>((set, get) => ({
   },
 
   togglePin: (id) => {
-    const next = get().flows.map(f => f.id === id ? { ...f, pinned: !f.pinned, updated_at: now() } : f);
+    const next = mapFlow(get().flows, id, f => ({ ...f, pinned: !f.pinned }));
     set({ flows: next }); persist(next);
   },
 
-  addBlock: (flowId, type, title) => {
-    const titles: Record<BlockType, string> = { tasks: "Tasks", notes: "Notes", links: "Links", steps: "Steps" };
-    const block: FlowBlock = { id: uid(), type, title: title || titles[type], items: [] };
-    const next = get().flows.map(f => f.id === flowId ? { ...f, blocks: [...f.blocks, block], updated_at: now() } : f);
+  linkTask: (flowId, taskId) => {
+    const next = mapFlow(get().flows, flowId, f =>
+      f.linkedTaskIds.includes(taskId) ? f : { ...f, linkedTaskIds: [...f.linkedTaskIds, taskId] });
+    set({ flows: next }); persist(next);
+  },
+  unlinkTask: (flowId, taskId) => {
+    const next = mapFlow(get().flows, flowId, f =>
+      ({ ...f, linkedTaskIds: f.linkedTaskIds.filter(t => t !== taskId) }));
     set({ flows: next }); persist(next);
   },
 
-  removeBlock: (flowId, blockId) => {
-    const next = get().flows.map(f => f.id === flowId ? { ...f, blocks: f.blocks.filter(b => b.id !== blockId), updated_at: now() } : f);
+  linkNote: (flowId, noteId) => {
+    const next = mapFlow(get().flows, flowId, f =>
+      f.linkedNoteIds.includes(noteId) ? f : { ...f, linkedNoteIds: [...f.linkedNoteIds, noteId] });
+    set({ flows: next }); persist(next);
+  },
+  unlinkNote: (flowId, noteId) => {
+    const next = mapFlow(get().flows, flowId, f =>
+      ({ ...f, linkedNoteIds: f.linkedNoteIds.filter(n => n !== noteId) }));
     set({ flows: next }); persist(next);
   },
 
-  renameBlock: (flowId, blockId, title) => {
-    const next = get().flows.map(f => f.id === flowId
-      ? { ...f, blocks: f.blocks.map(b => b.id === blockId ? { ...b, title } : b), updated_at: now() }
-      : f);
-    set({ flows: next }); persist(next);
-  },
-
-  addItem: (flowId, blockId, text) => {
+  addStep: (flowId, text) => {
     const t = text.trim(); if (!t) return;
-    const isUrl = /^https?:\/\//i.test(t);
-    const item: FlowItem = { id: uid(), text: t, url: isUrl ? t : undefined };
-    const next = get().flows.map(f => f.id === flowId
-      ? { ...f, blocks: f.blocks.map(b => b.id === blockId ? { ...b, items: [...b.items, item] } : b), updated_at: now() }
-      : f);
+    const step: FlowStep = { id: uid(), text: t, done: false };
+    const next = mapFlow(get().flows, flowId, f => ({ ...f, steps: [...f.steps, step] }));
     set({ flows: next }); persist(next);
   },
-
-  toggleItem: (flowId, blockId, itemId) => {
-    const next = get().flows.map(f => f.id === flowId
-      ? { ...f, blocks: f.blocks.map(b => b.id === blockId
-          ? { ...b, items: b.items.map(i => i.id === itemId ? { ...i, done: !i.done } : i) }
-          : b), updated_at: now() }
-      : f);
+  toggleStep: (flowId, stepId) => {
+    const next = mapFlow(get().flows, flowId, f =>
+      ({ ...f, steps: f.steps.map(s => s.id === stepId ? { ...s, done: !s.done } : s) }));
     set({ flows: next }); persist(next);
   },
-
-  updateItem: (flowId, blockId, itemId, patch) => {
-    const next = get().flows.map(f => f.id === flowId
-      ? { ...f, blocks: f.blocks.map(b => b.id === blockId
-          ? { ...b, items: b.items.map(i => i.id === itemId ? { ...i, ...patch } : i) }
-          : b), updated_at: now() }
-      : f);
+  updateStep: (flowId, stepId, text) => {
+    const next = mapFlow(get().flows, flowId, f =>
+      ({ ...f, steps: f.steps.map(s => s.id === stepId ? { ...s, text } : s) }));
     set({ flows: next }); persist(next);
   },
-
-  removeItem: (flowId, blockId, itemId) => {
-    const next = get().flows.map(f => f.id === flowId
-      ? { ...f, blocks: f.blocks.map(b => b.id === blockId
-          ? { ...b, items: b.items.filter(i => i.id !== itemId) }
-          : b), updated_at: now() }
-      : f);
+  removeStep: (flowId, stepId) => {
+    const next = mapFlow(get().flows, flowId, f =>
+      ({ ...f, steps: f.steps.filter(s => s.id !== stepId) }));
     set({ flows: next }); persist(next);
   },
 }));

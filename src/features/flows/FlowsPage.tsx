@@ -1,26 +1,23 @@
 import { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
+import { useNavigate } from "react-router-dom";
 import {
-  Plus, Pin, PinOff, Trash2, ArrowLeft, ChevronDown, GitBranch,
-  ListTodo, FileText, Link2, ListOrdered, MoreHorizontal, Check, Search,
+  Plus, Pin, PinOff, Trash2, ArrowLeft, GitBranch, Check, Search, X,
+  ListTodo, FileText, Flag, CalendarClock,
 } from "lucide-react";
-import { useFlowsStore, FLOW_COLORS, type BlockType, type Flow } from "@/stores/flowsStore";
-import { DelayIcon } from "@/components/ui/DelayIcon";
+import { useFlowsStore, FLOW_COLORS, type Flow } from "@/stores/flowsStore";
+import { useTasksStore } from "@/stores/tasksStore";
+import { useNotesStore } from "@/stores/notesStore";
 import { EmptyState } from "@/shared/components/EmptyState";
-
-const BLOCK_META: Record<BlockType, { icon: React.ReactNode; label: string }> = {
-  tasks: { icon: <ListTodo size={14} />, label: "Tasks" },
-  notes: { icon: <FileText size={14} />, label: "Notes" },
-  links: { icon: <Link2 size={14} />, label: "Links" },
-  steps: { icon: <ListOrdered size={14} />, label: "Steps" },
-};
 
 export function FlowsPage() {
   const { flows, loading, loadFlows, createFlow, updateFlow, removeFlow, togglePin } = useFlowsStore();
+  const { tasks, loadTasks } = useTasksStore();
+  const { notes, loadNotes } = useNotesStore();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
 
-  useEffect(() => { loadFlows(); }, []);
+  useEffect(() => { loadFlows(); loadTasks(); loadNotes(); }, []);
 
   const sorted = useMemo(() => {
     const f = search
@@ -31,19 +28,25 @@ export function FlowsPage() {
 
   const selected = flows.find(f => f.id === selectedId);
 
-  const handleCreate = () => {
-    const id = createFlow("Untitled flow");
-    setSelectedId(id);
+  const handleCreate = () => setSelectedId(createFlow("Untitled flow"));
+
+  // Live progress for a flow = (done linked tasks + done milestones) / total
+  const flowProgress = (f: Flow) => {
+    const linkedTasks = tasks.filter(t => f.linkedTaskIds.includes(t.id) && !t.deleted_at);
+    const total = linkedTasks.length + f.steps.length;
+    const done = linkedTasks.filter(t => t.completed).length + f.steps.filter(s => s.done).length;
+    return { total, done, pct: total ? Math.round((done / total) * 100) : 0,
+             items: linkedTasks.length + f.linkedNoteIds.length + f.steps.length };
   };
 
   return (
     <div className="flex flex-col md:flex-row h-full bg-bg-primary">
-      {/* List */}
+      {/* ── List ── */}
       <aside className={`md:w-[320px] md:border-r border-border/30 flex flex-col ${selected ? "hidden md:flex" : "flex"} h-full`}>
-        <header className="px-4 py-3 border-b border-border/30 bg-bg-secondary/30 backdrop-blur-md flex items-center justify-between">
+        <header className="px-4 py-3 border-b border-border/30 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-accent/30 to-accent/10 ring-1 ring-accent/30 flex items-center justify-center">
-              <DelayIcon name="flows" size={18} />
+            <div className="w-9 h-9 rounded-xl bg-accent/12 ring-1 ring-accent/25 flex items-center justify-center">
+              <GitBranch size={17} className="text-accent" />
             </div>
             <div>
               <h1 className="text-[15px] font-bold text-text-primary leading-tight">Flows</h1>
@@ -57,7 +60,7 @@ export function FlowsPage() {
         </header>
 
         <div className="px-3 py-2 border-b border-border/20">
-          <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-bg-secondary/40 border border-border/20">
+          <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-bg-secondary border border-border/20">
             <Search size={13} className="text-text-tertiary" />
             <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search flows..."
               className="bg-transparent outline-none text-[12px] text-text-primary flex-1 placeholder:text-text-tertiary" />
@@ -71,34 +74,40 @@ export function FlowsPage() {
             <div className="py-12">
               <EmptyState type="flows"
                 title={search ? "No matches" : "No flows yet"}
-                description={search ? "Try another keyword." : "Create a project to link tasks, notes, and steps together."} />
+                description={search ? "Try another keyword." : "A flow is a project — link your real tasks and notes, track milestones, see progress."} />
             </div>
           ) : (
-            sorted.map(f => (
-              <button key={f.id} onClick={() => setSelectedId(f.id)}
-                className={`w-full text-left px-3 py-2.5 rounded-xl transition-all cursor-pointer flex items-center gap-2.5
-                  ${selectedId === f.id ? "bg-accent/10 ring-1 ring-accent/20" : "hover:bg-bg-hover"}`}>
-                <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
-                  style={{ background: `linear-gradient(135deg, ${f.color}33, ${f.color}10)`, border: `1px solid ${f.color}40` }}>
-                  <span className="text-[14px]">{f.emoji || "✦"}</span>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className={`text-[13px] font-bold truncate ${selectedId === f.id ? "text-accent" : "text-text-primary"}`}>{f.title}</p>
-                  <p className="text-[10px] text-text-tertiary">
-                    {f.blocks.reduce((acc, b) => acc + b.items.length, 0)} items · {f.blocks.length} sections
-                  </p>
-                </div>
-                {f.pinned && <Pin size={11} className="text-accent" />}
-              </button>
-            ))
+            sorted.map(f => {
+              const p = flowProgress(f);
+              return (
+                <button key={f.id} onClick={() => setSelectedId(f.id)}
+                  className={`w-full text-left px-3 py-2.5 rounded-xl transition-all cursor-pointer flex items-center gap-2.5
+                    ${selectedId === f.id ? "bg-accent/10 ring-1 ring-accent/20" : "hover:bg-bg-hover"}`}>
+                  <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 text-[14px]"
+                    style={{ background: `${f.color}1f`, border: `1px solid ${f.color}40` }}>
+                    {f.emoji || "✦"}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className={`text-[13px] font-bold truncate ${selectedId === f.id ? "text-accent" : "text-text-primary"}`}>{f.title}</p>
+                    <div className="flex items-center gap-1.5 mt-1">
+                      <div className="flex-1 h-1 rounded-full bg-border/30 overflow-hidden max-w-[90px]">
+                        <div className="h-full rounded-full" style={{ width: `${p.pct}%`, background: f.color }} />
+                      </div>
+                      <span className="text-[9.5px] text-text-tertiary tabular-nums">{p.items} item{p.items === 1 ? "" : "s"}</span>
+                    </div>
+                  </div>
+                  {f.pinned && <Pin size={11} className="text-accent shrink-0" />}
+                </button>
+              );
+            })
           )}
         </div>
       </aside>
 
-      {/* Detail */}
+      {/* ── Detail ── */}
       <main className={`flex-1 ${selected ? "flex" : "hidden md:flex"} flex-col overflow-hidden`}>
         {selected ? (
-          <FlowDetail flow={selected} onBack={() => setSelectedId(null)}
+          <FlowDetail key={selected.id} flow={selected} onBack={() => setSelectedId(null)}
             onUpdate={(p) => updateFlow(selected.id, p)}
             onDelete={() => { removeFlow(selected.id); setSelectedId(null); }}
             onTogglePin={() => togglePin(selected.id)} />
@@ -106,7 +115,7 @@ export function FlowsPage() {
           <div className="hidden md:flex flex-1 items-center justify-center">
             <EmptyState type="flows"
               title="Pick or create a flow"
-              description="A flow is a project that pulls together tasks, notes, links, and steps in one place." />
+              description="A flow pulls your real tasks, notes and milestones for one project into a single view." />
           </div>
         )}
       </main>
@@ -121,25 +130,49 @@ function FlowDetail({ flow, onBack, onUpdate, onDelete, onTogglePin }: {
   onDelete: () => void;
   onTogglePin: () => void;
 }) {
-  const { addBlock, removeBlock, renameBlock, addItem, toggleItem, removeItem, updateItem } = useFlowsStore();
-  const [showAddBlock, setShowAddBlock] = useState(false);
+  const navigate = useNavigate();
+  const { linkTask, unlinkTask, linkNote, unlinkNote, addStep, toggleStep, updateStep, removeStep } = useFlowsStore();
+  const { tasks, toggleTask, createTask } = useTasksStore();
+  const { notes, createNote, setActiveNote } = useNotesStore();
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [picker, setPicker] = useState<"task" | "note" | null>(null);
 
-  const total = flow.blocks.reduce((acc, b) => acc + b.items.length, 0);
-  const done = flow.blocks.reduce((acc, b) => acc + b.items.filter(i => i.done).length, 0);
+  const linkedTasks = useMemo(
+    () => flow.linkedTaskIds.map(id => tasks.find(t => t.id === id)).filter((t): t is NonNullable<typeof t> => !!t && !t.deleted_at),
+    [flow.linkedTaskIds, tasks]
+  );
+  const linkedNotes = useMemo(
+    () => flow.linkedNoteIds.map(id => notes.find(n => n.id === id)).filter((n): n is NonNullable<typeof n> => !!n && !n.deleted_at),
+    [flow.linkedNoteIds, notes]
+  );
+
+  const total = linkedTasks.length + flow.steps.length;
+  const done = linkedTasks.filter(t => t.completed).length + flow.steps.filter(s => s.done).length;
   const progress = total ? Math.round((done / total) * 100) : 0;
+
+  const openNote = (id: string) => { setActiveNote(id); navigate("/notes"); };
+
+  const handleNewTask = async () => {
+    const id = await createTask("New task");
+    linkTask(flow.id, id);
+  };
+  const handleNewNote = async () => {
+    const id = await createNote();
+    linkNote(flow.id, id);
+    openNote(id);
+  };
 
   return (
     <>
       {/* Header */}
-      <header className="px-4 md:px-8 py-4 border-b border-border/30 bg-bg-secondary/30 backdrop-blur-md shrink-0">
+      <header className="px-4 md:px-8 py-4 border-b border-border/30 shrink-0">
         <div className="flex items-center gap-2 mb-3">
           <button onClick={onBack} className="md:hidden w-9 h-9 flex items-center justify-center rounded-xl hover:bg-bg-hover text-text-secondary cursor-pointer">
             <ArrowLeft size={16} />
           </button>
-          <div className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 ring-1 ring-white/5"
-            style={{ background: `linear-gradient(135deg, ${flow.color}40, ${flow.color}15)` }}>
-            <span className="text-[20px]">{flow.emoji || "✦"}</span>
+          <div className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 text-[20px]"
+            style={{ background: `${flow.color}26`, border: `1px solid ${flow.color}40` }}>
+            {flow.emoji || "✦"}
           </div>
           <input
             value={flow.title}
@@ -157,30 +190,26 @@ function FlowDetail({ flow, onBack, onUpdate, onDelete, onTogglePin }: {
         <textarea
           value={flow.description}
           onChange={e => onUpdate({ description: e.target.value })}
-          placeholder="Describe what this flow is about..."
+          placeholder="What's this project about?"
           rows={1}
           className="w-full bg-transparent outline-none text-[13px] text-text-secondary placeholder:text-text-tertiary resize-none mb-3"
         />
 
-        {/* Color palette */}
         <div className="flex items-center gap-3 flex-wrap">
-          <span className="text-[10px] uppercase tracking-widest font-bold text-text-tertiary">Color</span>
           <div className="flex items-center gap-1.5">
             {FLOW_COLORS.map(c => (
               <button key={c} onClick={() => onUpdate({ color: c })}
-                className={`w-5 h-5 rounded-full transition-all ${flow.color === c ? "ring-2 ring-offset-2 ring-offset-bg-secondary ring-text-primary scale-110" : "hover:scale-110"}`}
+                className={`w-5 h-5 rounded-full transition-all ${flow.color === c ? "ring-2 ring-offset-2 ring-offset-bg-primary ring-text-primary scale-110" : "hover:scale-110"}`}
                 style={{ background: c }} aria-label={`Color ${c}`} />
             ))}
           </div>
-
-          {/* Progress */}
           {total > 0 && (
             <div className="ml-auto flex items-center gap-2 text-[11px] font-bold">
               <div className="w-32 h-1.5 rounded-full bg-border/30 overflow-hidden">
                 <div className="h-full rounded-full transition-all" style={{ width: `${progress}%`, background: flow.color }} />
               </div>
               <span style={{ color: flow.color }}>{progress}%</span>
-              <span className="text-text-tertiary">· {done}/{total}</span>
+              <span className="text-text-tertiary">· {done}/{total} done</span>
             </div>
           )}
         </div>
@@ -188,45 +217,95 @@ function FlowDetail({ flow, onBack, onUpdate, onDelete, onTogglePin }: {
 
       {/* Body */}
       <div className="flex-1 overflow-y-auto px-4 md:px-8 py-6 space-y-5">
-        {flow.blocks.map(block => (
-          <BlockCard key={block.id} block={block} flowColor={flow.color}
-            onRename={(t) => renameBlock(flow.id, block.id, t)}
-            onRemove={() => removeBlock(flow.id, block.id)}
-            onAddItem={(text) => addItem(flow.id, block.id, text)}
-            onToggleItem={(id) => toggleItem(flow.id, block.id, id)}
-            onRemoveItem={(id) => removeItem(flow.id, block.id, id)}
-            onUpdateItem={(id, p) => updateItem(flow.id, block.id, id, p)}
-          />
-        ))}
+        {/* ── Tasks ── */}
+        <Section icon={<ListTodo size={14} />} title="Tasks" count={linkedTasks.length} color={flow.color}
+          onLink={() => setPicker("task")} onNew={handleNewTask} newLabel="New task">
+          {linkedTasks.length === 0 ? (
+            <EmptyRow text="No tasks linked. Create one or link existing tasks." />
+          ) : (
+            linkedTasks.map(t => (
+              <div key={t.id} className="group flex items-center gap-2.5 px-2 py-1.5 rounded-lg hover:bg-bg-hover/60 transition-colors">
+                <button onClick={() => toggleTask(t.id)}
+                  className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 cursor-pointer ${t.completed ? "bg-accent border-accent" : "border-border hover:border-accent"}`}>
+                  {!!t.completed && <Check size={10} className="text-white" strokeWidth={3} />}
+                </button>
+                <span className={`flex-1 text-[12.5px] truncate ${t.completed ? "line-through text-text-tertiary" : "text-text-primary"}`}>
+                  {t.title || "Untitled task"}
+                </span>
+                {t.due_date ? (
+                  <span className="flex items-center gap-1 text-[10px] text-text-tertiary shrink-0">
+                    <CalendarClock size={10} />
+                    {new Date(t.due_date * 1000).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+                  </span>
+                ) : null}
+                <button onClick={() => unlinkTask(flow.id, t.id)}
+                  className="opacity-0 group-hover:opacity-100 text-text-tertiary hover:text-danger shrink-0" title="Unlink">
+                  <X size={13} />
+                </button>
+              </div>
+            ))
+          )}
+        </Section>
 
-        <div className="relative">
-          <button onClick={() => setShowAddBlock(s => !s)}
-            className="w-full px-4 py-3 rounded-2xl border border-dashed border-border/40 hover:border-accent/40 hover:bg-accent/5 transition-all flex items-center justify-center gap-2 text-[12px] font-bold text-text-tertiary hover:text-accent cursor-pointer">
-            <Plus size={14} /> Add section
-            <ChevronDown size={12} className={`transition-transform ${showAddBlock ? "rotate-180" : ""}`} />
-          </button>
-          <AnimatePresence>
-            {showAddBlock && (
-              <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
-                className="mt-2 grid grid-cols-2 md:grid-cols-4 gap-2">
-                {(Object.entries(BLOCK_META) as [BlockType, typeof BLOCK_META[BlockType]][]).map(([t, meta]) => (
-                  <button key={t} onClick={() => { addBlock(flow.id, t); setShowAddBlock(false); }}
-                    className="px-3 py-2.5 rounded-xl bg-bg-secondary/60 border border-border/30 hover:border-accent/30 hover:bg-accent/5 transition-all flex items-center gap-2 cursor-pointer">
-                    <span className="text-text-tertiary">{meta.icon}</span>
-                    <span className="text-[12px] font-bold text-text-primary">{meta.label}</span>
-                  </button>
-                ))}
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
+        {/* ── Notes ── */}
+        <Section icon={<FileText size={14} />} title="Notes" count={linkedNotes.length} color={flow.color}
+          onLink={() => setPicker("note")} onNew={handleNewNote} newLabel="New note">
+          {linkedNotes.length === 0 ? (
+            <EmptyRow text="No notes linked. Create one or link existing notes." />
+          ) : (
+            linkedNotes.map(n => (
+              <div key={n.id} className="group flex items-center gap-2.5 px-2 py-1.5 rounded-lg hover:bg-bg-hover/60 transition-colors">
+                <button onClick={() => openNote(n.id)} className="flex-1 min-w-0 text-left cursor-pointer">
+                  <p className="text-[12.5px] font-medium text-text-primary truncate">{n.title || "Untitled note"}</p>
+                  {n.content_text ? (
+                    <p className="text-[10.5px] text-text-tertiary truncate">{n.content_text.slice(0, 80)}</p>
+                  ) : null}
+                </button>
+                <button onClick={() => unlinkNote(flow.id, n.id)}
+                  className="opacity-0 group-hover:opacity-100 text-text-tertiary hover:text-danger shrink-0" title="Unlink">
+                  <X size={13} />
+                </button>
+              </div>
+            ))
+          )}
+        </Section>
 
-        {flow.blocks.length === 0 && (
-          <div className="py-8 text-center">
-            <p className="text-[13px] text-text-tertiary">Empty flow. Add a section to get started.</p>
-          </div>
-        )}
+        {/* ── Milestones ── */}
+        <Section icon={<Flag size={14} />} title="Milestones" count={flow.steps.length} color={flow.color}>
+          {flow.steps.map((s, idx) => (
+            <div key={s.id} className="group flex items-center gap-2.5 px-2 py-1.5 rounded-lg hover:bg-bg-hover/60 transition-colors">
+              <button onClick={() => toggleStep(flow.id, s.id)}
+                className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 cursor-pointer ${s.done ? "bg-accent border-accent" : "border-border hover:border-accent"}`}>
+                {s.done && <Check size={9} className="text-white" strokeWidth={3} />}
+              </button>
+              <span className="w-4 text-[10px] font-bold tabular-nums text-text-tertiary text-center shrink-0">{idx + 1}</span>
+              <input value={s.text} onChange={e => updateStep(flow.id, s.id, e.target.value)}
+                className={`flex-1 bg-transparent outline-none text-[12.5px] ${s.done ? "line-through text-text-tertiary" : "text-text-primary"}`} />
+              <button onClick={() => removeStep(flow.id, s.id)}
+                className="opacity-0 group-hover:opacity-100 text-text-tertiary hover:text-danger shrink-0" title="Remove">
+                <X size={13} />
+              </button>
+            </div>
+          ))}
+          <StepInput onAdd={(t) => addStep(flow.id, t)} />
+        </Section>
       </div>
+
+      {/* Link picker */}
+      <AnimatePresence>
+        {picker === "task" && (
+          <LinkPicker title="Link tasks" emptyText="All your tasks are already linked."
+            options={tasks.filter(t => !t.deleted_at && !flow.linkedTaskIds.includes(t.id))
+              .map(t => ({ id: t.id, label: t.title || "Untitled task", sub: t.completed ? "Completed" : undefined }))}
+            onPick={(id) => linkTask(flow.id, id)} onClose={() => setPicker(null)} />
+        )}
+        {picker === "note" && (
+          <LinkPicker title="Link notes" emptyText="All your notes are already linked."
+            options={notes.filter(n => !n.deleted_at && !flow.linkedNoteIds.includes(n.id))
+              .map(n => ({ id: n.id, label: n.title || "Untitled note", sub: n.content_text?.slice(0, 50) }))}
+            onPick={(id) => linkNote(flow.id, id)} onClose={() => setPicker(null)} />
+        )}
+      </AnimatePresence>
 
       {/* Delete confirm */}
       <AnimatePresence>
@@ -235,18 +314,16 @@ function FlowDetail({ flow, onBack, onUpdate, onDelete, onTogglePin }: {
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
               className="fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm" onClick={() => setConfirmDelete(false)} />
             <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 12 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 12 }}
+              initial={{ opacity: 0, scale: 0.95, y: 12 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 12 }}
               className="fixed z-[101] left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2
                 w-[min(360px,calc(100vw-32px))] p-5 rounded-2xl bg-bg-elevated border border-border/40 shadow-2xl">
               <p className="text-[14px] font-bold text-text-primary">Delete this flow?</p>
-              <p className="text-[12px] text-text-tertiary mt-1">This can't be undone. All sections and items will be removed.</p>
+              <p className="text-[12px] text-text-tertiary mt-1">The flow is removed. Your linked tasks and notes are <strong>not</strong> deleted — only the project view.</p>
               <div className="flex items-center justify-end gap-2 mt-4">
                 <button onClick={() => setConfirmDelete(false)}
                   className="px-3 py-1.5 rounded-lg text-[12px] font-bold text-text-secondary hover:bg-bg-hover cursor-pointer">Cancel</button>
                 <button onClick={() => { setConfirmDelete(false); onDelete(); }}
-                  className="px-3 py-1.5 rounded-lg text-[12px] font-bold text-white bg-danger hover:opacity-90 cursor-pointer">Delete</button>
+                  className="px-3 py-1.5 rounded-lg text-[12px] font-bold text-white bg-danger hover:opacity-90 cursor-pointer">Delete flow</button>
               </div>
             </motion.div>
           </>
@@ -256,95 +333,99 @@ function FlowDetail({ flow, onBack, onUpdate, onDelete, onTogglePin }: {
   );
 }
 
-function BlockCard({ block, flowColor, onRename, onRemove, onAddItem, onToggleItem, onRemoveItem, onUpdateItem }: {
-  block: ReturnType<typeof useFlowsStore.getState>["flows"][number]["blocks"][number];
-  flowColor: string;
-  onRename: (t: string) => void;
-  onRemove: () => void;
-  onAddItem: (text: string) => void;
-  onToggleItem: (id: string) => void;
-  onRemoveItem: (id: string) => void;
-  onUpdateItem: (id: string, p: Partial<{ text: string; done: boolean; url: string }>) => void;
+/* ── Section shell ── */
+function Section({ icon, title, count, color, onLink, onNew, newLabel, children }: {
+  icon: React.ReactNode; title: string; count: number; color: string;
+  onLink?: () => void; onNew?: () => void; newLabel?: string; children: React.ReactNode;
 }) {
-  const meta = BLOCK_META[block.type];
-  const [input, setInput] = useState("");
-  const [showMenu, setShowMenu] = useState(false);
-
-  const isOrdered = block.type === "steps";
-  const showCheckbox = block.type === "tasks" || block.type === "steps";
-
   return (
-    <section className="rounded-2xl bg-bg-secondary/40 border border-border/30 backdrop-blur-sm overflow-hidden">
-      <header className="flex items-center gap-2 px-4 py-2.5 border-b border-border/20 bg-bg-secondary/40">
+    <section className="rounded-2xl bg-bg-secondary/50 border border-border/30 overflow-hidden">
+      <header className="flex items-center gap-2 px-4 py-2.5 border-b border-border/20">
         <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
-          style={{ background: `${flowColor}20`, color: flowColor }}>{meta.icon}</div>
-        <input value={block.title} onChange={e => onRename(e.target.value)}
-          className="flex-1 bg-transparent outline-none text-[13px] font-bold text-text-primary" />
-        <span className="text-[10px] text-text-tertiary font-mono">{block.items.length}</span>
-        <button onClick={() => setShowMenu(m => !m)} className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-bg-hover text-text-tertiary cursor-pointer relative">
-          <MoreHorizontal size={14} />
-          {showMenu && (
-            <div className="absolute top-full right-0 mt-1 z-10 bg-bg-elevated border border-border/40 rounded-xl shadow-xl py-1 min-w-[140px]">
-              <button onClick={(e) => { e.stopPropagation(); setShowMenu(false); onRemove(); }}
-                className="w-full text-left px-3 py-1.5 text-[12px] font-semibold text-danger hover:bg-danger/10 flex items-center gap-2">
-                <Trash2 size={12} /> Delete section
-              </button>
-            </div>
-          )}
-        </button>
-      </header>
-
-      <div className="px-3 py-2 space-y-0.5">
-        {block.items.length === 0 ? (
-          <p className="text-[12px] text-text-tertiary text-center py-3">Empty section</p>
-        ) : (
-          block.items.map((it, idx) => (
-            <div key={it.id} className="group flex items-start gap-2 px-2 py-1.5 rounded-lg hover:bg-bg-hover/60 transition-colors">
-              {showCheckbox ? (
-                <button onClick={() => onToggleItem(it.id)}
-                  className={`mt-0.5 w-4 h-4 rounded border flex items-center justify-center shrink-0 cursor-pointer ${it.done ? "bg-accent border-accent" : "border-border hover:border-accent"}`}>
-                  {it.done && <Check size={10} className="text-white" strokeWidth={3} />}
-                </button>
-              ) : isOrdered ? (
-                <span className="mt-0.5 w-5 text-[11px] font-bold tabular-nums text-text-tertiary text-center shrink-0">{idx + 1}.</span>
-              ) : (
-                <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-text-tertiary shrink-0" />
-              )}
-              <input
-                value={it.text}
-                onChange={(e) => onUpdateItem(it.id, { text: e.target.value })}
-                className={`flex-1 bg-transparent outline-none text-[12.5px] ${it.done ? "line-through text-text-tertiary" : "text-text-primary"}`}
-              />
-              {it.url && (
-                <a href={it.url} target="_blank" rel="noopener noreferrer"
-                  className="opacity-0 group-hover:opacity-100 text-text-tertiary hover:text-accent" title="Open link">
-                  <Link2 size={12} />
-                </a>
-              )}
-              <button onClick={() => onRemoveItem(it.id)}
-                className="opacity-0 group-hover:opacity-100 text-text-tertiary hover:text-danger" title="Remove">
-                <Trash2 size={12} />
-              </button>
-            </div>
-          ))
+          style={{ background: `${color}1f`, color }}>{icon}</div>
+        <span className="text-[13px] font-bold text-text-primary flex-1">{title}</span>
+        <span className="text-[10px] text-text-tertiary tabular-nums">{count}</span>
+        {onLink && (
+          <button onClick={onLink}
+            className="px-2 py-1 rounded-lg text-[11px] font-bold text-text-secondary hover:bg-bg-hover cursor-pointer transition-colors">
+            Link existing
+          </button>
         )}
-
-        <div className="flex items-center gap-2 px-2 py-2">
-          <Plus size={13} className="text-text-tertiary shrink-0" />
-          <input
-            value={input}
-            onChange={e => setInput(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && input.trim()) {
-                onAddItem(input);
-                setInput("");
-              }
-            }}
-            placeholder={`Add ${meta.label.toLowerCase()}...`}
-            className="flex-1 bg-transparent outline-none text-[12.5px] text-text-primary placeholder:text-text-tertiary"
-          />
-        </div>
-      </div>
+        {onNew && (
+          <button onClick={onNew}
+            className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-bold text-accent hover:bg-accent/10 cursor-pointer transition-colors">
+            <Plus size={12} /> {newLabel}
+          </button>
+        )}
+      </header>
+      <div className="px-3 py-2 space-y-0.5">{children}</div>
     </section>
+  );
+}
+
+function EmptyRow({ text }: { text: string }) {
+  return <p className="text-[12px] text-text-tertiary text-center py-3">{text}</p>;
+}
+
+function StepInput({ onAdd }: { onAdd: (t: string) => void }) {
+  const [v, setV] = useState("");
+  return (
+    <div className="flex items-center gap-2 px-2 py-2">
+      <Plus size={13} className="text-text-tertiary shrink-0" />
+      <input value={v} onChange={e => setV(e.target.value)}
+        onKeyDown={e => { if (e.key === "Enter" && v.trim()) { onAdd(v); setV(""); } }}
+        placeholder="Add a milestone..."
+        className="flex-1 bg-transparent outline-none text-[12.5px] text-text-primary placeholder:text-text-tertiary" />
+    </div>
+  );
+}
+
+/* ── Link picker modal ── */
+function LinkPicker({ title, options, emptyText, onPick, onClose }: {
+  title: string;
+  options: { id: string; label: string; sub?: string }[];
+  emptyText: string;
+  onPick: (id: string) => void;
+  onClose: () => void;
+}) {
+  const [q, setQ] = useState("");
+  const filtered = q ? options.filter(o => o.label.toLowerCase().includes(q.toLowerCase())) : options;
+  return (
+    <>
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+        className="fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm" onClick={onClose} />
+      <motion.div
+        initial={{ opacity: 0, scale: 0.96, y: 14 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.96, y: 14 }}
+        className="fixed z-[101] left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2
+          w-[min(420px,calc(100vw-24px))] max-h-[min(520px,calc(100vh-100px))] flex flex-col
+          bg-bg-elevated border border-border/40 rounded-2xl shadow-2xl overflow-hidden">
+        <header className="flex items-center justify-between px-4 py-3 border-b border-border/30">
+          <p className="text-[14px] font-bold text-text-primary">{title}</p>
+          <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-lg text-text-tertiary hover:bg-bg-hover cursor-pointer">
+            <X size={15} />
+          </button>
+        </header>
+        <div className="px-3 py-2 border-b border-border/20">
+          <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-bg-secondary border border-border/20">
+            <Search size={13} className="text-text-tertiary" />
+            <input autoFocus value={q} onChange={e => setQ(e.target.value)} placeholder="Search..."
+              className="bg-transparent outline-none text-[12px] text-text-primary flex-1 placeholder:text-text-tertiary" />
+          </div>
+        </div>
+        <div className="flex-1 overflow-y-auto p-2">
+          {filtered.length === 0 ? (
+            <p className="text-[12px] text-text-tertiary text-center py-8">{q ? "No matches." : emptyText}</p>
+          ) : (
+            filtered.map(o => (
+              <button key={o.id} onClick={() => { onPick(o.id); onClose(); }}
+                className="w-full text-left px-3 py-2 rounded-xl hover:bg-bg-hover transition-colors cursor-pointer">
+                <p className="text-[12.5px] font-medium text-text-primary truncate">{o.label}</p>
+                {o.sub ? <p className="text-[10.5px] text-text-tertiary truncate">{o.sub}</p> : null}
+              </button>
+            ))
+          )}
+        </div>
+      </motion.div>
+    </>
   );
 }
