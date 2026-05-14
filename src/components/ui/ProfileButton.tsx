@@ -1,10 +1,11 @@
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { LogOut, Crown, Zap, Settings, ChevronRight, User } from "lucide-react";
+import { LogOut, Crown, Zap, Settings, ChevronRight, Users } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import { useGamificationStore } from "@/stores/gamificationStore";
 import { useNavigate } from "react-router-dom";
+import { WorkspacesModal } from "@/features/workspaces/WorkspacesModal";
 
 const PLAN_COLORS: Record<string, string> = {
   free: "text-text-tertiary bg-bg-hover",
@@ -28,6 +29,7 @@ export function ProfileButton({ compact, telegram }: Props) {
   const { profile } = useProfile();
   const { xp, level } = useGamificationStore();
   const [open, setOpen] = useState(false);
+  const [workspacesOpen, setWorkspacesOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
 
@@ -75,7 +77,9 @@ export function ProfileButton({ compact, telegram }: Props) {
             </p>
           </div>
         </button>
-        <DropdownMenu open={open} onClose={() => setOpen(false)} name={name} email={email} plan={plan} xp={xp} level={level} signOut={signOut} navigate={navigate} telegram />
+        <DropdownMenu open={open} onClose={() => setOpen(false)} name={name} email={email} plan={plan} xp={xp} level={level} signOut={signOut} navigate={navigate}
+          onOpenWorkspaces={() => { setWorkspacesOpen(true); setOpen(false); }} telegram />
+        <WorkspacesModal open={workspacesOpen} onClose={() => setWorkspacesOpen(false)} />
       </div>
     );
   }
@@ -102,16 +106,19 @@ export function ProfileButton({ compact, telegram }: Props) {
           </div>
         )}
       </button>
-      <DropdownMenu open={open} onClose={() => setOpen(false)} name={name} email={email} plan={plan} xp={xp} level={level} signOut={signOut} navigate={navigate} />
+      <DropdownMenu open={open} onClose={() => setOpen(false)} name={name} email={email} plan={plan} xp={xp} level={level} signOut={signOut} navigate={navigate}
+        onOpenWorkspaces={() => { setWorkspacesOpen(true); setOpen(false); }} />
+      <WorkspacesModal open={workspacesOpen} onClose={() => setWorkspacesOpen(false)} />
     </div>
   );
 }
 
 function DropdownMenu({
-  open, onClose, name, email, plan, xp, level, signOut, navigate, telegram,
+  open, onClose, name, email, plan, xp, level, signOut, navigate, onOpenWorkspaces, telegram,
 }: {
   open: boolean; onClose: () => void; name: string; email: string; plan: string;
-  xp: number; level: number; signOut: () => void; navigate: (to: string) => void; telegram?: boolean;
+  xp: number; level: number; signOut: () => void; navigate: (to: string) => void;
+  onOpenWorkspaces: () => void; telegram?: boolean;
 }) {
   return (
     <AnimatePresence>
@@ -152,6 +159,14 @@ function DropdownMenu({
                 <ChevronRight size={12} className="text-amber-400/60" />
               </button>
             )}
+            <button
+              onClick={() => { onOpenWorkspaces(); }}
+              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-bg-hover transition-all cursor-pointer"
+            >
+              <Users size={14} className="text-text-tertiary" />
+              <span className="text-[12px] font-medium text-text-secondary flex-1 text-left">Workspaces</span>
+              <ChevronRight size={12} className="text-text-tertiary" />
+            </button>
             <button
               onClick={() => { navigate("/settings"); onClose(); }}
               className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-bg-hover transition-all cursor-pointer"

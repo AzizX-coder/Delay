@@ -4,12 +4,18 @@ import type { Note } from "@/types/note";
 import type { Task, TaskList } from "@/types/task";
 import type { CalendarEvent } from "@/types/event";
 
-// Maps local Dexie table name → Supabase table name
+// Maps local Dexie table name → Supabase table name.
+// Mirrors the sync tables in supabase/schema.sql.
 const TABLE_MAP: Record<string, string> = {
   notes: "user_notes",
   tasks: "user_tasks",
   taskLists: "user_task_lists",
   events: "user_events",
+  codeSnippets: "user_code_snippets",
+  timerSessions: "user_timer_sessions",
+  memories: "user_memories",
+  aiConversations: "user_ai_conversations",
+  aiMessages: "user_ai_messages",
 };
 
 let drainTimer: ReturnType<typeof setTimeout> | null = null;
@@ -91,18 +97,26 @@ export async function flushQueue(userId: string) {
 export async function pullFromSupabase(userId: string, since = 0) {
   if (!supabase || !userId) return;
 
-  const pulls: Array<{ supaTable: string; dexieTable: keyof typeof db }> = [
-    { supaTable: "user_notes", dexieTable: "notes" },
-    { supaTable: "user_tasks", dexieTable: "tasks" },
+  // `incCol` = the column used for incremental pulls. Tables without an
+  // updated_at column (task lists, memories, ai messages, timer sessions)
+  // are always pulled in full — they're small.
+  const pulls: Array<{ supaTable: string; dexieTable: keyof typeof db; incCol?: string }> = [
+    { supaTable: "user_notes", dexieTable: "notes", incCol: "updated_at" },
+    { supaTable: "user_tasks", dexieTable: "tasks", incCol: "updated_at" },
     { supaTable: "user_task_lists", dexieTable: "taskLists" },
-    { supaTable: "user_events", dexieTable: "events" },
+    { supaTable: "user_events", dexieTable: "events", incCol: "updated_at" },
+    { supaTable: "user_code_snippets", dexieTable: "codeSnippets", incCol: "updated_at" },
+    { supaTable: "user_timer_sessions", dexieTable: "timerSessions" },
+    { supaTable: "user_memories", dexieTable: "memories" },
+    { supaTable: "user_ai_conversations", dexieTable: "aiConversations", incCol: "updated_at" },
+    { supaTable: "user_ai_messages", dexieTable: "aiMessages" },
   ];
 
   await Promise.all(
-    pulls.map(async ({ supaTable, dexieTable }) => {
+    pulls.map(async ({ supaTable, dexieTable, incCol }) => {
       try {
         let query = supabase!.from(supaTable).select("*").eq("user_id", userId);
-        if (since > 0) query = query.gte("updated_at", since);
+        if (since > 0 && incCol) query = query.gte(incCol, since);
         const { data, error } = await query;
         if (error || !data) return;
         // Strip user_id before storing in Dexie
