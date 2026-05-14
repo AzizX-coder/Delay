@@ -8,21 +8,7 @@ import {
 import { useThemeStore } from "@/stores/themeStore";
 import { useSettingsStore } from "@/stores/settingsStore";
 import { AppLayout } from "@/components/layout/AppLayout";
-import { NotesPage } from "@/features/notes/NotesPage";
-import { TasksPage } from "@/features/tasks/TasksPage";
-import { CalendarPage } from "@/features/calendar/CalendarPage";
-import { AIChatPage } from "@/features/ai/AIChatPage";
-import { TimerPage } from "@/features/timer/TimerPage";
-import { CodeStudioPage } from "@/features/code-studio/CodeStudioPage";
-import { SettingsPage } from "@/features/settings/SettingsPage";
 import { OnboardingFlow } from "@/features/onboarding/OnboardingFlow";
-import { KanbanPage } from "@/features/kanban/KanbanPage";
-import { WhiteboardPage } from "@/features/whiteboard/WhiteboardPage";
-import { VoiceStudioPage } from "@/features/voice-studio/VoiceStudioPage";
-import { BucketPage } from "@/features/bucket/BucketPage";
-import { CapturePage } from "@/features/capture/CapturePage";
-import { StatusPage } from "@/features/status/StatusPage";
-import { FlowsPage } from "@/features/flows/FlowsPage";
 import { AppLock } from "@/components/ui/AppLock";
 import { Logo } from "@/components/ui/Logo";
 import { CommandPalette } from "@/components/ui/CommandPalette";
@@ -33,8 +19,26 @@ import { useProfile } from "@/hooks/useProfile";
 import { useGamificationStore } from "@/stores/gamificationStore";
 import { AuthPage } from "@/features/auth/AuthPage";
 import { isSupabaseConfigured } from "@/lib/supabase";
-import { PricingPage } from "@/features/pricing/PricingPage";
-import { PublicNotePage } from "@/features/share/PublicNotePage";
+
+// Route pages are lazy-loaded so their heavy dependencies (tldraw, monaco,
+// recharts, tiptap, emoji-mart) split into separate chunks instead of one
+// ~3 MB bundle. Each page's code only downloads when the user opens it.
+const NotesPage = lazy(() => import("@/features/notes/NotesPage").then(m => ({ default: m.NotesPage })));
+const TasksPage = lazy(() => import("@/features/tasks/TasksPage").then(m => ({ default: m.TasksPage })));
+const CalendarPage = lazy(() => import("@/features/calendar/CalendarPage").then(m => ({ default: m.CalendarPage })));
+const AIChatPage = lazy(() => import("@/features/ai/AIChatPage").then(m => ({ default: m.AIChatPage })));
+const TimerPage = lazy(() => import("@/features/timer/TimerPage").then(m => ({ default: m.TimerPage })));
+const CodeStudioPage = lazy(() => import("@/features/code-studio/CodeStudioPage").then(m => ({ default: m.CodeStudioPage })));
+const SettingsPage = lazy(() => import("@/features/settings/SettingsPage").then(m => ({ default: m.SettingsPage })));
+const KanbanPage = lazy(() => import("@/features/kanban/KanbanPage").then(m => ({ default: m.KanbanPage })));
+const WhiteboardPage = lazy(() => import("@/features/whiteboard/WhiteboardPage").then(m => ({ default: m.WhiteboardPage })));
+const VoiceStudioPage = lazy(() => import("@/features/voice-studio/VoiceStudioPage").then(m => ({ default: m.VoiceStudioPage })));
+const BucketPage = lazy(() => import("@/features/bucket/BucketPage").then(m => ({ default: m.BucketPage })));
+const CapturePage = lazy(() => import("@/features/capture/CapturePage").then(m => ({ default: m.CapturePage })));
+const StatusPage = lazy(() => import("@/features/status/StatusPage").then(m => ({ default: m.StatusPage })));
+const FlowsPage = lazy(() => import("@/features/flows/FlowsPage").then(m => ({ default: m.FlowsPage })));
+const PricingPage = lazy(() => import("@/features/pricing/PricingPage").then(m => ({ default: m.PricingPage })));
+const PublicNotePage = lazy(() => import("@/features/share/PublicNotePage").then(m => ({ default: m.PublicNotePage })));
 
 const OFFLINE_KEY = "delay_offline_mode";
 
@@ -185,31 +189,46 @@ export default function App() {
     <HashRouter>
       <CommandPalette open={cmdkOpen} onClose={() => setCmdkOpen(false)} />
       <QuickCaptureModal open={quickCaptureOpen} onClose={() => setQuickCaptureOpen(false)} />
-      <Routes>
-        {/* Public share routes — no auth required */}
-        <Route path="share/note/:slug" element={<PublicNotePage />} />
+      <Suspense fallback={<PageFallback />}>
+        <Routes>
+          {/* Public share routes — no auth required */}
+          <Route path="share/note/:slug" element={<PublicNotePage />} />
 
-        {/* Main app */}
-        <Route path="/" element={<AppLayout />}>
-          <Route index element={<Navigate to="/notes" replace />} />
-          <Route path="notes" element={<NotesPage />} />
-          <Route path="tasks" element={<TasksPage />} />
-          <Route path="calendar" element={<CalendarPage />} />
-          <Route path="timer" element={<TimerPage />} />
-          <Route path="ai" element={<AIChatPage />} />
-          <Route path="code-studio" element={<CodeStudioPage />} />
-          <Route path="kanban" element={<KanbanPage />} />
-          <Route path="whiteboard" element={<WhiteboardPage />} />
-          <Route path="voice-studio" element={<VoiceStudioPage />} />
-          <Route path="bucket" element={<BucketPage />} />
-          <Route path="capture" element={<CapturePage />} />
-          <Route path="status" element={<StatusPage />} />
-          <Route path="flows" element={<FlowsPage />} />
-          <Route path="settings" element={<SettingsPage />} />
-          <Route path="pricing" element={<PricingPage />} />
-        </Route>
-      </Routes>
+          {/* Main app */}
+          <Route path="/" element={<AppLayout />}>
+            <Route index element={<Navigate to="/notes" replace />} />
+            <Route path="notes" element={<NotesPage />} />
+            <Route path="tasks" element={<TasksPage />} />
+            <Route path="calendar" element={<CalendarPage />} />
+            <Route path="timer" element={<TimerPage />} />
+            <Route path="ai" element={<AIChatPage />} />
+            <Route path="code-studio" element={<CodeStudioPage />} />
+            <Route path="kanban" element={<KanbanPage />} />
+            <Route path="whiteboard" element={<WhiteboardPage />} />
+            <Route path="voice-studio" element={<VoiceStudioPage />} />
+            <Route path="bucket" element={<BucketPage />} />
+            <Route path="capture" element={<CapturePage />} />
+            <Route path="status" element={<StatusPage />} />
+            <Route path="flows" element={<FlowsPage />} />
+            <Route path="settings" element={<SettingsPage />} />
+            <Route path="pricing" element={<PricingPage />} />
+          </Route>
+        </Routes>
+      </Suspense>
     </HashRouter>
+  );
+}
+
+/** Lightweight fallback while a lazy route chunk loads. */
+function PageFallback() {
+  return (
+    <div className="flex-1 h-full flex items-center justify-center bg-bg-primary">
+      <motion.span
+        animate={{ rotate: 360 }}
+        transition={{ duration: 0.8, repeat: Infinity, ease: "linear" }}
+        className="w-5 h-5 rounded-full border-2 border-border-light border-t-accent"
+      />
+    </div>
   );
 }
 
