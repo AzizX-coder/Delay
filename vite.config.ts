@@ -10,7 +10,7 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: "autoUpdate",
-      includeAssets: ["logo.png", "favicon.ico", "logo-192.png", "logo-512.png"],
+      includeAssets: ["logo.png", "logo-192.png", "logo-512.png"],
       manifest: {
         name: "Delay",
         short_name: "Delay",

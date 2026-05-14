@@ -8,29 +8,11 @@ import { useState, useEffect } from "react";
 import { useSettingsStore } from "@/stores/settingsStore";
 import { useTimerStore } from "@/stores/timerStore";
 import { ALL_MODULES } from "@/types/settings";
-import { DelayIcon } from "@/components/ui/DelayIcon";
 import { ProfileButton } from "@/components/ui/ProfileButton";
 
 const ICON_MAP: Record<string, any> = {
   StickyNote, CheckSquare, Calendar, Timer, Sparkles, Code2,
   HardDrive, Columns3, PenTool, Mic, Archive, Bookmark, BarChart3, GitBranch,
-};
-
-// Module ID → DelayIcon name. When present, render the branded illustration instead of lucide.
-const MODULE_ICON_MAP: Record<string, string> = {
-  notes: "notes",
-  tasks: "tasks",
-  calendar: "calendar",
-  timer: "timer",
-  capture: "saved",
-  kanban: "kanban",
-  whiteboard: "whiteboard",
-  "code-studio": "code",
-  bucket: "vault",
-  "voice-studio": "voice",
-  status: "status",
-  ai: "ai",
-  flows: "flows",
 };
 
 function LiveClock() {
@@ -109,16 +91,12 @@ export function NavigationRail() {
     const path = `/${item.id}`;
     const isActive = location.pathname.startsWith(path);
     const Icon = ICON_MAP[item.icon] || Sparkles;
-    const delayIconName = MODULE_ICON_MAP[item.id];
     const isHovered = hoveredPath === path;
 
-    const renderIcon = (sz: number) =>
-      delayIconName ? (
-        <DelayIcon name={delayIconName} size={sz} className={isActive ? "" : "opacity-90"} />
-      ) : (
-        <Icon size={sz} strokeWidth={isActive ? 2.2 : 1.7}
-          className={`transition-all duration-200 ${isActive ? "text-accent" : "text-text-tertiary group-hover:text-text-primary"}`} />
-      );
+    const renderIcon = (sz: number) => (
+      <Icon size={sz} strokeWidth={isActive ? 2.2 : 1.7}
+        className={`transition-all duration-200 ${isActive ? "text-accent" : "text-text-tertiary group-hover:text-text-primary"}`} />
+    );
 
     if (isTelegram) {
       return (
@@ -280,14 +258,13 @@ function ModuleManagerModal({ onClose, enabled_modules, toggleModule, navPositio
         <div className="overflow-y-auto p-2 max-h-[440px]">
           {ALL_MODULES.map(m => {
             const Icon = ICON_MAP[m.icon] || Sparkles;
-            const delayIconName = MODULE_ICON_MAP[m.id];
             const enabled = enabled_modules.includes(m.id);
             return (
               <button key={m.id} onClick={() => toggleModule(m.id)}
                 className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-all cursor-pointer
                   ${enabled ? "bg-accent/8" : "hover:bg-bg-hover"}`}>
-                <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${enabled ? "bg-gradient-to-br from-accent/30 to-accent/10 ring-1 ring-accent/30" : "bg-bg-hover"}`}>
-                  {delayIconName ? <DelayIcon name={delayIconName} size={18} /> : <Icon size={16} strokeWidth={enabled ? 2.4 : 1.8} className={enabled ? "text-accent" : "text-text-tertiary"} />}
+                <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${enabled ? "bg-accent/15 ring-1 ring-accent/25" : "bg-bg-hover"}`}>
+                  <Icon size={16} strokeWidth={enabled ? 2.4 : 1.8} className={enabled ? "text-accent" : "text-text-tertiary"} />
                 </div>
                 <div className="flex-1 text-left">
                   <p className={`text-[13px] font-bold ${enabled ? "text-text-primary" : "text-text-secondary"}`}>{m.label}</p>
