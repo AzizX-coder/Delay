@@ -17,6 +17,7 @@ import { motion } from "motion/react";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import { useGamificationStore } from "@/stores/gamificationStore";
+import { useTwemoji } from "@/hooks/useTwemoji";
 import { AuthPage } from "@/features/auth/AuthPage";
 import { isSupabaseConfigured } from "@/lib/supabase";
 
@@ -57,6 +58,10 @@ export default function App() {
   const { user, loading: authLoading } = useAuth();
   const { profile } = useProfile();
   const { setXP, setStreak } = useGamificationStore();
+
+  // Replace native emoji glyphs with Twemoji SVGs so Windows users get the
+  // same polished look Mac / Telegram / Notion users see.
+  useTwemoji();
 
   // Hydrate gamification from cloud profile
   useEffect(() => {
