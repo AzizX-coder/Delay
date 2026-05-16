@@ -212,6 +212,9 @@ export default function App() {
             <Route path="whiteboard" element={<WhiteboardPage />} />
             <Route path="voice-studio" element={<VoiceStudioPage />} />
             <Route path="bucket" element={<BucketPage />} />
+            {/* The module id is "saved" (see ALL_MODULES), so the nav points to
+                /saved. /capture stays as a working alias for any old links. */}
+            <Route path="saved" element={<CapturePage />} />
             <Route path="capture" element={<CapturePage />} />
             <Route path="status" element={<StatusPage />} />
             <Route path="flows" element={<FlowsPage />} />

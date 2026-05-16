@@ -41,6 +41,14 @@ export function ProfileButton({ compact, telegram }: Props) {
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
+  // Allow other parts of the app (Settings → Account) to open the
+  // Workspaces modal without needing a global store.
+  useEffect(() => {
+    const open = () => setWorkspacesOpen(true);
+    window.addEventListener("delay:open-workspaces", open);
+    return () => window.removeEventListener("delay:open-workspaces", open);
+  }, []);
+
   if (!user) return null;
 
   const name = profile?.display_name ?? user.email?.split("@")[0] ?? "User";

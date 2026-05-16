@@ -1,38 +1,20 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { useThemeStore } from "@/stores/themeStore";
 import { useSettingsStore } from "@/stores/settingsStore";
 import { useAIStore } from "@/stores/aiStore";
 import { useUpdaterStore } from "@/stores/updaterStore";
+import { useAuth } from "@/hooks/useAuth";
+import { useProfile } from "@/hooks/useProfile";
+import { isSupabaseConfigured } from "@/lib/supabase";
 import { listOllamaModels, checkOllamaStatus } from "@/lib/ollama";
 import { motion, AnimatePresence } from "motion/react";
 import {
-  Sun,
-  Moon,
-  Monitor,
-  Bot,
-  Languages,
-  Info,
-  Wifi,
-  WifiOff,
-  ChevronRight,
-  Check,
-  Download,
-  RefreshCw,
-  CheckCircle2,
-  AlertCircle,
-  Trash2,
-  AlertTriangle,
-  Zap,
-  Leaf,
-  Coffee,
-  Waves,
-  Flower2,
-  Shield,
-  Lock,
-  Layout,
-  PanelLeft,
-  PanelRight,
-  PanelBottom,
+  Sun, Moon, Monitor, Bot, Languages, Info, Wifi, WifiOff, ChevronRight,
+  Check, Download, RefreshCw, CheckCircle2, AlertCircle, Trash2, AlertTriangle,
+  Zap, Leaf, Coffee, Waves, Flower2, Shield, Lock, Layout,
+  PanelLeft, PanelRight, PanelBottom,
+  User, Cloud, HardDrive, Crown, LogOut, Users, ExternalLink, Sparkles, ArrowRight,
 } from "lucide-react";
 import { db } from "@/lib/database";
 import { LANGUAGES, ACCENT_PRESETS } from "@/types/settings";
@@ -40,7 +22,24 @@ import type { OllamaModel } from "@/types/ai";
 import { Logo } from "@/components/ui/Logo";
 import { useT } from "@/lib/i18n";
 
+/** Sections the sidebar can navigate to. Order = sidebar order. */
+const SECTION_TABS = [
+  { id: "account",    label: "Account",     icon: User,        group: "you" },
+  { id: "workspace",  label: "Workspace",   icon: Layout,      group: "you" },
+  { id: "appearance", label: "Appearance",  icon: Sun,         group: "look" },
+  { id: "navigation", label: "Navigation",  icon: PanelLeft,   group: "look" },
+  { id: "language",   label: "Language",    icon: Languages,   group: "look" },
+  { id: "ai",         label: "AI",          icon: Bot,         group: "smart" },
+  { id: "security",   label: "Security",    icon: Shield,      group: "smart" },
+  { id: "updates",    label: "Updates",     icon: Download,    group: "system" },
+  { id: "data",       label: "Data",        icon: AlertTriangle, group: "system" },
+  { id: "about",      label: "About",       icon: Info,        group: "system" },
+] as const;
+
+type SectionId = (typeof SECTION_TABS)[number]["id"];
+
 export function SettingsPage() {
+  const navigate = useNavigate();
   const { theme, setTheme, customBgData, setCustomBg } = useThemeStore();
   const {
     language, ai_provider, ai_model, ai_enabled, security_pin,
@@ -48,9 +47,12 @@ export function SettingsPage() {
     workspace_name, accent_color, density, font_family, reduce_motion, rounded_corners,
     api_key_openrouter, api_key_groq, api_key_openai,
     api_key_anthropic, api_key_deepseek, api_key_gemini,
+    usage_mode, use_case,
     setSetting
   } = useSettingsStore();
-  const [settingsQuery, setSettingsQuery] = useState("");
+  const { user, signOut } = useAuth();
+  const { profile } = useProfile();
+  const [activeSection, setActiveSection] = useState<SectionId>("account");
   const { setModel } = useAIStore();
   const {
     status,
@@ -106,31 +108,164 @@ export function SettingsPage() {
   const currentLang = LANGUAGES.find((l) => l.code === language);
 
   return (
-    <div className="h-full overflow-y-auto">
-      <div className="max-w-2xl mx-auto px-8 py-10">
-        <motion.h1
-          initial={{ opacity: 0, y: -6 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-[28px] font-bold text-text-primary mb-1 tracking-[-0.02em]"
-        >
-          {t("settings.title")}
-        </motion.h1>
-        <p className="text-[13px] text-text-tertiary mb-8">
-          {t("settings.subtitle")}
-        </p>
-
-        {/* Search */}
-        <div className="mb-6 flex items-center gap-2 px-3 py-2 rounded-xl bg-bg-secondary/40 border border-border/30">
-          <span className="text-text-tertiary text-[12px] font-bold">⌕</span>
-          <input
-            value={settingsQuery}
-            onChange={(e) => setSettingsQuery(e.target.value)}
-            placeholder="Search settings..."
-            className="flex-1 bg-transparent outline-none text-[13px] text-text-primary placeholder:text-text-tertiary"
-          />
+    <div className="h-full flex bg-bg-primary overflow-hidden">
+      {/* ── Sidebar with section tabs ── */}
+      <aside className="hidden md:flex w-[220px] shrink-0 flex-col border-r border-border/30 bg-bg-secondary/30 overflow-y-auto">
+        <div className="px-5 pt-7 pb-5">
+          <p className="text-[20px] font-bold tracking-[-0.02em] text-text-primary">{t("settings.title")}</p>
+          <p className="text-[11.5px] text-text-tertiary mt-0.5">{t("settings.subtitle")}</p>
         </div>
+        <nav className="px-2 pb-4 space-y-0.5">
+          {SECTION_TABS.map((tab, i) => {
+            const Icon = tab.icon;
+            const prev = SECTION_TABS[i - 1];
+            const showGroupDivider = prev && prev.group !== tab.group;
+            return (
+              <div key={tab.id}>
+                {showGroupDivider && <div className="my-2 mx-3 h-px bg-border/30" />}
+                <button
+                  onClick={() => setActiveSection(tab.id)}
+                  className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-[13px] font-medium transition-colors cursor-pointer
+                    ${activeSection === tab.id ? "bg-accent/12 text-accent" : "text-text-secondary hover:bg-bg-hover hover:text-text-primary"}`}
+                >
+                  <Icon size={15} />
+                  {tab.label}
+                </button>
+              </div>
+            );
+          })}
+        </nav>
+      </aside>
 
-        <Section title="Workspace" icon={<Layout size={18} />} hidden={settingsQuery && !"workspace name density font motion accent radius corners".includes(settingsQuery.toLowerCase())}>
+      {/* ── Mobile tab strip ── */}
+      <div className="md:hidden absolute top-0 inset-x-0 z-10 bg-bg-primary border-b border-border/30">
+        <div className="flex overflow-x-auto no-scrollbar px-3 py-2 gap-1.5">
+          {SECTION_TABS.map(tab => {
+            const Icon = tab.icon;
+            return (
+              <button key={tab.id} onClick={() => setActiveSection(tab.id)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11.5px] font-bold whitespace-nowrap transition-colors cursor-pointer
+                  ${activeSection === tab.id ? "bg-accent text-white" : "bg-bg-secondary/60 text-text-secondary"}`}>
+                <Icon size={12} />
+                {tab.label}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* ── Active section content ── */}
+      <div className="flex-1 overflow-y-auto pt-14 md:pt-0">
+        <div className="max-w-2xl mx-auto px-6 md:px-10 py-8 md:py-10">
+
+          {/* ── Account ── */}
+          {activeSection === "account" && (
+            <div className="mb-6 space-y-4">
+              <SectionHeader title="Account" subtitle="Your profile, plan and where your data lives." />
+              {user ? (
+                <div className="rounded-2xl border border-border/30 bg-bg-secondary/40 p-5">
+                  <div className="flex items-center gap-4">
+                    {profile?.avatar_url ? (
+                      <img src={profile.avatar_url} alt="" className="w-14 h-14 rounded-full object-cover" />
+                    ) : (
+                      <div className="w-14 h-14 rounded-full bg-accent/15 flex items-center justify-center text-accent text-[20px] font-bold">
+                        {(profile?.display_name ?? user.email ?? "U").charAt(0).toUpperCase()}
+                      </div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[15px] font-bold text-text-primary truncate">{profile?.display_name ?? user.email}</p>
+                      <p className="text-[12px] text-text-tertiary truncate">{user.email}</p>
+                      <div className="flex items-center gap-2 mt-1.5">
+                        <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider
+                          ${profile?.plan === "max" ? "bg-purple-400/15 text-purple-400" :
+                            profile?.plan === "pro" ? "bg-amber-400/15 text-amber-400" :
+                            "bg-bg-hover text-text-tertiary"}`}>
+                          {profile?.plan ?? "free"}
+                        </span>
+                        {profile?.plan === "free" && (
+                          <button onClick={() => navigate("/pricing")}
+                            className="text-[11px] font-bold text-accent hover:underline flex items-center gap-1 cursor-pointer">
+                            Upgrade <ArrowRight size={11} />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                    <button onClick={() => signOut()}
+                      className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-[12px] font-bold text-danger bg-danger/10 hover:bg-danger/15 cursor-pointer transition-colors">
+                      <LogOut size={13} /> Sign out
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="rounded-2xl border border-border/30 bg-bg-secondary/40 p-5">
+                  <div className="flex items-start gap-4">
+                    <div className="w-12 h-12 rounded-2xl bg-accent/12 flex items-center justify-center shrink-0">
+                      <Cloud size={20} className="text-accent" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-[14px] font-bold text-text-primary">You're using Delay locally</p>
+                      <p className="text-[12px] text-text-tertiary mt-0.5 leading-relaxed">
+                        Sign in to sync across devices, share notes with public links, and collaborate in workspaces.
+                      </p>
+                      <button onClick={() => { setSetting("usage_mode", "cloud"); window.location.reload(); }}
+                        className="mt-3 inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-accent text-white text-[12.5px] font-bold hover:opacity-90 cursor-pointer">
+                        Sign in
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Storage mode */}
+              <div className="rounded-2xl border border-border/30 bg-bg-secondary/40 p-4">
+                <p className="text-[12px] font-bold text-text-tertiary uppercase tracking-wider mb-3">Storage</p>
+                <div className="grid grid-cols-2 gap-2">
+                  {([
+                    { id: "cloud", icon: Cloud, label: "Cloud sync", sub: "Across devices" },
+                    { id: "local", icon: HardDrive, label: "Local only", sub: "This device" },
+                  ] as const).map(({ id, icon: Icon, label, sub }) => (
+                    <button key={id} onClick={() => setSetting("usage_mode", id)}
+                      className={`flex items-center gap-3 p-3 rounded-xl border-2 transition-colors cursor-pointer text-left
+                        ${usage_mode === id ? "border-accent bg-accent/5" : "border-border/30 hover:border-border/60"}`}>
+                      <Icon size={16} className={usage_mode === id ? "text-accent" : "text-text-tertiary"} />
+                      <div className="min-w-0">
+                        <p className={`text-[12.5px] font-bold ${usage_mode === id ? "text-accent" : "text-text-primary"}`}>{label}</p>
+                        <p className="text-[10.5px] text-text-tertiary">{sub}</p>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Use case (read-only — set during onboarding) */}
+              {use_case && (
+                <div className="rounded-2xl border border-border/30 bg-bg-secondary/40 p-4 flex items-center gap-3">
+                  <Sparkles size={16} className="text-accent shrink-0" />
+                  <div className="flex-1">
+                    <p className="text-[12px] font-bold text-text-primary">Workspace tuned for: <span className="text-accent capitalize">{use_case}</span></p>
+                    <p className="text-[11px] text-text-tertiary mt-0.5">Modules and AI prompts are tailored to this. Change in Workspace → Modules.</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Workspaces shortcut */}
+              {isSupabaseConfigured && user && (
+                <button
+                  className="w-full flex items-center gap-3 p-4 rounded-2xl border border-border/30 bg-bg-secondary/40 hover:bg-bg-hover transition-colors cursor-pointer text-left"
+                  onClick={() => window.dispatchEvent(new CustomEvent("delay:open-workspaces"))}
+                >
+                  <Users size={16} className="text-accent shrink-0" />
+                  <div className="flex-1">
+                    <p className="text-[12.5px] font-bold text-text-primary">Workspaces & invites</p>
+                    <p className="text-[11px] text-text-tertiary">Share notes, tasks and boards with your team.</p>
+                  </div>
+                  <ChevronRight size={14} className="text-text-tertiary" />
+                </button>
+              )}
+            </div>
+          )}
+
+        <Section title="Workspace" icon={<Layout size={18} />} hidden={activeSection !== "workspace"}>
           <div className="space-y-4">
             <div>
               <p className="text-[12px] font-bold text-text-secondary mb-1.5">Workspace name</p>
@@ -217,7 +352,7 @@ export function SettingsPage() {
           </div>
         </Section>
 
-        <Section title={t("settings.appearance")} icon={<Sun size={18} />} hidden={settingsQuery && !"appearance theme dark light forest mocha ocean rose system background image".includes(settingsQuery.toLowerCase())}>
+        <Section title={t("settings.appearance")} icon={<Sun size={18} />} hidden={activeSection !== "appearance"}>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5">
             {(
               [
@@ -298,7 +433,7 @@ export function SettingsPage() {
           </div>
         </Section>
 
-        <Section title={t("settings.language")} icon={<Languages size={18} />}>
+        <Section title={t("settings.language")} icon={<Languages size={18} />} hidden={activeSection !== "language"}>
           <button
             onClick={() => setShowLangPicker(!showLangPicker)}
             className="w-full flex items-center justify-between px-4 py-3
@@ -366,7 +501,7 @@ export function SettingsPage() {
           )}
         </Section>
 
-        <Section title="Navigation & Display" icon={<Layout size={18} />}>
+        <Section title="Navigation & Display" icon={<Layout size={18} />} hidden={activeSection !== "navigation"}>
           {/* Nav Position */}
           <div className="mb-5">
             <p className="text-[12px] font-bold text-text-tertiary uppercase mb-2">Sidebar Position</p>
@@ -412,7 +547,7 @@ export function SettingsPage() {
           </div>
         </Section>
 
-        <Section title="AI Intelligence" icon={<Bot size={18} />}>
+        <Section title="AI Intelligence" icon={<Bot size={18} />} hidden={activeSection !== "ai"}>
           <div className="flex items-center justify-between mb-4">
             <div>
               <p className="text-[14px] font-medium text-text-primary">Enable AI Features</p>
@@ -520,7 +655,7 @@ export function SettingsPage() {
         </Section>
 
         {/* Security PIN */}
-        <Section title="App Security" icon={<Shield size={18} />}>
+        <Section title="App Security" icon={<Shield size={18} />} hidden={activeSection !== "security"}>
           <div className="flex items-center justify-between">
             <div>
               <p className="text-[14px] font-medium text-text-primary">App Lock PIN</p>
@@ -570,7 +705,7 @@ export function SettingsPage() {
           </AnimatePresence>
         </Section>
 
-        <Section title={t("settings.updates")} icon={<Download size={18} />}>
+        <Section title={t("settings.updates")} icon={<Download size={18} />} hidden={activeSection !== "updates"}>
           <UpdatePanel
             status={status}
             currentVersion={currentVersion}
@@ -583,7 +718,7 @@ export function SettingsPage() {
           />
         </Section>
 
-        <Section title={t("settings.danger_zone")} icon={<AlertTriangle size={18} />}>
+        <Section title={t("settings.danger_zone")} icon={<AlertTriangle size={18} />} hidden={activeSection !== "data"}>
           <div className="flex items-start justify-between gap-4">
             <div className="flex-1">
               <p className="text-[14px] font-medium text-text-primary">
@@ -645,39 +780,75 @@ export function SettingsPage() {
           </AnimatePresence>
         </Section>
 
-        <Section title={t("settings.about")} icon={<Info size={18} />}>
+        <Section title={t("settings.about")} icon={<Info size={18} />} hidden={activeSection !== "about"}>
           <div className="flex items-center gap-4">
             <Logo size={56} />
             <div className="flex-1">
-              <h3 className="text-[17px] font-semibold text-text-primary tracking-[-0.01em]">
-                Delay
-              </h3>
+              <h3 className="text-[17px] font-semibold text-text-primary tracking-[-0.01em]">Delay</h3>
               <p className="text-[12px] text-text-secondary">
-                Version {currentVersion}
+                Version <span className="font-mono font-bold">{__APP_VERSION__}</span>
+                <span className="text-text-tertiary"> · built {__BUILD_DATE__}</span>
               </p>
               <p className="text-[12px] text-text-tertiary mt-0.5">
-                Notes, tasks, calendar & AI — beautifully organized.
+                Notes, tasks, calendar & AI — your second brain for deep work.
               </p>
             </div>
-            <a
-              href="https://github.com/AzizX-coder/Delay"
-              target="_blank"
-              rel="noreferrer"
-              className="flex items-center gap-1.5 px-3 py-2 rounded-lg
-                bg-bg-secondary hover:bg-bg-hover border border-border-light
-                text-[12px] text-text-secondary hover:text-text-primary
-                transition-colors"
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                <path d="M12 .5A11.5 11.5 0 0 0 .5 12a11.5 11.5 0 0 0 7.86 10.92c.58.11.79-.25.79-.56v-2c-3.2.7-3.88-1.38-3.88-1.38-.52-1.33-1.28-1.68-1.28-1.68-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.76 2.7 1.25 3.36.96.1-.75.4-1.25.73-1.54-2.55-.29-5.24-1.28-5.24-5.69 0-1.26.45-2.28 1.19-3.09-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.18 1.18a11 11 0 0 1 5.78 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.81 1.19 1.83 1.19 3.09 0 4.42-2.69 5.39-5.25 5.68.41.35.78 1.05.78 2.12v3.14c0 .31.21.67.8.56A11.5 11.5 0 0 0 23.5 12 11.5 11.5 0 0 0 12 .5z"/>
-              </svg>
-              GitHub
+            <a href={`https://github.com/AzizX-coder/Delay/releases/tag/v${__APP_VERSION__}`}
+              target="_blank" rel="noreferrer"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-bg-secondary hover:bg-bg-hover border border-border-light text-[12px] text-text-secondary hover:text-text-primary transition-colors">
+              <ExternalLink size={12} /> Release notes
             </a>
           </div>
+
+          {/* Build / runtime info */}
+          <div className="mt-5 grid grid-cols-2 gap-2">
+            {([
+              ["Platform",   detectPlatform()],
+              ["Build mode", import.meta.env.MODE],
+              ["Online",     navigator.onLine ? "Yes" : "No"],
+              ["Locale",     navigator.language],
+            ] as const).map(([k, v]) => (
+              <div key={k} className="px-3 py-2 rounded-lg bg-bg-secondary/50 border border-border/20">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-text-tertiary">{k}</p>
+                <p className="text-[12px] font-mono text-text-primary mt-0.5 truncate">{v}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Quick links */}
+          <div className="mt-4 flex flex-wrap gap-2">
+            <a href="https://github.com/AzizX-coder/Delay" target="_blank" rel="noreferrer"
+              className="px-3 py-1.5 rounded-lg bg-bg-secondary/50 hover:bg-bg-hover border border-border/30 text-[11.5px] font-semibold text-text-secondary hover:text-text-primary cursor-pointer transition-colors">GitHub</a>
+            <a href="https://github.com/AzizX-coder/Delay/releases" target="_blank" rel="noreferrer"
+              className="px-3 py-1.5 rounded-lg bg-bg-secondary/50 hover:bg-bg-hover border border-border/30 text-[11.5px] font-semibold text-text-secondary hover:text-text-primary cursor-pointer transition-colors">All releases</a>
+            <a href="https://github.com/AzizX-coder/Delay/issues/new" target="_blank" rel="noreferrer"
+              className="px-3 py-1.5 rounded-lg bg-bg-secondary/50 hover:bg-bg-hover border border-border/30 text-[11.5px] font-semibold text-text-secondary hover:text-text-primary cursor-pointer transition-colors">Report a bug</a>
+            <a href="mailto:hello@delay.app"
+              className="px-3 py-1.5 rounded-lg bg-bg-secondary/50 hover:bg-bg-hover border border-border/30 text-[11.5px] font-semibold text-text-secondary hover:text-text-primary cursor-pointer transition-colors">Email</a>
+          </div>
         </Section>
+        </div>
       </div>
     </div>
   );
+}
+
+/** Sub-header shown above non-Section content (e.g. the Account panel). */
+function SectionHeader({ title, subtitle }: { title: string; subtitle: string }) {
+  return (
+    <div className="mb-2">
+      <h2 className="text-[20px] font-bold tracking-[-0.02em] text-text-primary">{title}</h2>
+      <p className="text-[12.5px] text-text-tertiary mt-0.5">{subtitle}</p>
+    </div>
+  );
+}
+
+/** Best-effort platform label for the About panel — desktop / mobile / web. */
+function detectPlatform(): string {
+  if (typeof window !== "undefined" && (window as any).electronAPI?.isElectron) return "Desktop (Electron)";
+  if (typeof window !== "undefined" && (window as any).Capacitor?.isNativePlatform?.()) return "Android (Capacitor)";
+  const m = (navigator.userAgent.match(/(Chrome|Firefox|Safari|Edg)\/[\d.]+/) || [])[0];
+  return m ? `Web · ${m}` : "Web";
 }
 
 function UpdatePanel({
