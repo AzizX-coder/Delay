@@ -205,11 +205,20 @@ function inlineFormat(text: string): string {
   // Inline code: `text`
   result = result.replace(/`([^`]+?)`/g, '<code class="md-inline-code">$1</code>');
 
-  // Links: [text](url)
+  // Links: [text](url) — sanitize URL scheme. Without this, a markdown
+  // payload like [click](javascript:alert(1)) would render an XSS link.
   result = result.replace(
     /\[([^\]]+?)\]\(([^)]+?)\)/g,
-    '<a href="$2" class="md-link" target="_blank" rel="noreferrer">$1</a>'
+    (_m, text, url) => `<a href="${safeUrl(url)}" class="md-link" target="_blank" rel="noreferrer">${text}</a>`
   );
 
   return result;
+}
+
+/** Allow only http(s)/mailto/relative URLs. Anything else (javascript:,
+ *  data:, vbscript:, file:) collapses to '#' so the link is harmless. */
+function safeUrl(raw: string): string {
+  const trimmed = raw.trim();
+  if (/^(https?:|mailto:|\/|#)/i.test(trimmed)) return trimmed.replace(/"/g, "&quot;");
+  return "#";
 }

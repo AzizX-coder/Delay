@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import DOMPurify from "dompurify";
 import { supabase } from "@/lib/supabase";
 import { db } from "@/lib/database";
 import { motion } from "motion/react";
@@ -131,10 +132,7 @@ export function PublicNotePage() {
             {note.content_text}
           </div>
         ) : note?.content ? (
-          <div
-            className="prose-delay text-[15px] text-text-secondary leading-relaxed"
-            dangerouslySetInnerHTML={{ __html: note.content }}
-          />
+          <SanitizedHtml html={note.content} className="prose-delay text-[15px] text-text-secondary leading-relaxed" />
         ) : (
           <p className="text-text-tertiary italic">This note has no content.</p>
         )}
@@ -147,4 +145,25 @@ export function PublicNotePage() {
       </div>
     </div>
   );
+}
+
+/**
+ * Renders user-authored HTML safely. PublicNotePage shows notes from
+ * other users — without sanitization, anyone who crafts a note via the
+ * API (bypassing TipTap's own escaping) could ship <script> or
+ * `<img onerror>` that runs in every visitor's session. DOMPurify
+ * strips anything that isn't a known-safe tag/attribute and refuses
+ * javascript:/data:/vbscript: URLs.
+ */
+function SanitizedHtml({ html, className }: { html: string; className?: string }) {
+  const clean = useMemo(
+    () =>
+      DOMPurify.sanitize(html, {
+        USE_PROFILES: { html: true },
+        FORBID_TAGS: ["style", "form", "input", "textarea", "button", "iframe", "object", "embed", "script"],
+        FORBID_ATTR: ["onerror", "onload", "onclick", "onmouseover", "onfocus", "style"],
+      }),
+    [html]
+  );
+  return <div className={className} dangerouslySetInnerHTML={{ __html: clean }} />;
 }

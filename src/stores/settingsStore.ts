@@ -28,6 +28,9 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
         } else if (row.key === "usage_mode") {
           settings.usage_mode =
             row.value === "cloud" || row.value === "local" ? row.value : null;
+        } else if (row.key === "use_case") {
+          const allowed = ["student", "builder", "personal", "work", "creative"];
+          settings.use_case = allowed.includes(row.value) ? (row.value as any) : null;
         } else if (row.key === "sidebar_collapsed") {
           settings.sidebar_collapsed = row.value === "true";
         } else if (row.key === "ai_enabled") {

@@ -9,7 +9,21 @@ import {
   Sparkles, Check, StickyNote, CheckSquare, Calendar, Timer,
   Code2, HardDrive, Columns3, PenTool, Mic, Leaf, Coffee, Waves, Flower2, Plus,
   Cloud, RefreshCw, Share2, Lock, Wifi, UserX,
+  GraduationCap, Briefcase, Heart, Palette,
 } from "lucide-react";
+
+type UseCase = "student" | "builder" | "personal" | "work" | "creative";
+
+// What modules to pre-select for each use-case. Picked to give every
+// persona an obviously-useful starter workspace without overwhelming them
+// with all 13 modules. The user can still toggle on the next step.
+const USE_CASE_PRESETS: Record<UseCase, string[]> = {
+  student:  ["notes", "tasks", "calendar", "timer", "ai", "capture", "status"],
+  builder:  ["notes", "tasks", "code-studio", "kanban", "ai", "timer", "flows", "status"],
+  personal: ["notes", "tasks", "calendar", "timer", "capture", "bucket", "ai"],
+  work:     ["notes", "tasks", "calendar", "kanban", "flows", "ai", "status"],
+  creative: ["notes", "whiteboard", "voice-studio", "capture", "bucket", "kanban"],
+};
 import type { OllamaModel } from "@/types/ai";
 import { Logo } from "@/components/ui/Logo";
 
@@ -18,7 +32,7 @@ const ICON_MAP: Record<string, any> = {
   Columns3, PenTool, Mic, Globe,
 };
 
-const STEPS = 5;
+const STEPS = 6;
 
 export function OnboardingFlow() {
   const [step, setStep] = useState(0);
@@ -30,6 +44,7 @@ export function OnboardingFlow() {
   } = useSettingsStore();
 
   const [usageMode, setUsageMode] = useState<"cloud" | "local" | null>(null);
+  const [useCase, setUseCase] = useState<UseCase | null>(null);
   const [selectedLang, setSelectedLang] = useState(language);
   const [selectedModel, setSelectedModel] = useState(ai_model);
   const [selectedModules, setSelectedModules] = useState<string[]>([...DEFAULT_MODULES]);
@@ -51,8 +66,16 @@ export function OnboardingFlow() {
   const next = () => { if (step < STEPS - 1) { setDirection(1); setStep(step + 1); } };
   const prev = () => { if (step > 0) { setDirection(-1); setStep(step - 1); } };
 
+  const pickUseCase = (uc: UseCase) => {
+    setUseCase(uc);
+    // Snap the module selection to the preset for this persona. The user
+    // can still tweak it on the modules step.
+    setSelectedModules([...USE_CASE_PRESETS[uc]]);
+  };
+
   const finish = async () => {
     await setSetting("usage_mode", usageMode ?? "local");
+    if (useCase) await setSetting("use_case", useCase);
     await setSetting("language", selectedLang);
     await setSetting("ai_model", selectedModel);
     await setSetting("enabled_modules", selectedModules);
@@ -77,7 +100,11 @@ export function OnboardingFlow() {
     { key: "system", label: "System" },
   ];
 
-  const canAdvance = step !== 0 || usageMode !== null;
+  // Gate Next on step 0 (mode) and step 1 (use case) until the user picks.
+  const canAdvance =
+    (step === 0 && usageMode === null) ? false :
+    (step === 1 && useCase === null)   ? false :
+    true;
 
   return (
     <div className="h-screen w-screen flex items-center justify-center bg-bg-primary overflow-hidden">
@@ -200,8 +227,50 @@ export function OnboardingFlow() {
               </motion.div>
             )}
 
-            {/* Step 1: Theme */}
+            {/* Step 1: Use case — personalizes the workspace */}
             {step === 1 && (
+              <motion.div key="usecase" custom={direction} variants={variants}
+                initial="enter" animate="center" exit="exit" transition={transition}
+                className="flex-1 flex flex-col">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="p-2.5 rounded-xl bg-accent text-white shadow-lg shadow-accent/20"><Sparkles size={24} /></div>
+                  <div>
+                    <h2 className="text-[22px] font-bold text-text-primary tracking-tight">What's this mainly for?</h2>
+                    <p className="text-[12px] text-text-tertiary">We'll set up the right tools for you. Change anything later.</p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 overflow-y-auto max-h-[360px] pr-2 custom-scrollbar">
+                  {([
+                    { id: "student",  icon: GraduationCap, label: "Studying / school", sub: "Notes, calendar, focus timer, AI tutor" },
+                    { id: "builder",  icon: Code2,         label: "Building software",  sub: "Code studio, tasks, kanban, AI, flows" },
+                    { id: "work",     icon: Briefcase,     label: "Work / a team",      sub: "Tasks, calendar, kanban, status, flows" },
+                    { id: "personal", icon: Heart,         label: "Personal life",      sub: "Notes, tasks, capture, vault, calendar" },
+                    { id: "creative", icon: Palette,       label: "Creative projects",  sub: "Whiteboard, voice, capture, vault, boards" },
+                  ] as { id: UseCase; icon: any; label: string; sub: string }[]).map(({ id, icon: Icon, label, sub }) => {
+                    const active = useCase === id;
+                    return (
+                      <button key={id} onClick={() => pickUseCase(id)}
+                        className={`relative flex items-start gap-3 p-4 rounded-2xl border-2 transition-colors cursor-pointer text-left
+                          ${active ? "border-accent bg-accent/5" : "border-border/40 bg-bg-primary/40 hover:border-border"}`}>
+                        <div className={`p-2 rounded-xl shrink-0 ${active ? "bg-accent text-white" : "bg-bg-hover text-text-tertiary"}`}>
+                          <Icon size={18} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className={`text-[13.5px] font-bold ${active ? "text-accent" : "text-text-primary"}`}>{label}</p>
+                          <p className="text-[11px] text-text-tertiary mt-0.5">{sub}</p>
+                        </div>
+                        {active && (
+                          <div className="absolute top-2.5 right-2.5 text-accent"><Check size={15} strokeWidth={3} /></div>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </motion.div>
+            )}
+
+            {/* Step 2: Theme */}
+            {step === 2 && (
               <motion.div key="theme" custom={direction} variants={variants}
                 initial="enter" animate="center" exit="exit" transition={transition}
                 className="flex-1 flex flex-col">
@@ -238,8 +307,8 @@ export function OnboardingFlow() {
               </motion.div>
             )}
 
-            {/* Step 2: Language */}
-            {step === 2 && (
+            {/* Step 3: Language */}
+            {step === 3 && (
               <motion.div key="language" custom={direction} variants={variants}
                 initial="enter" animate="center" exit="exit" transition={transition}
                 className="flex-1 flex flex-col">
@@ -270,8 +339,8 @@ export function OnboardingFlow() {
               </motion.div>
             )}
 
-            {/* Step 3: Module selection */}
-            {step === 3 && (
+            {/* Step 4: Module selection */}
+            {step === 4 && (
               <motion.div key="modules" custom={direction} variants={variants}
                 initial="enter" animate="center" exit="exit" transition={transition}
                 className="flex-1 flex flex-col">
@@ -316,8 +385,8 @@ export function OnboardingFlow() {
               </motion.div>
             )}
 
-            {/* Step 4: AI */}
-            {step === 4 && (
+            {/* Step 5: AI */}
+            {step === 5 && (
               <motion.div key="ai" custom={direction} variants={variants}
                 initial="enter" animate="center" exit="exit" transition={transition}
                 className="flex-1 flex flex-col">
