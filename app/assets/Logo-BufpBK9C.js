@@ -1,0 +1,1 @@
+import{t as e}from"./jsx-runtime-B7rXg8Vy.js";var t=``+new URL(`logo-C0F8rqyq.png`,import.meta.url).href,n=e();function r({size:e=40,className:r=``}){return(0,n.jsx)(`img`,{src:t,alt:`Delay`,width:e,height:e,style:{width:e,height:e},className:`rounded-xl object-contain ${r}`,draggable:!1,onError:e=>{e.currentTarget.style.display=`none`}})}export{r as t};

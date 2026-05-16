@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Delay v3.0 — The Agentic OS by AlpSoft</title>
+  <meta name="description"
+    content="Delay is a completely free, local-first super app by AlpSoft. Docs, Planner, Schedule, Focus Timer, Capture, Vault, Code Studio, Canvas, Status Dashboard, Voice, and AI Copilot — all in one stunning app.">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --bg: #09090B; --bg-card: #111113; --bg-elevated: #18181B;
+      --accent: #6366F1; --accent-2: #8B5CF6; --accent-3: #06B6D4;
+      --text: #FAFAFA; --text-dim: #A1A1AA; --text-muted: #52525B;
+      --border: rgba(255,255,255,0.08); --radius: 20px;
+    }
+    html { scroll-behavior: smooth; }
+    body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); -webkit-font-smoothing: antialiased; line-height: 1.6; overflow-x: hidden; }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    /* NAV */
+    .nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; backdrop-filter: blur(24px) saturate(160%); background: rgba(9,9,11,0.8); border-bottom: 1px solid var(--border); }
+    .nav-inner { max-width: 1200px; margin: 0 auto; padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; }
+    .nav-logo { display: flex; align-items: center; gap: 10px; font-size: 18px; font-weight: 800; letter-spacing: -0.03em; }
+    .nav-logo img { width: 36px; height: 36px; border-radius: 10px; }
+    .nav-links { display: flex; align-items: center; gap: 24px; }
+    .nav-links a { color: var(--text-dim); font-size: 13px; font-weight: 600; transition: color 0.2s; }
+    .nav-links a:hover { color: var(--text); text-decoration: none; }
+    .nav-cta { padding: 8px 20px; border-radius: 12px; background: var(--accent); color: white !important; font-weight: 700; font-size: 13px; transition: transform 0.15s, box-shadow 0.2s; }
+    .nav-cta:hover { transform: translateY(-1px); box-shadow: 0 6px 24px rgba(99,102,241,0.3); text-decoration: none; }
+
+    /* HERO */
+    .hero { padding: 140px 24px 80px; text-align: center; position: relative; overflow: hidden; }
+    .hero::before { content: ''; position: absolute; top: -300px; left: 50%; transform: translateX(-50%); width: 1000px; height: 1000px; background: radial-gradient(circle, rgba(99,102,241,0.15) 0%, rgba(139,92,246,0.05) 40%, transparent 70%); pointer-events: none; }
+    .hero::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 200px; background: linear-gradient(to top, var(--bg), transparent); pointer-events: none; }
+    .hero-logo { width: 72px; height: 72px; border-radius: 20px; margin: 0 auto 24px; display: block; box-shadow: 0 8px 40px rgba(99,102,241,0.25); }
+    .badge { display: inline-flex; align-items: center; gap: 6px; padding: 6px 16px; border-radius: 99px; background: rgba(99,102,241,0.1); border: 1px solid rgba(99,102,241,0.2); font-size: 12px; font-weight: 700; color: var(--accent); margin-bottom: 20px; letter-spacing: 0.03em; }
+    .hero h1 { font-size: clamp(32px, 6vw, 68px); font-weight: 900; letter-spacing: -0.045em; line-height: 1.05; margin-bottom: 18px; background: linear-gradient(135deg, #fff 20%, var(--accent) 80%, var(--accent-3) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .hero p { font-size: clamp(14px, 1.8vw, 17px); color: var(--text-dim); max-width: 600px; margin: 0 auto 32px; line-height: 1.7; }
+    .hero-btns { display: flex; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap; position: relative; z-index: 2; }
+    .btn-p { display: inline-flex; align-items: center; gap: 8px; padding: 13px 28px; border-radius: 14px; background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: white; font-weight: 700; font-size: 14px; transition: transform 0.15s, box-shadow 0.2s; border: none; cursor: pointer; }
+    .btn-p:hover { transform: translateY(-2px); box-shadow: 0 12px 40px rgba(99,102,241,0.35); text-decoration: none; }
+    .btn-o { display: inline-flex; align-items: center; gap: 8px; padding: 13px 28px; border-radius: 14px; background: transparent; border: 1px solid var(--border); color: var(--text); font-weight: 700; font-size: 14px; transition: background 0.2s; cursor: pointer; }
+    .btn-o:hover { background: var(--bg-card); text-decoration: none; }
+
+    /* STATS BAR */
+    .stats-bar { display: flex; justify-content: center; gap: 40px; padding: 40px 24px; flex-wrap: wrap; }
+    .stat-item { text-align: center; }
+    .stat-item .num { font-size: 32px; font-weight: 900; color: var(--accent); }
+    .stat-item .lbl { font-size: 12px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 2px; }
+
+    /* SECTIONS */
+    .section { padding: 80px 24px; max-width: 1200px; margin: 0 auto; }
+    .section-title { font-size: clamp(24px, 4vw, 36px); font-weight: 800; letter-spacing: -0.03em; margin-bottom: 10px; }
+    .section-sub { font-size: 15px; color: var(--text-dim); max-width: 520px; margin-bottom: 40px; }
+
+    /* FEATURE GRID */
+    .feat-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+    .feat-card { padding: 28px; border-radius: 18px; background: var(--bg-card); border: 1px solid var(--border); transition: transform 0.2s, border-color 0.3s; }
+    .feat-card:hover { transform: translateY(-3px); border-color: rgba(99,102,241,0.2); }
+    .feat-ico { width: 44px; height: 44px; border-radius: 13px; display: flex; align-items: center; justify-content: center; margin-bottom: 16px; font-size: 20px; }
+    .feat-card h3 { font-size: 16px; font-weight: 700; margin-bottom: 6px; }
+    .feat-card p { font-size: 13px; color: var(--text-dim); line-height: 1.55; }
+
+    /* DOCS */
+    .docs { padding: 60px 24px; max-width: 860px; margin: 0 auto; }
+    .docs h2 { font-size: 26px; font-weight: 800; margin-bottom: 14px; letter-spacing: -0.02em; }
+    .docs h3 { font-size: 18px; font-weight: 700; margin: 28px 0 10px; color: var(--accent); }
+    .docs p, .docs li { font-size: 14px; color: var(--text-dim); line-height: 1.75; }
+    .docs ul { list-style: none; padding: 0; }
+    .docs ul li { padding: 5px 0 5px 22px; position: relative; }
+    .docs ul li::before { content: '→'; position: absolute; left: 0; color: var(--accent); font-weight: 700; }
+    .docs code { background: var(--bg-elevated); padding: 2px 7px; border-radius: 5px; font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--accent-3); }
+    .docs-hr { width: 100%; height: 1px; background: var(--border); margin: 48px 0; }
+
+    /* TABLE */
+    .spec-tbl { width: 100%; border-collapse: collapse; margin: 20px 0; }
+    .spec-tbl th, .spec-tbl td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--border); font-size: 13px; }
+    .spec-tbl th { color: var(--text-muted); font-weight: 600; text-transform: uppercase; font-size: 10px; letter-spacing: 0.06em; }
+    .spec-tbl td { color: var(--text-dim); }
+
+    /* DONATE */
+    .donate { text-align: center; padding: 80px 24px; background: linear-gradient(180deg, var(--bg-card) 0%, var(--bg) 100%); border-top: 1px solid var(--border); }
+    .donate h2 { font-size: 28px; font-weight: 800; margin-bottom: 10px; }
+    .donate p { color: var(--text-dim); font-size: 14px; max-width: 460px; margin: 0 auto 28px; }
+    .donate-btn { display: inline-flex; align-items: center; gap: 8px; padding: 14px 32px; border-radius: 16px; background: linear-gradient(135deg, #FACC15, #F59E0B); color: #000; font-weight: 800; font-size: 15px; transition: transform 0.15s; border: none; cursor: pointer; }
+    .donate-btn:hover { transform: translateY(-2px); text-decoration: none; }
+
+    /* FOOTER */
+    footer { padding: 32px 24px; text-align: center; border-top: 1px solid var(--border); }
+    footer p { color: var(--text-muted); font-size: 12px; }
+    footer a { color: var(--text-dim); }
+
+    /* RESPONSIVE */
+    @media (max-width: 768px) {
+      .nav-links { display: none; }
+      .feat-grid { grid-template-columns: 1fr; }
+      .stats-bar { gap: 24px; }
+    }
+  </style>
+</head>
+
+<body>
+  <!-- NAV -->
+  <nav class="nav">
+    <div class="nav-inner">
+      <div class="nav-logo">
+        <img src="logo.png" alt="Delay">
+        Delay
+      </div>
+      <div class="nav-links">
+        <a href="#features">Features</a>
+        <a href="#docs">Docs</a>
+        <a href="#security">Security</a>
+        <a href="#donate">Support</a>
+        <a href="./app/" class="nav-cta">Launch Web App</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <section class="hero">
+    <img src="logo.png" alt="Delay" class="hero-logo">
+    <div class="badge">✦ v3.0 · Full SaaS Features, Gamification, Secure Vault — by AlpSoft</div>
+    <h1>The Super App<br>For Everything You Do.</h1>
+    <p>
+      Delay is a completely free cross-platform Agentic OS crafted by <strong>AlpSoft</strong>.
+      Docs, Planner, Schedule, Focus Timer, Capture, Vault, Code Studio, Canvas, Status Dashboard, Voice Studio, and AI Copilot — all in one beautiful SaaS app.
+    </p>
+    <div class="hero-btns">
+      <a href="./app/" class="btn-p">→ Launch Web App</a>
+      <a href="https://github.com/AzizX-coder/Delay/releases" class="btn-o">↓ Download Desktop / Mobile</a>
+    </div>
+    
+    <div style="max-width: 1000px; margin: 60px auto 0;">
+      <img src="dashboard.png" alt="Delay Dashboard" style="width: 100%; border-radius: 20px; box-shadow: 0 20px 60px rgba(0,0,0,0.5); border: 1px solid var(--border);" />
+    </div>
+  </section>
+
+  <!-- STATS -->
+  <div class="stats-bar">
+    <div class="stat-item"><div class="num">15</div><div class="lbl">Modules</div></div>
+    <div class="stat-item"><div class="num">7</div><div class="lbl">Themes</div></div>
+    <div class="stat-item"><div class="num">11</div><div class="lbl">Languages</div></div>
+    <div class="stat-item"><div class="num">3</div><div class="lbl">Platforms</div></div>
+    <div class="stat-item"><div class="num">$0</div><div class="lbl">Forever</div></div>
+  </div>
+
+  <!-- FEATURES -->
+  <section class="section" id="features">
+    <h2 class="section-title">Everything Built In</h2>
+    <p class="section-sub">14 powerful modules. No subscriptions. No cloud lock-in. Your data never leaves your device.</p>
+    <div class="feat-grid">
+      <div class="feat-card"><div class="feat-ico" style="background:rgba(99,102,241,0.1)">📝</div><h3>Docs</h3><p>Rich-text editor with Markdown, AI writing, voice dictation, and PDF export. Your personal knowledge base.</p></div>
+      <div class="feat-card"><div class="feat-ico" style="background:rgba(16,185,129,0.1)">✅</div><h3>Planner</h3><p>Multi-list task management with due dates, priorities, drag-and-drop, and calendar integration.</p></div>
+      <div class="feat-card"><div class="feat-ico" style="background:rgba(245,158,11,0.1)">📅</div><h3>Schedule</h3><p>Month, Week, and Day views with color-coded events, task deadline overlays, and quick creation.</p></div>
+      <div class="feat-card"><div class="feat-ico" style="background:rgba(239,68,68,0.1)">🔥</div><h3>Focus</h3><p>Pomodoro timer with goal tracking, session stats, screen-awake mode, and customizable durations.</p></div>
+      <div class="feat-card"><div class="feat-ico" style="background:rgba(99,102,241,0.1)">🔖</div><h3>Saved</h3><p>Telegram-style saved messages. Save text, links with previews, quick todos. Pin, react with emoji, and filter.</p></div>
+      <div class="feat-card"><div class="feat-ico" style="background:rgba(139,92,246,0.1)">🗄️</div><h3>Vault</h3><p>Secure file storage with folders. Upload images, PDFs, videos. Protected by the app sandbox. Easy sharing.</p></div>
+      <div class="feat-card"><div class="feat-ico" style="background:rgba(6,182,212,0.1)">💻</div><h3>Studio</h3><p>VS Code-like IDE powered by Monaco Editor with syntax highlighting, minimap, terminal, and project runner.</p></div>
+      <div class="feat-card"><div class="feat-ico" style="background:rgba(236,72,153,0.1)">🎨</div><h3>Canvas</h3><p>Infinite canvas powered by tldraw. Draw, diagram, brainstorm — Miro-quality right in your workspace.</p></div>
+      <div class="feat-card"><div class="feat-ico" style="background:rgba(16,185,129,0.1)">📋</div><h3>Boards</h3><p>Multi-board drag-and-drop Kanban. Create unlimited boards and columns for project management.</p></div>
+      <div class="feat-card"><div class="feat-ico" style="background:rgba(245,158,11,0.1)">📊</div><h3>Status</h3><p>Activity dashboard with bar charts, heatmaps, streak counters, KPI cards, and completion rate graphs.</p></div>
+      <div class="feat-card"><div class="feat-ico" style="background:rgba(99,102,241,0.1)">🎙️</div><h3>Voice</h3><p>Professional audio recorder with waveform visualization, speed control, noise gate, and AI enhancement.</p></div>
+      <div class="feat-card"><div class="feat-ico" style="background:rgba(139,92,246,0.1)">💾</div><h3>Media</h3><p>Media management for your local file library. Preview, organize, and manage project assets.</p></div>
+      <div class="feat-card"><div class="feat-ico" style="background:rgba(99,102,241,0.1)">🤖</div><h3>Copilot</h3><p>AI assistant with multi-provider support (OpenRouter, OpenAI, Groq, Gemini). Optional — bring your own key.</p></div>
+      <div class="feat-card"><div class="feat-ico" style="background:rgba(239,68,68,0.1)">🔒</div><h3>App Lock</h3><p>4-digit PIN lock protects all your data. Notes, vault, conversations stay private even on shared devices.</p></div>
+    </div>
+  </section>
+
+  <!-- DOCUMENTATION -->
+  <section class="docs" id="docs">
+    <h2>📖 Full Documentation</h2>
+    <p>Delay v3.0 introduces a seamless and powerful workflow for the modern professional. Here is everything you need to know about the tools included.</p>
+
+    <div style="margin: 40px 0;">
+      <img src="notes.png" alt="Delay Notes Editor" style="width: 100%; border-radius: 16px; border: 1px solid var(--border); box-shadow: 0 20px 60px rgba(0,0,0,0.5);" />
+    </div>
+
+    <h3>1. AI Copilot (Copilot)</h3>
+    <p>Delay features a powerful AI assistant that can be configured to use <strong>Local Models (Ollama)</strong> for complete privacy, or <strong>Cloud Models (OpenRouter, Groq, OpenAI, Anthropic)</strong> for maximum intelligence. During onboarding, you can easily select your preferred provider or disable the AI features entirely.</p>
+    <ul>
+      <li>Global command palette <code>Cmd/Ctrl + K</code> for instant AI access.</li>
+      <li>Chat context includes recent notes and tasks.</li>
+    </ul>
+
+    <h3>2. Capture & Vault</h3>
+    <p>We replaced complex disk flows with two powerful new concepts:</p>
+    <ul>
+      <li><strong>Capture (formerly Saved):</strong> A global inbox. Hit <code>Cmd/Ctrl + Shift + S</code> anywhere to capture a quick thought, link, or image. Like a personal Telegram "Saved Messages" but better.</li>
+      <li><strong>Vault (formerly Bucket):</strong> Secure, local file storage. Upload files and they remain strictly on your device, protected by the App Lock PIN if configured.</li>
+    </ul>
+
+    <h3>3. Kanban & Tasks</h3>
+    <p>A full Trello-style Kanban board is built right in. With the new v3 update, you can drag and drop cards, open a <strong>Detail Drawer</strong> to set due dates, priorities, and write rich descriptions, and view a complete activity log for every card.</p>
+
+    <h3>4. Gamification</h3>
+    <p>Productivity is now a game. Earn XP by completing tasks, finishing Pomodoro focus sessions, and writing notes. Level up and see your stats grow on the Status Dashboard.</p>
+
+    <div class="docs-hr"></div>
+
+    <h2>Keyboard Shortcuts</h2>
+    <table class="spec-tbl">
+      <thead>
+        <tr><th>Shortcut</th><th>Action</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>Cmd/Ctrl + K</code></td><td>Open Global Command Palette</td></tr>
+        <tr><td><code>Cmd/Ctrl + Shift + S</code></td><td>Open Quick Capture</td></tr>
+        <tr><td><code>/</code> (in Notes)</td><td>Open TipTap Slash Commands menu</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- DONATE -->
+  <section class="donate" id="donate">
+    <h2>Support the AlpSoft Team</h2>
+    <p>We built Delay to be the ultimate, completely free Agentic OS. No subscriptions, no ads, no cloud lock-in. If Delay helps you get things done, consider supporting our development.</p>
+    <a href="https://www.buymeacoffee.com/alpsoft" target="_blank" class="donate-btn">
+      ☕ Buy us a Coffee
+    </a>
+  </section>
+  <!-- FOOTER -->
+  <footer>
+    <p>
+      Built with ♥ by <strong>AlpSoft</strong>, Tashkent &nbsp;·&nbsp;
+      <a href="https://github.com/AzizX-coder/Delay">GitHub</a> &nbsp;·&nbsp;
+      <a href="https://github.com/AzizX-coder/Delay/releases">Releases</a> &nbsp;·&nbsp;
+      Apache 2.0
+    </p>
+    <p style="margin-top:6px;">© 2026 AlpSoft. All rights reserved.</p>
+  </footer>
+</body>
+</html>
